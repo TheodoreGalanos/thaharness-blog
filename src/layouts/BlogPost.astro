@@ -2,6 +2,7 @@
 <!-- ABOUTME: Wraps individual blog posts with full HTML document, head, header, footer, and sticky TOC. -->
 ---
 import { Image } from 'astro:assets';
+import Analytics from '@vercel/analytics/astro';
 import type { CollectionEntry } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
@@ -141,5 +142,6 @@ const {
 			</article>
 		</main>
 		<Footer />
+		<Analytics />
 	</body>
 </html>

@@ -1,6 +1,7 @@
 <!-- ABOUTME: Blog archive page listing all posts in chronological order. -->
 <!-- ABOUTME: Each post displays as a row with date, title, description, and tags. -->
 ---
+import Analytics from '@vercel/analytics/astro';
 import { getCollection } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';
@@ -56,5 +57,6 @@ const posts = getPublishedBlogPosts(await getCollection('blog'));
 			</section>
 		</main>
 		<Footer />
+		<Analytics />
 	</body>
 </html>
