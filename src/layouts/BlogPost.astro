@@ -32,6 +32,7 @@ const {
 	description,
 	pubDate,
 	updatedDate,
+	author,
 	heroImage,
 	tags,
 	readingTime,
@@ -41,7 +42,16 @@ const {
 
 <html lang="en" data-theme="dark">
 	<head>
-		<BaseHead title={title} description={description} />
+		<BaseHead
+			title={title}
+			description={description}
+			image={heroImage}
+			type="article"
+			author={author}
+			publishedTime={pubDate}
+			modifiedTime={updatedDate}
+			tags={tags}
+		/>
 		<style>
 			.post-header {
 				max-width: 60rem;

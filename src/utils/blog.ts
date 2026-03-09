@@ -5,8 +5,7 @@ import type { CollectionEntry } from 'astro:content';
 
 export type BlogPostEntry = CollectionEntry<'blog'>;
 
-export function isPublishedBlogPost(post: BlogPostEntry, now = new Date()) {
-	void now;
+export function isPublishedBlogPost(post: BlogPostEntry) {
 	return !post.data.draft;
 }
 
@@ -14,6 +13,6 @@ export function sortBlogPostsByDate(posts: BlogPostEntry[]) {
 	return posts.sort((left, right) => right.data.pubDate.valueOf() - left.data.pubDate.valueOf());
 }
 
-export function getPublishedBlogPosts(posts: BlogPostEntry[], now = new Date()) {
-	return sortBlogPostsByDate(posts.filter((post) => isPublishedBlogPost(post, now)));
+export function getPublishedBlogPosts(posts: BlogPostEntry[]) {
+	return sortBlogPostsByDate(posts.filter((post) => isPublishedBlogPost(post)));
 }

@@ -39,7 +39,7 @@ const { posts } = Astro.props;
 <!doctype html>
 <html lang="en" data-theme="dark">
 	<head>
-		<BaseHead title={`#${tag} | ${SITE_TITLE}`} description={`Posts tagged with "${tag}".`} />
+		<BaseHead title={`#${tag} | ${SITE_TITLE}`} description={`Posts tagged with "${tag}".`} noindex={true} />
 	</head>
 	<body class="bg-[--color-bg]">
 		<Header />

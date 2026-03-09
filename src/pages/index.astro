@@ -7,7 +7,7 @@ import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
 import TagPill from '../components/TagPill.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import { SITE_DESCRIPTION, SITE_SUBTITLE, SITE_TAGLINE, SITE_TITLE } from '../consts';
 import { getPublishedBlogPosts } from '../utils/blog';
 
 const posts = getPublishedBlogPosts(await getCollection('blog'));
@@ -28,10 +28,10 @@ const remainingPosts = posts.slice(1);
 			<section class="px-6 py-16 md:py-24 lg:py-28">
 				<div class="mx-auto max-w-[--width-wide] text-center">
 					<p class="font-body italic text-3xl md:text-5xl text-[--color-text-primary] leading-tight">
-						{SITE_DESCRIPTION}
+						{SITE_TAGLINE}
 					</p>
 					<p class="mt-4 text-[--color-text-tertiary] text-lg md:text-xl">
-						Where autonomous systems meet human judgment.
+						{SITE_SUBTITLE}
 					</p>
 				</div>
 			</section>
