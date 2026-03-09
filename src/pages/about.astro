@@ -2,6 +2,7 @@
 <!-- ABOUTME: Describes The Harness blog and its purpose using the reading layout. -->
 ---
 import Analytics from '@vercel/analytics/astro';
+import SpeedInsights from '@vercel/speed-insights/astro';
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
@@ -45,5 +46,6 @@ import { SITE_TITLE } from '../consts';
 		</main>
 		<Footer />
 		<Analytics />
+		<SpeedInsights />
 	</body>
 </html>

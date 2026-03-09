@@ -2,6 +2,7 @@
 <!-- ABOUTME: Each post displays as a row with date, title, description, and tags. -->
 ---
 import Analytics from '@vercel/analytics/astro';
+import SpeedInsights from '@vercel/speed-insights/astro';
 import { getCollection } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';
@@ -58,5 +59,6 @@ const posts = getPublishedBlogPosts(await getCollection('blog'));
 		</main>
 		<Footer />
 		<Analytics />
+		<SpeedInsights />
 	</body>
 </html>
