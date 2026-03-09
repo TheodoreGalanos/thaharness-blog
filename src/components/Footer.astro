@@ -7,13 +7,15 @@ const today = new Date();
 <footer class="mt-20 px-6 pb-12">
 	<div class="mx-auto max-w-[--width-wide]">
 		<div class="border-t border-[--color-border] pt-6">
-			<p class="mb-0 font-heading text-[0.8125rem] text-[--color-text-tertiary]">
-				&copy; {today.getFullYear()} Theodoros Galanos &middot; The Harness
-				<span class="mx-2">&middot;</span>
-				<a href="/rss.xml" class="text-[--color-text-tertiary] hover:text-[--color-text-secondary] transition-colors duration-250">RSS</a>
-				<span class="mx-2">&middot;</span>
-				<a href="https://github.com" class="text-[--color-text-tertiary] hover:text-[--color-text-secondary] transition-colors duration-250">GitHub</a>
-			</p>
+			<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+				<p class="mb-0 font-heading text-[0.8125rem] leading-relaxed text-[--color-text-tertiary]">
+					&copy; {today.getFullYear()} Theodoros Galanos &middot; The Harness
+				</p>
+				<div class="flex items-center gap-4 font-heading text-[0.8125rem] text-[--color-text-tertiary]">
+					<a href="/rss.xml" class="text-[--color-text-tertiary] hover:text-[--color-text-secondary] transition-colors duration-250">RSS</a>
+					<a href="https://github.com" class="text-[--color-text-tertiary] hover:text-[--color-text-secondary] transition-colors duration-250">GitHub</a>
+				</div>
+			</div>
 		</div>
 	</div>
 </footer>

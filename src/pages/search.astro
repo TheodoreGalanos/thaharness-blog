@@ -15,14 +15,25 @@ import { SITE_TITLE } from '../consts';
 		<BaseHead title={`Search | ${SITE_TITLE}`} description="Search all posts and pages." noindex={true} />
 		<link href="/pagefind/pagefind-ui.css" rel="stylesheet" />
 		<style>
+			.search-shell {
+				display: grid;
+				gap: 1.5rem;
+			}
+			.search-intro {
+				max-width: 36rem;
+				font-size: 1rem;
+				line-height: 1.7;
+				color: var(--color-text-secondary);
+			}
 			.pagefind-ui .pagefind-ui__search-input {
 				font-family: var(--font-mono);
 				font-size: 16px;
 				border-color: var(--color-border);
 				color: var(--color-text-primary);
 				background: var(--color-surface);
-				padding: 0.85rem 1rem;
+				padding: 0.95rem 1rem;
 				border-radius: 8px;
+				min-height: 3rem;
 			}
 			.pagefind-ui .pagefind-ui__search-input:focus {
 				border-color: var(--color-accent);
@@ -35,6 +46,8 @@ import { SITE_TITLE } from '../consts';
 			.pagefind-ui .pagefind-ui__result-link {
 				font-family: var(--font-body);
 				font-weight: 600;
+				font-size: 1.125rem;
+				line-height: 1.35;
 				color: var(--color-text-primary);
 			}
 			.pagefind-ui .pagefind-ui__result-link:hover {
@@ -48,23 +61,53 @@ import { SITE_TITLE } from '../consts';
 				margin-top: 2rem;
 			}
 			.pagefind-ui .pagefind-ui__result {
-				padding: 1.25rem 0;
+				padding: 1.4rem 0;
 				border-top: 1px solid var(--color-border);
+			}
+			.pagefind-ui .pagefind-ui__button,
+			.pagefind-ui .pagefind-ui__search-clear,
+			.pagefind-ui .pagefind-ui__search-clear-icon {
+				min-height: 2.75rem;
 			}
 			.pagefind-ui .pagefind-ui__message,
 			.pagefind-ui .pagefind-ui__button {
 				font-family: var(--font-mono);
 				color: var(--color-text-secondary);
 			}
+			@media (max-width: 768px) {
+				.search-shell {
+					gap: 1.25rem;
+				}
+
+				.search-intro {
+					font-size: 0.95rem;
+				}
+
+				.pagefind-ui .pagefind-ui__search-input {
+					padding: 1rem;
+					font-size: 16px;
+				}
+
+				.pagefind-ui .pagefind-ui__result-link {
+					font-size: 1rem;
+				}
+
+				.pagefind-ui .pagefind-ui__result {
+					padding: 1.1rem 0;
+				}
+			}
 		</style>
 	</head>
 	<body class="bg-[--color-bg]">
 		<Header />
 		<main class="page-shell py-14 md:py-16">
-			<section class="mx-auto max-w-[--width-content]">
+			<section class="search-shell mx-auto max-w-[--width-content]">
 				<h1 class="font-heading font-medium text-3xl md:text-[3rem] tracking-[-0.02em] text-[--color-text-primary] mb-8">
 					Search
 				</h1>
+				<p class="search-intro -mt-4">
+					Search across the published writing on The Harness. Results update as you type.
+				</p>
 				<div id="search"></div>
 			</section>
 		</main>

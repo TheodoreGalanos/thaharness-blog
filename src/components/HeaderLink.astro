@@ -14,7 +14,7 @@ const isActive = href === pathname || href === '/' + (subpath?.[0] || '');
 <a
 	href={href}
 	class:list={[
-		'font-heading text-[0.8125rem] font-normal px-2 py-2 transition-colors duration-250',
+		'font-heading text-[0.75rem] sm:text-[0.8125rem] font-normal px-1.5 sm:px-2 py-2 transition-colors duration-250',
 		isActive
 			? 'text-[--color-accent]'
 			: 'text-[--color-text-secondary] hover:text-[--color-text-primary]',

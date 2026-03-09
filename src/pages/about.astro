@@ -16,11 +16,14 @@ import { SITE_TITLE } from '../consts';
 	</head>
 	<body class="bg-[--color-bg]">
 		<Header />
-		<main class="px-6 py-14 md:py-20">
+		<main class="px-5 py-14 sm:px-6 md:py-20">
 			<div class="mx-auto max-w-[--width-content]">
-				<h1 class="font-heading font-medium text-3xl md:text-[3rem] tracking-[-0.02em] text-[--color-text-primary] mb-10">
+				<h1 class="font-heading font-medium text-3xl md:text-[3rem] tracking-[-0.02em] text-[--color-text-primary] mb-6 md:mb-8">
 					About
 				</h1>
+				<p class="max-w-2xl mb-8 md:mb-10 text-base md:text-lg text-[--color-text-secondary] leading-relaxed">
+					The Harness is where I write about harness engineering, agentic systems, and the work of making AI useful in real engineering practice.
+				</p>
 				<div class="prose">
 					<p>
 						Hello, I am Theodoros Galanos. I have been working at the intersection of AI, design, and engineering for the better part of the last 12 years.
@@ -41,6 +44,14 @@ import { SITE_TITLE } from '../consts';
 					<p>
 						If you want to follow along, the cleanest route is the <a href="/rss.xml">RSS feed</a>. If you want a broader snapshot of my work, the external links in the header point to my <a href="https://www.linkedin.com/in/theodorosgalanos/" target="_blank" rel="noopener noreferrer">LinkedIn</a> and <a href="https://x.com/TheodoreGalanos" target="_blank" rel="noopener noreferrer">X</a>. Otherwise, the <a href="/blog">archive</a> stays simple on purpose.
 					</p>
+				</div>
+				<div class="mt-10 flex flex-wrap gap-3">
+					<a href="/rss.xml" class="inline-flex min-h-11 items-center justify-center rounded border border-[--color-border] bg-[--color-surface] px-4 py-2 font-heading text-[0.8125rem] text-[--color-text-primary] no-underline transition-colors duration-250 hover:border-[--color-accent] hover:text-[--color-accent]">
+						Follow via RSS
+					</a>
+					<a href="/blog" class="inline-flex min-h-11 items-center justify-center rounded border border-[--color-border] bg-[--color-surface] px-4 py-2 font-heading text-[0.8125rem] text-[--color-text-primary] no-underline transition-colors duration-250 hover:border-[--color-accent] hover:text-[--color-accent]">
+						Read the archive
+					</a>
 				</div>
 			</div>
 		</main>

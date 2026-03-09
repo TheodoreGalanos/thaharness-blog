@@ -6,14 +6,14 @@ import ThemeToggle from './ThemeToggle.astro';
 ---
 
 <header class="sticky top-0 left-0 right-0 z-50 border-b border-[--color-border]" style="background-color: var(--color-bg);">
-	<nav class="page-shell flex items-center justify-between h-16 md:h-[4.25rem]">
+	<nav class="page-shell flex items-center justify-between gap-3 h-16 md:h-[4.25rem]">
 		<a
 			href="/"
-			class="flex items-center gap-0 no-underline hover:no-underline"
+			class="flex min-w-0 items-center gap-0 no-underline hover:no-underline"
 		>
 			<span class="font-heading text-[--color-accent] text-xl font-medium">&gt;&nbsp;</span>
-			<span class="font-heading font-medium text-xl text-[--color-text-primary] tracking-[-0.02em]">The Harness</span>
-			<span class="cursor-blink font-heading text-xl text-[--color-accent] ml-px">_</span>
+			<span class="font-heading font-medium text-lg sm:text-xl text-[--color-text-primary] tracking-[-0.02em] truncate">The Harness</span>
+			<span class="cursor-blink font-heading text-lg sm:text-xl text-[--color-accent] ml-px">_</span>
 			<span class="text-[--color-border] mx-2 hidden md:inline">|</span>
 			<span class="font-heading text-[0.8125rem] text-[--color-text-secondary] hidden md:inline">Theodoros Galanos</span>
 		</a>
@@ -28,7 +28,7 @@ import ThemeToggle from './ThemeToggle.astro';
 			</a>
 		</div>
 
-		<div class="flex items-center gap-1 md:gap-2">
+		<div class="flex shrink-0 items-center gap-0.5 md:gap-2">
 			<HeaderLink href="/blog">writing</HeaderLink>
 			<span class="text-[--color-text-tertiary] text-xs hidden md:inline">&middot;</span>
 			<HeaderLink href="/about">about</HeaderLink>

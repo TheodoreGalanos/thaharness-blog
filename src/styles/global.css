@@ -403,15 +403,44 @@ img {
 		font-size: 17px;
 	}
 
+	.page-shell {
+		padding-left: 1rem;
+		padding-right: 1rem;
+	}
+
 	.prose {
 		font-size: 1.0625rem;
+		line-height: 1.75;
 	}
 
 	.prose h2 {
 		font-size: 1.75rem;
+		margin-top: 2.25em;
 	}
 
 	.prose h3 {
 		font-size: 1.5rem;
+	}
+
+	.prose blockquote {
+		font-size: 1.125rem;
+		padding-left: 1rem;
+		margin: 2em 0;
+	}
+
+	.prose pre {
+		padding: 1rem;
+		border-radius: 0.625rem;
+	}
+
+	.prose figure,
+	.prose img {
+		margin: 1.5em auto;
+	}
+
+	.prose table {
+		display: block;
+		overflow-x: auto;
+		white-space: nowrap;
 	}
 }

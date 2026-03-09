@@ -9,16 +9,17 @@ interface Heading {
 
 interface Props {
 	headings: Heading[];
+	variant?: 'default' | 'inline';
 }
 
-const { headings } = Astro.props;
+const { headings, variant = 'default' } = Astro.props;
 
 // Only show h2 and h3
 const tocHeadings = headings.filter((h) => h.depth === 2 || h.depth === 3);
 ---
 
 {tocHeadings.length > 0 && (
-	<nav id="toc" class="toc" aria-label="Table of contents">
+	<nav class:list={['toc', variant === 'inline' && 'toc-inline']} aria-label="Table of contents">
 		<span class="toc-label">On this page</span>
 		<ul>
 			{tocHeadings.map((heading) => (
@@ -36,6 +37,15 @@ const tocHeadings = headings.filter((h) => h.depth === 2 || h.depth === 3);
 	.toc {
 		max-height: calc(100vh - 8rem);
 		overflow-y: auto;
+	}
+
+	.toc-inline {
+		max-height: none;
+		overflow: visible;
+		padding: 1rem;
+		border: 1px solid var(--color-border);
+		border-radius: 0.75rem;
+		background: color-mix(in srgb, var(--color-surface) 88%, transparent);
 	}
 
 	.toc-label {
@@ -78,6 +88,27 @@ const tocHeadings = headings.filter((h) => h.depth === 2 || h.depth === 3);
 
 	a:hover {
 		color: var(--color-text-secondary);
+	}
+
+	.toc-inline ul {
+		display: grid;
+		gap: 0.125rem;
+	}
+
+	.toc-inline a {
+		font-size: 0.8125rem;
+		padding-top: 0.35rem;
+		padding-bottom: 0.35rem;
+	}
+
+	@media (max-width: 768px) {
+		.toc-inline {
+			padding: 0.875rem;
+		}
+
+		.toc-inline a {
+			font-size: 0.75rem;
+		}
 	}
 
 	/* Active state applied via JS */
