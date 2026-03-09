@@ -1,0 +1,18 @@
+<!-- ABOUTME: Renders a date as a styled <time> element with semantic datetime attribute. -->
+<!-- ABOUTME: Displays dates in YYYY-MM-DD format using JetBrains Mono for terminal aesthetics. -->
+---
+interface Props {
+	date: Date;
+}
+
+const { date } = Astro.props;
+
+const formatted = date.toISOString().split('T')[0];
+---
+
+<time
+	datetime={date.toISOString()}
+	class="font-heading text-[0.8125rem] text-[--color-text-tertiary] tracking-[0.02em]"
+>
+	{formatted}
+</time>

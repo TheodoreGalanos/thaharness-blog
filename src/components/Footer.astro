@@ -1,0 +1,19 @@
+<!-- ABOUTME: Minimal one-line site footer with copyright, RSS link, and GitHub link. -->
+<!-- ABOUTME: Separated by a horizontal rule, matching The Harness terminal aesthetic. -->
+---
+const today = new Date();
+---
+
+<footer class="mt-20 px-6 pb-12">
+	<div class="mx-auto max-w-[--width-wide]">
+		<div class="border-t border-[--color-border] pt-6">
+			<p class="mb-0 font-heading text-[0.8125rem] text-[--color-text-tertiary]">
+				&copy; {today.getFullYear()} Theodoros Galanos &middot; The Harness
+				<span class="mx-2">&middot;</span>
+				<a href="/rss.xml" class="text-[--color-text-tertiary] hover:text-[--color-text-secondary] transition-colors duration-250">RSS</a>
+				<span class="mx-2">&middot;</span>
+				<a href="https://github.com" class="text-[--color-text-tertiary] hover:text-[--color-text-secondary] transition-colors duration-250">GitHub</a>
+			</p>
+		</div>
+	</div>
+</footer>

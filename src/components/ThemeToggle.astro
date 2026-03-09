@@ -1,0 +1,46 @@
+<!-- ABOUTME: Dark/light mode toggle button with moon and sun text icons. -->
+<!-- ABOUTME: Persists preference in localStorage and sets data-theme on the html element. -->
+---
+---
+
+<button
+	id="theme-toggle"
+	type="button"
+	aria-label="Toggle dark mode"
+	class="p-2 font-heading text-lg text-[--color-text-secondary] hover:text-[--color-text-primary] transition-colors duration-250"
+>
+	<span class="theme-icon-dark" aria-hidden="true">&#9789;</span>
+	<span class="theme-icon-light hidden" aria-hidden="true">&#9788;</span>
+</button>
+
+<script>
+	function updateToggleIcons(theme: string) {
+		const darkIcon = document.querySelector('.theme-icon-dark');
+		const lightIcon = document.querySelector('.theme-icon-light');
+		if (!darkIcon || !lightIcon) return;
+
+		if (theme === 'dark') {
+			darkIcon.classList.remove('hidden');
+			lightIcon.classList.add('hidden');
+		} else {
+			darkIcon.classList.add('hidden');
+			lightIcon.classList.remove('hidden');
+		}
+	}
+
+	function getEffectiveTheme(): string {
+		const stored = localStorage.getItem('theme');
+		if (stored) return stored;
+		return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+	}
+
+	updateToggleIcons(getEffectiveTheme());
+
+	document.getElementById('theme-toggle')?.addEventListener('click', () => {
+		const current = getEffectiveTheme();
+		const next = current === 'dark' ? 'light' : 'dark';
+		localStorage.setItem('theme', next);
+		document.documentElement.setAttribute('data-theme', next);
+		updateToggleIcons(next);
+	});
+</script>

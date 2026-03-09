@@ -1,0 +1,38 @@
+<!-- ABOUTME: Dynamic route that generates individual blog post pages from the content collection. -->
+<!-- ABOUTME: Uses getStaticPaths to create a page for each blog post at /blog/[slug]/. -->
+---
+import { type CollectionEntry, getCollection, render } from 'astro:content';
+import BlogPost from '../../layouts/BlogPost.astro';
+import { getPublishedBlogPosts } from '../../utils/blog';
+
+export async function getStaticPaths() {
+	const posts = getPublishedBlogPosts(await getCollection('blog'));
+	return posts.map((post) => ({
+		params: { slug: post.id },
+		props: post,
+	}));
+}
+type Props = CollectionEntry<'blog'>;
+
+const post = Astro.props as Props;
+const { Content, headings } = await render(post);
+const allPosts = getPublishedBlogPosts(await getCollection('blog'));
+
+const readingTimeSource = post.body ?? '';
+const readingTime = Math.max(3, Math.ceil(readingTimeSource.split(/\s+/).filter(Boolean).length / 180));
+
+const relatedPosts = allPosts
+	.filter((entry) => entry.id !== post.id)
+	.sort((left, right) => {
+		const leftScore = Number(left.data.category === post.data.category) +
+			left.data.tags.filter((tag) => post.data.tags.includes(tag)).length;
+		const rightScore = Number(right.data.category === post.data.category) +
+			right.data.tags.filter((tag) => post.data.tags.includes(tag)).length;
+		return rightScore - leftScore || right.data.pubDate.valueOf() - left.data.pubDate.valueOf();
+	})
+	.slice(0, 3);
+---
+
+<BlogPost {...post.data} slug={post.id} readingTime={readingTime} relatedPosts={relatedPosts} headings={headings}>
+	<Content />
+</BlogPost>

@@ -1,0 +1,47 @@
+<!-- ABOUTME: About page with monospace heading and centered prose content. -->
+<!-- ABOUTME: Describes The Harness blog and its purpose using the reading layout. -->
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_TITLE } from '../consts';
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+	<head>
+		<BaseHead title={`About | ${SITE_TITLE}`} description="About The Harness and the ideas behind it." />
+	</head>
+	<body class="bg-[--color-bg]">
+		<Header />
+		<main class="px-6 py-14 md:py-20">
+			<div class="mx-auto max-w-[--width-content]">
+				<h1 class="font-heading font-medium text-3xl md:text-[3rem] tracking-[-0.02em] text-[--color-text-primary] mb-10">
+					About
+				</h1>
+				<div class="prose">
+					<p>
+						Hello, I am Theodoros Galanos. I have been working at the intersection of AI, design, and engineering for the better part of the last 12 years.
+					</p>
+
+					<p>
+						People who know me know that I tend to be opinionated about where the future is going, and equally interested in how that view changes over time. This site is where I try to make those ideas more concrete: a place to write about agentic systems, harness engineering, and the harder middle layer between model capability and reliable real-world work.
+					</p>
+
+					<p>
+						My interests sit around the design of systems that need to do more than produce plausible answers. I care about environments, tools, verifiers, workflows, evaluation, and the control surfaces that let people direct useful autonomous behaviour without losing accountability.
+					</p>
+
+					<p>
+						The Harness exists to advance that work in public. Part of that means research: trying to make vague claims about agents more concrete through better tasks, better benchmarks, and better system design. Part of it means building: turning ideas about orchestration and reliability into actual tools, workflows, and experiments. Part of it means education: writing things clearly enough that other builders and domain experts can use them. And part of it means community: helping create a sharper conversation around what harness engineering is, why it matters, and how to do it well.
+					</p>
+
+					<p>
+						If you want to follow along, the cleanest route is the <a href="/rss.xml">RSS feed</a>. If you want a broader snapshot of my work, the external links in the header point to my <a href="https://www.linkedin.com/in/theodorosgalanos/" target="_blank" rel="noopener noreferrer">LinkedIn</a> and <a href="https://x.com/TheodoreGalanos" target="_blank" rel="noopener noreferrer">X</a>. Otherwise, the <a href="/blog">archive</a> stays simple on purpose.
+					</p>
+				</div>
+			</div>
+		</main>
+		<Footer />
+	</body>
+</html>

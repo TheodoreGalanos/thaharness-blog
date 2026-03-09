@@ -1,0 +1,16 @@
+<!-- ABOUTME: Reusable tag pill component that links to a tag-filtered listing page. -->
+<!-- ABOUTME: Displays a small monospace pill with surface background and border styling. -->
+---
+interface Props {
+	tag: string;
+}
+
+const { tag } = Astro.props;
+---
+
+<a
+	href={`/tags/${tag}/`}
+	class="inline-block font-heading text-[0.6875rem] uppercase tracking-[0.05em] text-[--color-text-secondary] bg-[--color-surface] border border-[--color-border] rounded px-2 py-0.5 no-underline hover:text-[--color-accent] hover:border-[--color-accent] transition-colors duration-250"
+>
+	{tag}
+</a>

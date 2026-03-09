@@ -1,0 +1,26 @@
+<!-- ABOUTME: Navigation link component that highlights the active route. -->
+<!-- ABOUTME: Used in the Header to render nav items with monospace terminal styling. -->
+---
+import type { HTMLAttributes } from 'astro/types';
+
+type Props = HTMLAttributes<'a'>;
+
+const { href, class: className, ...props } = Astro.props;
+const pathname = Astro.url.pathname.replace(import.meta.env.BASE_URL, '');
+const subpath = pathname.match(/[^\/]+/g);
+const isActive = href === pathname || href === '/' + (subpath?.[0] || '');
+---
+
+<a
+	href={href}
+	class:list={[
+		'font-heading text-[0.8125rem] font-normal px-2 py-2 transition-colors duration-250',
+		isActive
+			? 'text-[--color-accent]'
+			: 'text-[--color-text-secondary] hover:text-[--color-text-primary]',
+		className,
+	]}
+	{...props}
+>
+	<slot />
+</a>

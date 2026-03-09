@@ -1,0 +1,417 @@
+/* ABOUTME: Global stylesheet with Tailwind v4, custom theme tokens, and base prose styles. */
+/* ABOUTME: Defines The Harness theme with dark-mode-first terminal-inspired design tokens. */
+
+@import "tailwindcss";
+
+/* ──────────────────────────────────────────────────────────
+   1. Theme tokens
+   ────────────────────────────────────────────────────────── */
+@theme {
+	/* Typography */
+	--font-heading: "JetBrains Mono", ui-monospace, "Cascadia Code", "Fira Code", monospace;
+	--font-body: "Source Serif 4", Georgia, "Times New Roman", serif;
+	--font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", "Fira Code", monospace;
+
+	/* Colors — dark mode defaults */
+	--color-bg: #111113;
+	--color-surface: #1A1A1D;
+	--color-text-primary: #FAF9F6;
+	--color-text-secondary: #8A8A96;
+	--color-text-tertiary: #55555F;
+	--color-accent: #E8A84C;
+	--color-accent-hover: #F0B84C;
+	--color-border: #2A2A2E;
+	--color-code-bg: #1E1E21;
+
+	/* Effects */
+	--ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+
+	/* Spacing & Sizing */
+	--width-content: 680px;
+	--width-wide: 1080px;
+}
+
+/* ──────────────────────────────────────────────────────────
+   2. Dark mode (default) — applied via :root and [data-theme="dark"]
+   ────────────────────────────────────────────────────────── */
+:root,
+[data-theme="dark"] {
+	--color-bg: #111113;
+	--color-surface: #1A1A1D;
+	--color-text-primary: #FAF9F6;
+	--color-text-secondary: #8A8A96;
+	--color-text-tertiary: #55555F;
+	--color-accent: #E8A84C;
+	--color-accent-hover: #F0B84C;
+	--color-border: #2A2A2E;
+	--color-code-bg: #1E1E21;
+}
+
+/* ──────────────────────────────────────────────────────────
+   3. Light mode overrides
+   ────────────────────────────────────────────────────────── */
+[data-theme="light"] {
+	--color-bg: #FAFAF9;
+	--color-surface: #FFFFFF;
+	--color-text-primary: #1C1C1E;
+	--color-text-secondary: #6B6B76;
+	--color-text-tertiary: #9D9DA8;
+	--color-accent: #D4882C;
+	--color-accent-hover: #B8741F;
+	--color-border: #E8E8EC;
+	--color-code-bg: #F4F4F5;
+}
+
+/* ──────────────────────────────────────────────────────────
+   4. Base styles
+   ────────────────────────────────────────────────────────── */
+html {
+	scroll-behavior: smooth;
+}
+
+body {
+	font-family: var(--font-body);
+	font-size: 18px;
+	line-height: 1.75;
+	color: var(--color-text-primary);
+	background-color: var(--color-bg);
+	min-height: 100vh;
+	margin: 0;
+	padding: 0;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+/* ──────────────────────────────────────────────────────────
+   5. Typography base
+   ────────────────────────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+	font-family: var(--font-heading);
+	font-weight: 500;
+	letter-spacing: -0.02em;
+	line-height: 1.15;
+	color: var(--color-text-primary);
+	margin: 0 0 0.5rem 0;
+	scroll-margin-top: 5rem;
+}
+
+h1 { font-size: 3rem; }
+h2 { font-size: 2.25rem; }
+h3 { font-size: 1.75rem; }
+h4 { font-size: 1.375rem; }
+h5 { font-size: 1.125rem; }
+h6 { font-size: 1rem; }
+
+a {
+	color: var(--color-accent);
+	text-decoration: none;
+	transition: color 0.25s var(--ease-standard);
+}
+
+a:hover {
+	color: var(--color-accent-hover);
+}
+
+p {
+	margin-bottom: 1em;
+}
+
+main {
+	position: relative;
+	z-index: 1;
+}
+
+img {
+	max-width: 100%;
+	height: auto;
+}
+
+/* ──────────────────────────────────────────────────────────
+   6. Layout utilities
+   ────────────────────────────────────────────────────────── */
+.page-shell {
+	max-width: var(--width-wide);
+	margin: 0 auto;
+	padding-left: 1.5rem;
+	padding-right: 1.5rem;
+}
+
+/* ──────────────────────────────────────────────────────────
+   7. Prose styles for blog content
+   ────────────────────────────────────────────────────────── */
+.prose {
+	font-family: var(--font-body);
+	font-size: 1.1875rem;
+	line-height: 1.8;
+	color: var(--color-text-primary);
+}
+
+.prose p {
+	margin-bottom: 1.5em;
+}
+
+.prose h2 {
+	font-family: var(--font-heading);
+	font-size: 2.25rem;
+	font-weight: 500;
+	letter-spacing: -0.02em;
+	line-height: 1.15;
+	color: var(--color-text-primary);
+	margin-top: 2.5em;
+	margin-bottom: 0.75em;
+}
+
+.prose h3 {
+	font-family: var(--font-heading);
+	font-size: 1.75rem;
+	font-weight: 500;
+	letter-spacing: -0.02em;
+	line-height: 1.15;
+	color: var(--color-text-primary);
+	margin-top: 2em;
+	margin-bottom: 0.5em;
+}
+
+.prose h4 {
+	font-family: var(--font-heading);
+	font-size: 1.375rem;
+	font-weight: 500;
+	color: var(--color-text-primary);
+	margin-top: 1.5em;
+	margin-bottom: 0.5em;
+}
+
+.prose a {
+	color: var(--color-accent);
+	text-decoration: none;
+	background-image: linear-gradient(var(--color-accent), var(--color-accent));
+	background-size: 0% 1px;
+	background-position: 0 100%;
+	background-repeat: no-repeat;
+	transition: background-size 0.3s var(--ease-standard), color 0.25s var(--ease-standard);
+}
+
+.prose a:hover {
+	color: var(--color-accent-hover);
+	background-size: 100% 1px;
+}
+
+.prose blockquote {
+	border-left: 4px solid var(--color-accent);
+	padding: 0.5em 0 0.5em 1.5em;
+	margin: 2.5em 0;
+	font-style: normal;
+	font-size: 1.375rem;
+	line-height: 1.6;
+	color: var(--color-text-secondary);
+}
+
+.prose blockquote p:last-child {
+	margin-bottom: 0;
+}
+
+.prose code {
+	font-family: var(--font-mono);
+	font-size: 0.9em;
+	padding: 2px 6px;
+	background-color: var(--color-code-bg);
+	border-radius: 4px;
+}
+
+.prose pre {
+	background-color: var(--color-code-bg);
+	padding: 1.5em;
+	border-radius: 8px;
+	overflow-x: auto;
+	margin: 2em 0;
+	font-size: 0.9em;
+	line-height: 1.6;
+}
+
+.prose pre > code {
+	all: unset;
+	font-family: var(--font-mono);
+}
+
+.prose ul, .prose ol {
+	margin: 1.5em 0;
+	padding-left: 1.5em;
+}
+
+.prose li {
+	margin-bottom: 0.5em;
+}
+
+.prose li::marker {
+	color: var(--color-text-tertiary);
+}
+
+.prose hr {
+	border: none;
+	border-top: 1px solid var(--color-border);
+	margin: 3em 0;
+}
+
+.prose figure {
+	margin: 2.5em auto;
+	max-width: min(100%, 48.4rem);
+	text-align: center;
+}
+
+.prose figure img {
+	border-radius: 0;
+	border: 1px solid #ffffff;
+	background-color: #ffffff;
+	padding: 0.9rem;
+	box-sizing: border-box;
+	width: 100%;
+	height: auto;
+	display: block;
+	margin: 0;
+}
+
+.prose figure img[alt*="four bond types"] {
+	border: none;
+	background-color: transparent;
+	padding: 0;
+}
+
+.prose figure figcaption {
+	font-family: var(--font-heading);
+	font-size: 0.8125rem;
+	line-height: 1.5;
+	color: var(--color-text-secondary);
+	margin-top: 0.75em;
+	font-style: italic;
+}
+
+.prose img {
+	border-radius: 0;
+	border: 1px solid #ffffff;
+	background-color: #ffffff;
+	margin: 2em auto;
+	max-width: min(100%, 48.4rem);
+	height: auto;
+	display: block;
+}
+
+.prose table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 2em 0;
+}
+
+.prose th, .prose td {
+	text-align: left;
+	padding: 0.75em 1em;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.prose th {
+	font-family: var(--font-heading);
+	font-weight: 500;
+	font-size: 0.9em;
+}
+
+/* ──────────────────────────────────────────────────────────
+   8. Utility — blinking cursor animation
+   ────────────────────────────────────────────────────────── */
+@keyframes blink {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0; }
+}
+
+.cursor-blink {
+	animation: blink 1.2s step-end infinite;
+}
+
+/* ──────────────────────────────────────────────────────────
+   9. Selection styling
+   ────────────────────────────────────────────────────────── */
+::selection {
+	background: rgba(232, 168, 76, 0.25);
+	color: var(--color-text-primary);
+}
+
+[data-theme="light"] ::selection {
+	background: rgba(212, 136, 44, 0.25);
+	color: var(--color-text-primary);
+}
+
+/* ──────────────────────────────────────────────────────────
+   10. Pagefind search UI overrides
+   ────────────────────────────────────────────────────────── */
+.pagefind-ui {
+	--pagefind-ui-scale: 1;
+	--pagefind-ui-primary: var(--color-accent);
+	--pagefind-ui-text: var(--color-text-primary);
+	--pagefind-ui-background: var(--color-surface);
+	--pagefind-ui-border: var(--color-border);
+	--pagefind-ui-tag: var(--color-code-bg);
+	--pagefind-ui-border-width: 1px;
+	--pagefind-ui-border-radius: 8px;
+	--pagefind-ui-font: var(--font-mono);
+}
+
+/* ──────────────────────────────────────────────────────────
+   11. Scrollbar styling
+   ────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+::-webkit-scrollbar-track {
+	background: var(--color-bg);
+}
+
+::-webkit-scrollbar-thumb {
+	background: var(--color-border);
+	border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: var(--color-text-tertiary);
+}
+
+/* ──────────────────────────────────────────────────────────
+   12. Screen reader utility
+   ────────────────────────────────────────────────────────── */
+.sr-only {
+	border: 0;
+	padding: 0;
+	margin: 0;
+	position: absolute !important;
+	height: 1px;
+	width: 1px;
+	overflow: hidden;
+	clip: rect(1px 1px 1px 1px);
+	clip: rect(1px, 1px, 1px, 1px);
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+/* ──────────────────────────────────────────────────────────
+   13. Responsive adjustments
+   ────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+	h1 { font-size: 2rem; }
+	h2 { font-size: 1.75rem; }
+	h3 { font-size: 1.5rem; }
+
+	body {
+		font-size: 17px;
+	}
+
+	.prose {
+		font-size: 1.0625rem;
+	}
+
+	.prose h2 {
+		font-size: 1.75rem;
+	}
+
+	.prose h3 {
+		font-size: 1.5rem;
+	}
+}

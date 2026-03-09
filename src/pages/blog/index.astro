@@ -1,0 +1,60 @@
+<!-- ABOUTME: Blog archive page listing all posts in chronological order. -->
+<!-- ABOUTME: Each post displays as a row with date, title, description, and tags. -->
+---
+import { getCollection } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
+import { getPublishedBlogPosts } from '../../utils/blog';
+
+const posts = getPublishedBlogPosts(await getCollection('blog'));
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+	<head>
+		<BaseHead title={`Writing | ${SITE_TITLE}`} description={SITE_DESCRIPTION} />
+	</head>
+	<body class="bg-[--color-bg]">
+		<Header />
+		<main class="page-shell py-14 md:py-16">
+			<h1 class="font-heading font-medium text-3xl md:text-[3rem] tracking-[-0.02em] text-[--color-text-primary] mb-10">
+				Writing
+			</h1>
+
+			<section>
+				{
+					posts.map((post) => (
+						<a
+							href={`/blog/${post.id}/`}
+							class="flex flex-col md:flex-row md:items-baseline gap-1 md:gap-6 py-5 border-t border-[--color-border] no-underline group transition-colors duration-250 hover:bg-[--color-surface] -mx-3 px-3 rounded"
+						>
+							<span class="font-heading text-[0.8125rem] text-[--color-text-tertiary] shrink-0 w-[7rem]">
+								{post.data.pubDate.toISOString().split('T')[0]}
+							</span>
+							<div class="flex-1 min-w-0">
+								<span class="font-body font-semibold text-[--color-text-primary] group-hover:text-[--color-accent] transition-colors duration-250">
+									{post.data.title}
+								</span>
+								<p class="mt-1 mb-0 text-sm text-[--color-text-secondary] line-clamp-1">
+									{post.data.description}
+								</p>
+							</div>
+							{post.data.tags.length > 0 && (
+								<span class="flex flex-wrap gap-2 shrink-0 mt-1 md:mt-0">
+									{post.data.tags.map((tag: string) => (
+										<span class="font-heading text-[0.6875rem] uppercase tracking-[0.05em] text-[--color-text-tertiary]">
+											{tag}
+										</span>
+									))}
+								</span>
+							)}
+						</a>
+					))
+				}
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>

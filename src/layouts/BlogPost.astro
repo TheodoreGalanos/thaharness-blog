@@ -1,0 +1,135 @@
+<!-- ABOUTME: Blog post layout with monospace title, meta line, tags, and centered prose content. -->
+<!-- ABOUTME: Wraps individual blog posts with full HTML document, head, header, footer, and sticky TOC. -->
+---
+import { Image } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import FormattedDate from '../components/FormattedDate.astro';
+import Header from '../components/Header.astro';
+import TableOfContents from '../components/TableOfContents.astro';
+import TagPill from '../components/TagPill.astro';
+
+type RelatedPost = CollectionEntry<'blog'>;
+
+interface Heading {
+	depth: number;
+	slug: string;
+	text: string;
+}
+
+type PostData = CollectionEntry<'blog'>['data'];
+
+interface Props extends PostData {
+	slug: string;
+	readingTime: number;
+	relatedPosts: RelatedPost[];
+	headings: Heading[];
+}
+
+const {
+	title,
+	description,
+	pubDate,
+	updatedDate,
+	heroImage,
+	tags,
+	readingTime,
+	headings = [],
+} = Astro.props;
+---
+
+<html lang="en" data-theme="dark">
+	<head>
+		<BaseHead title={title} description={description} />
+		<style>
+			.post-header {
+				max-width: 60rem;
+				margin: 0 auto;
+			}
+			.post-hero {
+				max-width: 52rem;
+				margin: 0 auto;
+			}
+			.post-hero img {
+				width: 100%;
+				height: auto;
+				border-radius: 8px;
+			}
+			.post-body {
+				max-width: 60rem;
+				margin: 0 auto;
+			}
+			.post-content {
+				font-size: 1.1875rem;
+				line-height: 1.8;
+			}
+			.toc-sidebar {
+				display: none;
+			}
+			@media (min-width: 1440px) {
+				.toc-sidebar {
+					display: block;
+					position: fixed;
+					top: 6rem;
+					right: 2rem;
+					width: 14rem;
+				}
+			}
+		</style>
+	</head>
+
+	<body style="background-color: var(--color-bg);">
+		<Header />
+		<main>
+			<article>
+				<header class="post-header px-6 pt-20 pb-8 md:pt-28 md:pb-10">
+					<h1 class="font-heading font-medium text-3xl md:text-[2.75rem] tracking-[-0.02em] leading-[1.15]" style="color: var(--color-text-primary);">
+						{title}
+					</h1>
+					<div class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 font-heading text-[0.8125rem]" style="color: var(--color-text-tertiary);">
+						<FormattedDate date={pubDate} />
+						<span>&middot;</span>
+						<span>{readingTime} min read</span>
+						{updatedDate && (
+							<>
+								<span>&middot;</span>
+								<span>
+									updated {updatedDate.toISOString().split('T')[0]}
+								</span>
+							</>
+						)}
+					</div>
+					{tags.length > 0 && (
+						<div class="mt-3 flex flex-wrap gap-2">
+							{tags.map((tag: string) => (
+								<TagPill tag={tag} />
+							))}
+						</div>
+					)}
+				</header>
+
+				{heroImage && (
+					<div class="post-hero px-6 pb-8">
+						<Image
+							width={832}
+							height={468}
+							src={heroImage}
+							alt=""
+						/>
+					</div>
+				)}
+
+				<div class="post-body px-6 pb-16">
+					<div class="prose post-content" data-pagefind-body>
+						<slot />
+					</div>
+				</div>
+				<aside class="toc-sidebar">
+					<TableOfContents headings={headings} />
+				</aside>
+			</article>
+		</main>
+		<Footer />
+	</body>
+</html>
