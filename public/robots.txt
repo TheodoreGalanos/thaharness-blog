@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://theharness.blog/sitemap-index.xml
+Sitemap: https://theharness.blog/sitemap-0.xml
