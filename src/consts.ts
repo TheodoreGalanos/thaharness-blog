@@ -9,3 +9,4 @@ export const SITE_AUTHOR = 'Theodoros Galanos';
 export const SITE_LINKEDIN_URL = 'https://www.linkedin.com/in/theodorosgalanos/';
 export const SITE_X_URL = 'https://x.com/TheodoreGalanos';
 export const SITE_X_HANDLE = '@TheodoreGalanos';
+export const SITE_NEWSLETTER_BLURB = 'Get new posts by email when they publish. No feed reader required.';

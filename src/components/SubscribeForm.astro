@@ -1,0 +1,151 @@
+<!-- ABOUTME: Reusable newsletter subscription form for homepage, footer, and follow CTAs. -->
+<!-- ABOUTME: Posts to a Vercel API route that subscribes readers through Resend. -->
+---
+import { SITE_NEWSLETTER_BLURB } from '../consts';
+
+interface Props {
+	variant?: 'full' | 'compact';
+	title?: string;
+	description?: string;
+	inputId?: string;
+	anchorId?: string;
+}
+
+const {
+	variant = 'full',
+	title = 'Subscribe by email',
+	description = SITE_NEWSLETTER_BLURB,
+	inputId = `email-${variant}`,
+	anchorId,
+} = Astro.props;
+
+const isCompact = variant === 'compact';
+---
+
+<section id={anchorId} class:list={[isCompact ? 'rounded-lg border border-[--color-border] bg-[--color-surface] p-4 sm:p-5' : 'rounded-xl border border-[--color-border] bg-[--color-surface] px-5 py-6 sm:px-6 sm:py-7']}>
+	<div class:list={[isCompact ? 'max-w-2xl' : 'max-w-3xl']}>
+		<div class={isCompact ? 'max-w-xl' : ''}>
+			<h2 class:list={[
+				'font-heading font-medium tracking-[-0.02em] text-[--color-text-primary]',
+				isCompact ? 'text-base sm:text-lg' : 'text-2xl sm:text-[2rem]'
+			]}>
+				{title}
+			</h2>
+			<p class:list={[
+				'mb-0 text-[--color-text-secondary]',
+				isCompact ? 'mt-1 text-sm leading-relaxed' : 'mt-3 text-base sm:text-lg'
+			]}>
+				{description}
+			</p>
+		</div>
+
+		<form
+			class:list={[
+				'newsletter-subscribe-form flex w-full gap-3',
+				isCompact ? 'mt-3 flex-col sm:flex-row sm:items-center' : 'mt-5 flex-col lg:flex-row lg:items-end'
+			]}
+			data-subscribe-form
+			data-success-message="You are subscribed. New posts will land in your inbox."
+			data-error-message="Subscription failed. Please try again in a moment."
+		>
+			<label class="sr-only" for={inputId}>Email address</label>
+			<input
+				id={inputId}
+				type="email"
+				name="email"
+				required
+				placeholder="you@example.com"
+				autocomplete="email"
+				data-subscribe-email
+				class="min-h-12 w-full flex-1 rounded border border-[--color-border] bg-[--color-bg] px-4 font-heading text-sm text-[--color-text-primary] placeholder:text-[--color-text-tertiary] outline-none transition-colors duration-250 focus:border-[--color-accent]"
+			/>
+			<button
+				type="submit"
+				data-subscribe-button
+				class="inline-flex min-h-12 w-full shrink-0 items-center justify-center rounded border px-5 font-heading text-[0.8125rem] font-medium tracking-[0.02em] shadow-[0_0_0_1px_rgba(232,168,76,0.15)] transition-opacity duration-250 disabled:cursor-not-allowed disabled:opacity-60 sm:min-w-[8.5rem] sm:w-auto"
+				style="background-color: var(--color-accent); border-color: var(--color-accent); color: var(--color-bg);"
+			>
+				Subscribe
+			</button>
+		</form>
+
+		<p class:list={[
+			'mb-0 font-heading text-[0.6875rem] uppercase tracking-[0.05em] text-[--color-text-tertiary]',
+			isCompact ? 'mt-2' : 'mt-3'
+		]}>
+			Click Subscribe or press Enter.
+		</p>
+	</div>
+
+	<p data-subscribe-status aria-live="polite" class:list={[
+		'mb-0 min-h-[1.5rem] text-sm',
+		isCompact ? 'mt-3' : 'mt-4'
+	]}></p>
+
+	<p class:list={[
+		'mb-0 text-[--color-text-tertiary]',
+		isCompact ? 'mt-1 text-xs leading-relaxed' : 'mt-1 text-sm'
+	]}>
+		Powered by Resend. You can unsubscribe from newsletter emails at any time.
+	</p>
+</section>
+
+<script>
+	const forms = document.querySelectorAll('[data-subscribe-form]');
+
+	for (const form of forms) {
+		if (!(form instanceof HTMLFormElement)) continue;
+
+		const emailInput = form.querySelector('[data-subscribe-email]');
+		const submitButton = form.querySelector('[data-subscribe-button]');
+		const section = form.closest('section');
+		const status = section?.querySelector('[data-subscribe-status]');
+
+		if (!(emailInput instanceof HTMLInputElement) || !(submitButton instanceof HTMLButtonElement) || !(status instanceof HTMLElement)) {
+			continue;
+		}
+
+		form.addEventListener('submit', async (event) => {
+			event.preventDefault();
+			status.textContent = 'Subscribing...';
+			status.style.color = 'var(--color-text-secondary)';
+			submitButton.disabled = true;
+
+			try {
+				const response = await fetch('/api/subscribe', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({ email: emailInput.value.trim() }),
+				});
+
+				const contentType = response.headers.get('content-type') ?? '';
+				const result = contentType.includes('application/json')
+					? await response.json()
+					: null;
+
+				if (!response.ok) {
+					throw new Error(typeof result?.error === 'string' ? result.error : 'Newsletter signup is unavailable right now.');
+				}
+
+				if (!result) {
+					throw new Error('Newsletter signup is unavailable right now.');
+				}
+
+				status.textContent = typeof result?.message === 'string'
+					? result.message
+					: form.dataset.successMessage ?? 'You are subscribed.';
+				status.style.color = 'var(--color-accent)';
+				form.reset();
+			} catch (error) {
+				status.textContent = error instanceof Error && error.message
+					? error.message
+					: form.dataset.errorMessage ?? 'Subscription failed. Please try again.';
+				status.style.color = 'var(--color-text-secondary)';
+			} finally {
+				submitButton.disabled = false;
+			}
+		});
+	}
+</script>

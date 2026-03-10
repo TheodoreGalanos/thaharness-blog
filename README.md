@@ -83,6 +83,22 @@ For Vercel:
 5. Add `theharness.blog` in the project domain settings.
 6. Point DNS at Vercel using either nameservers or the records Vercel provides.
 
+## Newsletter
+
+The site includes a newsletter signup form backed by a Vercel API function and Resend.
+
+Required environment variables:
+
+- `RESEND_API_KEY`
+- `RESEND_NEWSLETTER_TOPIC_ID`
+
+Setup flow:
+
+1. Create a Topic in Resend for newsletter subscribers.
+2. Copy the Topic ID into `RESEND_NEWSLETTER_TOPIC_ID`.
+3. Add both variables to local `.env` and the Vercel project settings.
+4. Use Resend Broadcasts to send new-post emails to that Topic.
+
 ## Notes
 
 - Generated folders such as `dist/`, `.astro/`, `.vscode/`, and local planning notes under `docs/` are gitignored.

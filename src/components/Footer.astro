@@ -1,13 +1,22 @@
 <!-- ABOUTME: Minimal one-line site footer with copyright, RSS link, and GitHub link. -->
 <!-- ABOUTME: Separated by a horizontal rule, matching The Harness terminal aesthetic. -->
 ---
+import SubscribeForm from './SubscribeForm.astro';
+
 const today = new Date();
 ---
 
 <footer class="mt-20 px-6 pb-12">
 	<div class="mx-auto max-w-[--width-wide]">
 		<div class="border-t border-[--color-border] pt-6">
-			<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+			<SubscribeForm
+				variant="compact"
+				anchorId="newsletter"
+				title="Get new posts in your inbox"
+				description="Join the newsletter and get a note whenever something new goes live."
+				inputId="footer-subscribe-email"
+			/>
+			<div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<p class="mb-0 font-heading text-[0.8125rem] leading-relaxed text-[--color-text-tertiary]">
 					&copy; {today.getFullYear()} Theodoros Galanos &middot; The Harness
 				</p>
