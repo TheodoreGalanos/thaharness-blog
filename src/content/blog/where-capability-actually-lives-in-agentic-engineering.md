@@ -19,6 +19,14 @@ This broader shift is already visible across AI development. State-of-the-art be
 
 That is the question this essay is really about.
 
+## TL;DR
+
+- In engineering, useful agent performance depends less on generic fluency than on staying attached to the specific artifact, assumptions, constraints, and output format of the task at hand.
+- That means capability does not live in the base model alone. It is distributed across the full system: tools, verifiers, control flow, output contracts, interfaces, and human review structure.
+- The real design problem is therefore not just model selection. It is harness design: deciding what the agent should infer, what should be externalised into tools, what should be checked, and how the work should remain controllable.
+- Many important engineering workflows are better understood as processes rather than isolated tasks, which makes orchestration, UX, visibility, and intervention part of the capability story too.
+- If we want meaningful progress in engineering and AEC, we need better experimental environments and benchmarks that reflect real artifacts, real failure modes, and the actual conditions required for reliable work.
+
 ## Engineering Is Not Just Another Knowledge Domain
 
 It is tempting to treat engineering as one more expert domain that large models will gradually absorb as they become smarter and better trained. There is some truth in that. Engineering work is full of technical language, quantitative reasoning, standards, and procedural knowledge, all of which are at least partially representable in text, math, and code. But that description misses the thing that makes the domain difficult in practice.
