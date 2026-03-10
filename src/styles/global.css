@@ -238,6 +238,14 @@ img {
 	padding-left: 1.5em;
 }
 
+.prose ul {
+	list-style: disc;
+}
+
+.prose ol {
+	list-style: decimal;
+}
+
 .prose li {
 	margin-bottom: 0.5em;
 }
