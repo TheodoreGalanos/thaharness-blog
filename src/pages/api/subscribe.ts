@@ -10,6 +10,7 @@ type SubscribePayload = {
 };
 
 const resendApiKey = import.meta.env.RESEND_API_KEY;
+const newsletterSegmentId = import.meta.env.RESEND_NEWSLETTER_SEGMENT_ID;
 const newsletterTopicId = import.meta.env.RESEND_NEWSLETTER_TOPIC_ID;
 const resendBaseUrl = 'https://api.resend.com';
 
@@ -35,6 +36,59 @@ async function parsePayload(request: Request): Promise<SubscribePayload> {
 	return {};
 }
 
+type ResendRequestOptions = {
+	method?: 'GET' | 'POST' | 'PATCH';
+	body?: unknown;
+};
+
+type ResendErrorBody = {
+	message?: string;
+};
+
+async function resendRequest(path: string, options: ResendRequestOptions = {}) {
+	const response = await fetch(`${resendBaseUrl}${path}`, {
+		method: options.method ?? 'GET',
+		headers: {
+			Authorization: `Bearer ${resendApiKey}`,
+			'Content-Type': 'application/json',
+		},
+		body: options.body === undefined ? undefined : JSON.stringify(options.body),
+	});
+
+	const responseBody = await response.json().catch(() => null) as ResendErrorBody | null;
+
+	return {
+		response,
+		responseBody,
+	};
+}
+
+async function restoreExistingSubscriber(email: string) {
+	const encodedEmail = encodeURIComponent(email);
+	const results = await Promise.all([
+		resendRequest(`/contacts/${encodedEmail}/topics`, {
+			method: 'PATCH',
+			body: [
+				{
+					id: newsletterTopicId,
+					subscription: 'opt_in',
+				},
+			],
+		}),
+		resendRequest(`/contacts/${encodedEmail}`, {
+			method: 'PATCH',
+			body: {
+				unsubscribed: false,
+			},
+		}),
+		resendRequest(`/contacts/${encodedEmail}/segments/${newsletterSegmentId}`, {
+			method: 'POST',
+		}),
+	]);
+
+	return results.every(({ response }) => response.ok || response.status === 409);
+}
+
 export const GET: APIRoute = async () => {
 	return new Response(JSON.stringify({ error: 'Method not allowed.' }), {
 		status: 405,
@@ -45,7 +99,7 @@ export const GET: APIRoute = async () => {
 };
 
 export const POST: APIRoute = async ({ request }) => {
-	if (!resendApiKey || !newsletterTopicId) {
+	if (!resendApiKey || !newsletterTopicId || !newsletterSegmentId) {
 		return new Response(JSON.stringify({ error: 'Newsletter is not configured yet.' }), {
 			status: 500,
 			headers: {
@@ -66,22 +120,23 @@ export const POST: APIRoute = async ({ request }) => {
 		});
 	}
 
-	const response = await fetch(`${resendBaseUrl}/contacts`, {
+	const { response, responseBody } = await resendRequest('/contacts', {
 		method: 'POST',
-		headers: {
-			Authorization: `Bearer ${resendApiKey}`,
-			'Content-Type': 'application/json',
-		},
-		body: JSON.stringify({
+		body: {
 			email,
 			unsubscribed: false,
+			segments: [
+				{
+					id: newsletterSegmentId,
+				},
+			],
 			topics: [
 				{
 					id: newsletterTopicId,
 					subscription: 'opt_in',
 				},
 			],
-		}),
+		},
 	});
 
 	if (response.ok) {
@@ -93,10 +148,20 @@ export const POST: APIRoute = async ({ request }) => {
 		});
 	}
 
-	const errorBody = await response.json().catch(() => null) as { message?: string } | null;
-	const errorMessage = errorBody?.message?.toLowerCase() ?? '';
+	const errorMessage = responseBody?.message?.toLowerCase() ?? '';
 
 	if (response.status === 409 || errorMessage.includes('already') || errorMessage.includes('exists')) {
+		const restored = await restoreExistingSubscriber(email);
+
+		if (!restored) {
+			return new Response(JSON.stringify({ error: 'Subscription exists, but segment sync failed. Please try again in a moment.' }), {
+				status: 500,
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			});
+		}
+
 		return new Response(JSON.stringify({ message: 'That email is already subscribed.' }), {
 			status: 200,
 			headers: {
@@ -105,7 +170,7 @@ export const POST: APIRoute = async ({ request }) => {
 		});
 	}
 
-	const publicError = errorBody?.message ?? 'Subscription failed. Please try again in a moment.';
+	const publicError = responseBody?.message ?? 'Subscription failed. Please try again in a moment.';
 
 	return new Response(JSON.stringify({ error: publicError }), {
 		status: 500,

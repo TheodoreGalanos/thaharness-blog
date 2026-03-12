@@ -90,14 +90,32 @@ The site includes a newsletter signup form backed by a Vercel API function and R
 Required environment variables:
 
 - `RESEND_API_KEY`
+- `RESEND_NEWSLETTER_FROM`
+- `RESEND_NEWSLETTER_SEGMENT_ID`
 - `RESEND_NEWSLETTER_TOPIC_ID`
+
+Optional environment variables:
+
+- `RESEND_NEWSLETTER_REPLY_TO`
+- `NEWSLETTER_SITE_URL` (defaults to `https://theharness.blog`)
 
 Setup flow:
 
 1. Create a Topic in Resend for newsletter subscribers.
-2. Copy the Topic ID into `RESEND_NEWSLETTER_TOPIC_ID`.
-3. Add both variables to local `.env` and the Vercel project settings.
-4. Use Resend Broadcasts to send new-post emails to that Topic.
+2. Create a Segment in Resend for newsletter delivery.
+3. Copy the Topic ID into `RESEND_NEWSLETTER_TOPIC_ID` and the Segment ID into `RESEND_NEWSLETTER_SEGMENT_ID`.
+4. Add all required variables to local `.env` and the Vercel project settings.
+5. Existing subscribers created before the segment rollout can be backfilled with `npm run newsletter:sync-segment`.
+6. Create a draft broadcast for the newest post with `npm run newsletter:broadcast`.
+7. Send immediately with `npm run newsletter:broadcast -- --send` or target a specific post with `npm run newsletter:broadcast -- --slug your-post-slug --send`.
+
+Useful commands:
+
+- `npm run newsletter:broadcast` creates a draft broadcast in Resend for the latest published post.
+- `npm run newsletter:broadcast -- --slug where-capability-actually-lives-in-agentic-engineering --send` sends that post immediately.
+- `npm run newsletter:broadcast -- --send --scheduled-at "2026-03-10T14:00:00Z"` schedules the latest post.
+- `npm run newsletter:sync-segment` backfills topic subscribers into the delivery segment.
+- `npm run newsletter:sync-segment -- --email you@example.com` backfills one address.
 
 ## Notes
 

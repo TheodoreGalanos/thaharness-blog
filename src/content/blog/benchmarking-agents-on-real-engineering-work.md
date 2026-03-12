@@ -3,8 +3,8 @@ title: "Benchmarking Agents on Real Engineering Work Is Already Teaching Us Some
 description: "A first serious run at evaluating agentic systems on domain-specific engineering tasks, what it revealed about model capability, harness design, and why evaluation quality matters as much as model selection."
 author: "Theodoros Galanos"
 category: "Engineering"
-draft: true
-pubDate: 2026-03-09
+draft: false
+pubDate: 2026-03-12
 tags: ["agents", "engineering", "evaluation", "benchmarks"]
 ---
 
@@ -18,6 +18,8 @@ That is the starting point for this work.
 
 In [Where Capability Actually Lives in Agentic Engineering](/blog/where-capability-actually-lives-in-agentic-engineering/), I argued that progress in this domain will not come from better models alone. It will come from better operating conditions: better tools, better harnesses, and better environments for reliable work. This article is a first empirical step in that direction.
 
+That earlier piece made a conceptual claim about where capability lives. **This one asks whether that claim survives contact with measured performance.**
+
 >In domain-specific work, the environments agents operate in are part of the capability.
 
 The aim here is to start measuring that claim on real engineering tasks. The longer-term goal is a benchmark, but this piece reports an early run toward one: a single task, from a single discipline, using one agent harness setup, tested across a small set of models.
@@ -28,21 +30,17 @@ That is narrow by design, and still early. But it is already enough to surface u
 
 What follows is a first look at what current agents are good at, where they still break, and why evaluation design matters almost as much as model quality. It is also an early step in turning a vague domain gap into a concrete improvement programme.
 
-## The Short Version
+## TL;DR
 
-Three findings stand out.
+- **This benchmark is best read as evidence about conditional capability.** Inside a strong harness, current frontier agents can do meaningful engineering review work. Once guidance and tool support are stripped away, performance often collapses rather than degrading gracefully.
+- **The model ranking is clear, but it is not the deepest result.** Sonnet 4.6 is strongest overall, and Haiku 4.5 is the most attractive quality-per-dollar option in this setup.
+- **The most informative tasks were audit tasks, not calculation tasks.** Once the harness supplied something close to an oracle calculator, the real separation moved into checking, discrepancy detection, and reliable completion.
+- **Verification behaviour appears to matter a lot.** The strongest model did not just verify when it was in trouble. It verified as part of its default workflow, which looks like part of the mechanism behind its recall advantage.
+- **This is an empirical counterpart to the argument in the previous article, and the beginning of a broader benchmark effort.** It supports the claim that in engineering, capability is not just a model property. It is distributed across the model, the harness, the tools, the verifiers, and the output contract. The longer-term goal is to build high-quality benchmarks with enough coverage to support meaningful progress in agentic engineering.
 
 ![*Left: overall reward across the four models. Right: Sonnet 4.6 under budget and guidance ablations. The benchmark ranks models, but it also shows how much capability depends on the environment around the model.*](../../assets/blog/agentic-eval/hero-headline-reward.png)
 
-First, Claude Sonnet 4.6 is the strongest model we tested. It reached 98.3% overall reward and 93.8% audit recall, while also using fewer turns than the older Sonnet model and fewer than Haiku on the hardest audit tasks.
-
-Second, Claude Haiku 4.5 is the value leader. It is not the most accurate model, but it gets close enough that the cost gap matters. On a quality-weighted efficiency view, it leads every task type we measured.
-
-Third, the most important capability result in this first benchmark is conditionality. Inside the strongest harness, Sonnet 4.6 performs extremely well. But once we remove guidance and tool support, the task does not degrade gracefully. Most ablated conditions collapse to zero. That is not a small prompt effect. It is evidence that, in this domain, the operating environment is still carrying part of the capability.
-
-That last point matters beyond this benchmark. If your eval is shallow, your conclusions will be shallow too. And if your benchmark hides how much scaffolding the system needed in order to work, it can easily overstate what the model can do natively.
-
-It also matters for how we think about domain adaptation. If current agent development is still concentrated in areas that are convenient to benchmark, then domain-specific benchmarks are part of building the environments agents will need in order to get better in the first place.
+That is the core result in compressed form: **the benchmark ranks models, but more importantly, it makes the system dependence visible.**
 
 ## The Benchmark Was Simple on Purpose
 
@@ -56,11 +54,11 @@ Audit tasks ask the agent to inspect schedules, identify discrepancies, and prop
 
 That distinction ended up being crucial.
 
-The calculation tasks were close to saturated for the Anthropic models. They are useful as a baseline, but they do not separate strong agents from stronger ones.
+**The calculation tasks were close to saturated for the Anthropic models.** They are useful as a baseline, but they do not separate strong agents from stronger ones.
 
 That result is even more telling once you know the setup. The method was not hidden inside the task and left for the model to rediscover. The calculation approach was encoded directly into the harness as a near-oracle tool: a coded procedure plus the relevant lookup table values and calculator logic. Even with that help, not every model was perfect, and the harder audit tasks still separated the field clearly.
 
-That is where the real spread appears: systematic checking, consistency across many rows, and enough discipline to finish with the correct structured output.
+That is where the real spread appears: **systematic checking, consistency across many rows, and enough discipline to finish with the correct structured output.**
 
 ![Performance on the hardest audit task. This is where the benchmark starts to separate strong agents from stronger ones.](../../assets/blog/agentic-eval/audit-mixed-use-frontier.png)
 
@@ -84,7 +82,7 @@ Sonnet 4 remains solid. It is cheaper than 4.6 and more accurate than GPT-4.1-mi
 
 GPT-4.1-mini was not competitive for this workload. Its overall reward was 34.1%, with a 64% zero-rate. The issue was broader than engineering reasoning. A large share of failures were format failures, truncated outputs, or prose that never turned into the required JSON result.
 
-That last detail matters. In an eval setting, people sometimes treat format failures as a nuisance variable. In deployed agent systems, they are part of the failure surface. If an agent can reason but cannot reliably finish the job in the required structure, it still failed.
+That last detail matters. In an eval setting, people sometimes treat format failures as a nuisance variable. In deployed agent systems, they are part of the failure surface. **If an agent can reason but cannot reliably finish the job in the required structure, it still failed.**
 
 >If your eval is shallow, your conclusions will be shallow too.
 
@@ -92,13 +90,15 @@ That last detail matters. In an eval setting, people sometimes treat format fail
 
 One of the clearest findings in this benchmark is that harness choices materially change measured capability.
 
+**This is the most direct continuity with the previous article.** There, the claim was conceptual: the harness is part of the capability story. Here, the same point shows up empirically in the numbers.
+
 Even simple harness changes moved results. In the early setup, a 10-turn cap made one audit workload look almost impossible for an otherwise capable model, but turn budget was only part of the problem. With weaker guidance, the default strategy was to decompose the audit room by room and spend roughly two turns per room in an execute-then-verify rhythm. That produced real work, but it was the wrong workflow for the budget. The fix combined a higher cap with guidance that pushed the agent toward batching rather than treating every room as its own mini-loop.
 
 The same pattern showed up elsewhere. Verifier fixes mattered. Prompt refinements mattered. Prompt caching mattered for cost. Better output instructions reduced avoidable formatting zeros for the Anthropic models. And the tool design mattered too: even when the harness provides something close to an oracle for the core calculation, model differences do not disappear. They move into disciplined checking, orchestration, and reliable completion.
 
 The ablation results make the point more sharply. Reducing the turn budget from 20 to 10 is one kind of degradation. Removing guidance and tool support is another. The first makes the task harder. The second starts to expose the capability boundary. On this task family, the gap between strong-harness performance and low-guidance performance is larger than many of the model-to-model differences people usually focus on.
 
-Those are not side details. They are part of the measured system. The harness is not neutral background. It is an active ingredient in whether a model can express the capability it already has.
+Those are not side details. They are part of the measured system. **The harness is not neutral background. It is an active ingredient in whether a model can express the capability it already has.**
 
 For practitioners, this means you should be skeptical of any claim that a model simply can or cannot do a workflow based on a weak first-pass eval.
 
@@ -144,7 +144,7 @@ In the direct no-tool reference run, the current partial results look like this:
 
 That tells us a few things. The cleanest way to read it is as three different regimes: a workable strong-harness regime, a mildly degraded budget-constrained regime, and a collapse regime once the environment stops carrying enough of the method.
 
-First, the budget ablation and the guidance ablation are not the same phenomenon. Reducing turns hurts, but the agent still basically knows what kind of work it is doing. Removing guidance and tool support is much harsher. Most of those conditions do not degrade gracefully. They collapse.
+First, the budget ablation and the guidance ablation are not the same phenomenon. Reducing turns hurts, but the agent still basically knows what kind of work it is doing. Removing guidance and tool support is much harsher. **Most of those conditions do not degrade gracefully. They collapse.**
 
 Second, this is exactly the kind of out-of-distribution behaviour we were worried about.
 
@@ -154,11 +154,11 @@ Third, the surviving `no-tool` signal matters precisely because it is weak. Ther
 
 That is the larger point.
 
-When people say a model can do engineering, they often leave unspoken how much hidden structure is being provided by the harness, the tools, the prompt, or the reference data. Our ablation run makes that visible. In this task family, capability is highly conditional on the operating environment. Remove the support and the system does not simply get a bit worse. It often stops functioning in a useful way.
+When people say a model can do engineering, they often leave unspoken how much hidden structure is being provided by the harness, the tools, the prompt, or the reference data. Our ablation run makes that visible. In this task family, capability is highly conditional on the operating environment. **Remove the support and the system does not simply get a bit worse. It often stops functioning in a useful way.**
 
 That is not a failure of evaluation. It is exactly what good evaluation is supposed to reveal.
 
-It is also why the out-of-distribution framing matters so much. If the domain were already well-covered by the model's native priors, these ablations would look like inconvenience tests. Instead they look like capability boundary tests. That is a strong sign that for real engineering work, at least today, the harness is not a wrapper around the capability. It is part of the capability.
+It is also why the out-of-distribution framing matters so much. If the domain were already well-covered by the model's native priors, these ablations would look like inconvenience tests. Instead they look like capability boundary tests. **That is a strong sign that for real engineering work, at least today, the harness is not a wrapper around the capability. It is part of the capability.**
 
 ## What the Strongest Model Did Differently
 
@@ -218,7 +218,7 @@ The failed traces were more interesting than simple arithmetic misses. They ofte
 
 One Adelaide `L3` trace, for example, stopped auditing the office-building schedule and began analyzing hotel rooms and hotel suites instead. A Brisbane no-tool failure turned into a different classroom-and-library schedule with its own invented occupancy logic. Both traces remained fluent. Neither stayed on the job.
 
-That is the important distinction. The failure mode was often not "cannot calculate." It was "cannot stay on the instance."
+That is the important distinction. **The failure mode was often not "cannot calculate." It was "cannot stay on the instance."**
 
 That gave us a simple rubric for reading these traces. The key dimensions were instance fidelity, standards grounding, formula grounding, causal compression, and output discipline. The strongest traces stayed close to the presented schedule and compressed toward verifier-relevant findings. The weakest traces did the opposite: they drifted into generic HVAC explanation, expanded in length, and lost the contract.
 
@@ -268,7 +268,7 @@ Sonnet 4.6 was the most expensive, and part of that cost came from output verbos
 
 Haiku 4.5 hit the most interesting middle ground. It was fast, much cheaper than Sonnet 4.6, and accurate enough that it dominated on reward-squared-per-dollar.
 
-That metric matters because it punishes low accuracy sharply. A cheap wrong answer is not a bargain in review-heavy engineering workflows.
+That metric matters because it punishes low accuracy sharply. **A cheap wrong answer is not a bargain in review-heavy engineering workflows.**
 
 That matters especially in AEC, where the near-term deployment shape is often low request volume and very high task value. These are usually not million-QPS workloads. They are bounded but complex tasks that take skilled people real time to complete, and where the cost of a bad result can easily dominate the cost of the model run itself. In that setting, quality comes first.
 
@@ -284,7 +284,7 @@ If you want a deployable system, the right answer probably depends on where in t
 
 The practical takeaway is not that AI can now replace engineering judgement. That would be the wrong lesson.
 
-The stronger result is narrower and more useful: on bounded, well-instrumented tasks, evaluation quality already matters as much as model selection.
+The stronger result is narrower and more useful: **on bounded, well-instrumented tasks, evaluation quality already matters as much as model selection.**
 
 The models were not most differentiated by calculation. They were differentiated by disciplined checking, completeness, and reliable finish behaviour. Those are exactly the traits that matter in real QA workflows.
 
@@ -298,7 +298,7 @@ What this benchmark suggests is that three parts of the eval design matter espec
 
 First, real task grounding. The benchmark should represent work that people actually care about getting right.
 
-Second, harness transparency. Turn limits, verifier design, tool affordances, and output contracts are not implementation trivia. They are part of the measured system.
+Second, harness transparency. **Turn limits, verifier design, tool affordances, and output contracts are not implementation trivia. They are part of the measured system.**
 
 Third, behavioural instrumentation. If two agents get similar scores but fail in different ways, that difference matters. If one model exposes a strong distress signal and another does not, that matters too.
 
@@ -326,4 +326,4 @@ You can learn the wrong lesson from a bad eval.
 
 And you can misunderstand both strength and weakness if you are only looking at model names instead of the full system around them.
 
-This work is still in its early phases and still narrow. But it is already telling us something useful: **the next layer of progress will not come from bigger scoreboards alone. It will come from better tasks, better harnesses, and a clearer view of how much of domain capability is native to the model and how much is being supplied by the environment around it**.
+This work is still in its early phases and still narrow. But it is already telling us something useful: **the next layer of progress will not come from bigger scoreboards alone. It will come from better tasks, better harnesses, and a clearer view of how much of domain capability is native to the model and how much is being supplied by the environment around it.**
