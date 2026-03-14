@@ -284,6 +284,15 @@ img {
 	padding: 0;
 }
 
+
+.prose figure:has(img[alt*="Architecture of the autoresearch setup"]) {
+	max-width: min(100%, 56rem);
+}
+
+.prose figure:has(img[alt*="Architecture of the autoresearch setup"]) figcaption {
+	margin-top: 0.8rem;
+}
+
 .prose figure figcaption {
 	font-family: var(--font-heading);
 	font-size: 0.8125rem;
@@ -301,6 +310,14 @@ img {
 	max-width: min(100%, 48.4rem);
 	height: auto;
 	display: block;
+}
+
+.prose figure img[alt*="Architecture of the autoresearch setup"],
+.prose img[alt*="Architecture of the autoresearch setup"] {
+	border: none;
+	background-color: transparent;
+	padding: 0;
+	max-width: min(100%, 56rem);
 }
 
 .prose table {

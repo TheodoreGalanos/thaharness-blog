@@ -146,7 +146,18 @@ const tocHeadings = headings.filter((h) => h.depth === 2 || h.depth === 3);
 						activeSlug = slug;
 						links.forEach((link) => {
 							const linkSlug = (link as HTMLElement).dataset.tocLink;
-							link.classList.toggle('toc-active', linkSlug === slug);
+							const isActive = linkSlug === slug;
+							link.classList.toggle('toc-active', isActive);
+							if (isActive) {
+								const tocContainer = (link as HTMLElement).closest('.toc');
+								if (tocContainer && !tocContainer.classList.contains('toc-inline')) {
+									(link as HTMLElement).scrollIntoView({
+										block: 'nearest',
+										inline: 'nearest',
+										behavior: 'smooth',
+									});
+								}
+							}
 						});
 					}
 				}
