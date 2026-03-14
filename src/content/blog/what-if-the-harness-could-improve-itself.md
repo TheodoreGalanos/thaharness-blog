@@ -27,7 +27,7 @@ This article applies that pattern to only one part of an engineering evaluation 
 ## TL;DR
 
 - We applied the autoresearch pattern to one surface of our harness: the system prompt that guides audit behaviour.
-- The system uses an information barrier so the researcher agent sees patterns in outcomes, not task answers.
+- The system uses an information barrier so the autoresearcher agent sees patterns in outcomes, not task answers.
 - Behavioural feedback from an agentic-bonds classifier gives a richer signal than reward alone by showing how the agent distributed effort across execution, deliberation, exploration, and verification.
 - Across the Claude full-reference runs, one prompt change improved mean reward from 0.94 to 0.98 across five task instances. The entire change was two sentences: an explicit per-room verification checklist.
 - On Claude at `L0`, that full-reference winner backfired. Confidence thresholds and cross-room consistency instead improved reward from 0.73 to 1.0 on one instance.
@@ -54,13 +54,13 @@ Translating the autoresearch pattern to engineering harnesses requires three des
 
 ### The information barrier
 
-In autoresearch, the researcher agent sees everything: full training logs, exact loss curves, model weights. In our case, the artefact is a system prompt. If the researcher could see the task content or planted errors, it could bake that knowledge into the prompt and overfit the benchmark.
+In autoresearch, the autoresearcher agent sees everything: full training logs, exact loss curves, model weights. In our case, the artefact is a system prompt. If the autoresearcher could see the task content or planted errors, it could bake that knowledge into the prompt and overfit the benchmark.
 
-So we need an information barrier between raw trial outputs and the researcher. The researcher sees *patterns* — "3 of the last 5 runs had incomplete coverage" — but never *answers*. That is the key structural difference from autoresearch.
+So we need an information barrier between raw trial outputs and the autoresearcher. The autoresearcher sees *patterns* — "3 of the last 5 runs had incomplete coverage" — but never *answers*. That is the key structural difference from autoresearch.
 
 ### More Than One Score
 
-Autoresearch has one scalar: `val_bpb`. Engineering harnesses need more. A score of 0.7 could mean missed findings, formatting errors, or a timeout. The researcher needs to know not just how well the agent scored, but *how it behaved*.
+Autoresearch has one scalar: `val_bpb`. Engineering harnesses need more. A score of 0.7 could mean missed findings, formatting errors, or a timeout. The autoresearcher needs to know not just how well the agent scored, but *how it behaved*.
 
 We address this with three feedback channels:
 
@@ -68,7 +68,7 @@ We address this with three feedback channels:
 - **Failure categories** — abstracted failure modes without task-specific details: `incomplete_coverage`, `incorrect_values`, `format_error`, `timeout`, `false_positives`, `clean_miss`.
 - **Behavioural profile** — a classification of each turn in the trace using our [agentic-bonds classifier](https://arxiv.org/abs/2601.06002). It labels turns as execution, deliberation, exploration, or verification, and returns the distribution, temporal sequence, and a short narrative summary.
 
-That gives the researcher more than a score drop. It can tell whether the agent stopped verifying, front-loaded execution, or spent too long deliberating.
+That gives the autoresearcher more than a score drop. It can tell whether the agent stopped verifying, front-loaded execution, or spent too long deliberating.
 
 ### The Target Is the Workflow Prompt
 
@@ -80,9 +80,9 @@ This is closer to optimising an organisation's operating procedure than to optim
 
 The system has three layers with a strict information flow.
 
-![Architecture of the autoresearch setup. A local researcher agent edits the workflow prompt and reads sanitised feedback, support scripts enforce the information barrier and produce summaries, and the experiment sandbox runs the unchanged evaluation harness behind that boundary.](../../assets/blog/autoresearch/architecture_information_flow.svg)
+![Architecture of the autoresearch setup. A local autoresearcher agent edits the workflow prompt and reads sanitised feedback, support scripts enforce the information barrier and produce summaries, and the experiment sandbox runs the unchanged evaluation harness behind that boundary.](../../assets/blog/autoresearch/architecture_information_flow.svg)
 
-- **The researcher agent** runs locally, driven by Claude Code following a `program.md` — the same pattern as autoresearch. It edits system prompts, makes git commits, reads sanitised feedback, and decides whether to keep or revert each change. It never sees task content, verifier code, or raw conversation transcripts.
+- **The autoresearcher agent** runs locally, driven by Claude Code following a `program.md` — the same pattern as autoresearch. It edits system prompts, makes git commits, reads sanitised feedback, and decides whether to keep or revert each change. It never sees task content, verifier code, or raw conversation transcripts.
 - **Support scripts** handle the structured mechanics. `run_experiment.py` triggers a Harbor job in a Docker sandbox with the current system prompt. `feedback.py` enforces the information barrier: it reads the raw trial outputs, strips task-specific content, runs the bonds classifier, and returns a sanitised JSON summary. `results.py` manages the TSV audit trail.
 - **The experiment sandbox** is unchanged from the existing evaluation harness — the same Docker containers, agents, verifiers, and output contracts used in the benchmark work from the previous article. The only thing that changes between iterations is the system prompt file mounted into the container.
 
@@ -95,11 +95,11 @@ The loop mirrors autoresearch exactly:
 5. Keep if reward improved, revert if not
 6. Repeat
 
-The `program.md` is organised into eleven sections: purpose, setup, scope constraints, artefact definition, experiment execution, feedback reading, optimisation targets, the loop itself, logging, autonomy mandate, and information discipline. The information discipline section is the one that has no analogue in Karpathy's version: it explicitly instructs the researcher not to attempt reading task files or verifier code, and frames any desire to know specific task details as a signal to focus on process guidance instead.
+The `program.md` is organised into eleven sections: purpose, setup, scope constraints, artefact definition, experiment execution, feedback reading, optimisation targets, the loop itself, logging, autonomy mandate, and information discipline. The information discipline section is the one that has no analogue in Karpathy's version: it explicitly instructs the autoresearcher not to attempt reading task files or verifier code, and frames any desire to know specific task details as a signal to focus on process guidance instead.
 
 ## What Behavioural Feedback Adds
 
-The agentic-bonds classifier gives the researcher something autoresearch does not have: a temporal view of how the agent distributed its effort across the trace.
+The agentic-bonds classifier gives the autoresearcher something autoresearch does not have: a temporal view of how the agent distributed its effort across the trace.
 
 Each assistant turn in the conversation trace is classified as one of four types:
 
@@ -108,7 +108,7 @@ Each assistant turn in the conversation trace is classified as one of four types
 - **Exploration** — comparing alternatives, deciding *what* to do
 - **Verification** — checking backward at its own work, comparing results against expectations
 
-The researcher sees this at three levels: the **bond profile** (distribution), the **bond sequence** (temporal pattern), and a short **bond narrative**.
+The autoresearcher sees this at three levels: the **bond profile** (distribution), the **bond sequence** (temporal pattern), and a short **bond narrative**.
 
 ### What the classifier actually found
 
@@ -149,7 +149,7 @@ The first Claude Sonnet 4.6 run tested five prompt modifications against a singl
 
 Five strategies were tried: a planning step, cascade-error reporting, field-by-field verification, larger batches, and a re-verification pass. None moved the reward.
 
-The researcher reasonably concluded that the fifth error looked like a model capability boundary rather than a prompt issue. The one useful finding was about efficiency: the larger-batch approach achieved the same accuracy with fewer turns and tokens — 9 turns and 98k tokens versus the baseline's 10 turns and 105k.
+The autoresearcher reasonably concluded that the fifth error looked like a model capability boundary rather than a prompt issue. The one useful finding was about efficiency: the larger-batch approach achieved the same accuracy with fewer turns and tokens — 9 turns and 98k tokens versus the baseline's 10 turns and 105k.
 
 **That conclusion turned out to be wrong.** Not because the reasoning was poor, but because the evidence was insufficient. Single-instance evaluation made a task-specific ceiling look like a universal one.
 
@@ -254,7 +254,7 @@ The early behavioural picture suggests the two wins differ not only in wording, 
 
 ### Self-improving harnesses are feasible
 
-The system worked. The researcher agent formed hypotheses from sanitised feedback, made targeted prompt changes, measured their effect, and advanced the branch when something improved. The information barrier appeared to hold, and some improvements generalised across instances.
+The system worked. The autoresearcher agent formed hypotheses from sanitised feedback, made targeted prompt changes, measured their effect, and advanced the branch when something improved. The information barrier appeared to hold, and some improvements generalised across instances.
 
 This is obviously a small result, but it validates the basic mechanism.
 
@@ -299,7 +299,7 @@ This is early work. The scope is narrow and the results are preliminary.
 - **Single task type, single domain.** All experiments targeted HVAC audit tasks. We do not know whether the checklist approach generalises to other engineering task types.
 - **Small iteration count.** Four experiment blocks are enough to validate the mechanism and expose two important conditionalities, but not enough to map the full improvement frontier.
 - **Bonds data is still thin outside the Claude run and has no human-annotated validation set here.** The 30-trace behavioural analysis is for Claude Sonnet 4.6 on one task family. The GPT-4.1-mini read is directionally useful, but much smaller.
-- **The information barrier is untested against adversarial pressure.** The researcher followed the information discipline in these runs, but we have not stress-tested whether a sufficiently capable researcher agent might infer task-specific content from the feedback patterns.
+- **The information barrier is untested against adversarial pressure.** The autoresearcher followed the information discipline in these runs, but we have not stress-tested whether a sufficiently capable autoresearcher agent might infer task-specific content from the feedback patterns.
 - **The `L0` result is still single-instance.** The 1.0 score is encouraging, and it was reproduced once with a slightly more expensive prompt variant, but we have not yet tested the `L0`-optimised prompt across multiple cities. The five-instance Claude run already showed how misleading single-instance conclusions can be.
 - **The GPT-4.1-mini comparison is also single-instance.** We do not yet know whether the 0.83 ceiling or the prompt fragility pattern will hold across other cities or adjacent task families.
 - **Darwin remains at 0.9.** One instance did not improve across any prompt change. This may be a genuine model capability limit for that specific error type, but we would need to break the information barrier to investigate.
