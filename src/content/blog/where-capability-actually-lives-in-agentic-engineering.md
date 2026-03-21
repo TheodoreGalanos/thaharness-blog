@@ -4,7 +4,7 @@ description: "In AEC and domain-specific engineering, AI agent capability lives 
 author: "Theodoros Galanos"
 category: "Engineering"
 pubDate: 2026-03-10
-tags: ["harness-engineering", "agentic-ai", "aec", "engineering-ai", "orchestration", "agent-reliability"]
+tags: ["harness-engineering", "agentic-ai", "ai-in-aec", "engineering-ai", "orchestration", "agent-reliability", "construction-ai"]
 ---
 
 Estimated reading time: 16 minutes

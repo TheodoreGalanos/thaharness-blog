@@ -5,7 +5,7 @@ author: "Theodoros Galanos"
 category: "Engineering"
 draft: false
 pubDate: 2026-03-12
-tags: ["harness-engineering", "agentic-ai", "aec", "ai-benchmarks", "agent-evaluation", "hvac-ai"]
+tags: ["harness-engineering", "agentic-ai", "ai-in-aec", "ai-benchmarks", "agent-evaluation", "hvac-ai", "design-review", "mep-automation"]
 ---
 
 Estimated reading time: 15 minutes
