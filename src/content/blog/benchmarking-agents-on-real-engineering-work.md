@@ -1,11 +1,11 @@
 ---
 title: "Benchmarking Agents on Real Engineering Work Is Already Teaching Us Something Important"
-description: "A first serious run at evaluating agentic systems on domain-specific engineering tasks, what it revealed about model capability, harness design, and why evaluation quality matters as much as model selection."
+description: "Benchmarking AI agents on real HVAC engineering tasks across Claude and GPT models. Results on harness-dependent capability, agent evaluation design, and why AEC-domain benchmarks reveal what general benchmarks miss."
 author: "Theodoros Galanos"
 category: "Engineering"
 draft: false
 pubDate: 2026-03-12
-tags: ["agents", "engineering", "evaluation", "benchmarks"]
+tags: ["harness-engineering", "agentic-ai", "aec", "ai-benchmarks", "agent-evaluation", "hvac-ai"]
 ---
 
 Estimated reading time: 15 minutes

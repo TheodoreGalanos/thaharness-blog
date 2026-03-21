@@ -1,11 +1,11 @@
 ---
 title: "What If the Harness Could Improve Itself?"
-description: "Applying the autoresearch pattern to one surface of an engineering evaluation harness. Early results across audit tasks with different levels of available reference material, across two model families, and why the best prompt depends on the information available."
+description: "Applying the autoresearch pattern to self-improve an engineering agent harness. Automated prompt optimisation across HVAC audit tasks on Claude and GPT-4.1-mini, showing how harness engineering compounds when the improvement loop runs itself."
 author: "Theodoros Galanos"
 category: "Engineering"
 draft: false
 pubDate: 2026-03-14
-tags: ["agents", "engineering", "evaluation", "benchmarks", "autoresearch", "harnesses"]
+tags: ["harness-engineering", "autoresearch", "agentic-ai", "aec", "ai-benchmarks", "agent-evaluation", "prompt-optimisation"]
 ---
 
 Estimated reading time: 25 minutes

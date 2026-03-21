@@ -37,6 +37,7 @@ const {
 	author,
 	heroImage,
 	tags,
+	category,
 	readingTime,
 	headings = [],
 } = Astro.props;
@@ -53,6 +54,8 @@ const {
 			publishedTime={pubDate}
 			modifiedTime={updatedDate}
 			tags={tags}
+			wordCount={readingTime * 180}
+			articleSection={category}
 		/>
 		<style>
 			.post-frame {

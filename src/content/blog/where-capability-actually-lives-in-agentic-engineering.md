@@ -1,10 +1,10 @@
 ---
 title: "Where Capability Actually Lives in Agentic Engineering"
-description: "An argument that progress in engineering AI will come not just from better models, but from better harnesses, better process design, and better environments for reliable work."
+description: "In AEC and domain-specific engineering, AI agent capability lives not in the model alone but in harness engineering — the tools, verifiers, orchestration, and process design that make agentic work reliable."
 author: "Theodoros Galanos"
 category: "Engineering"
 pubDate: 2026-03-10
-tags: ["agents", "engineering", "harnesses", "orchestration", "autonomy"]
+tags: ["harness-engineering", "agentic-ai", "aec", "engineering-ai", "orchestration", "agent-reliability"]
 ---
 
 Estimated reading time: 16 minutes
