@@ -27,7 +27,7 @@ That is the question this essay is really about.
 - Many important engineering workflows are better understood as processes rather than isolated tasks, which makes orchestration, UX, visibility, and intervention part of the capability story too.
 - If we want meaningful progress in engineering and AEC, we need better experimental environments and benchmarks that reflect real artifacts, real failure modes, and the actual conditions required for reliable work.
 
-## Engineering Is Not Just Another Knowledge Domain
+## Why AEC Engineering Breaks Most AI Agent Approaches
 
 It is tempting to treat engineering as one more expert domain that large models will gradually absorb as they become smarter and better trained. There is some truth in that. Engineering work is full of technical language, quantitative reasoning, standards, and procedural knowledge, all of which are at least partially representable in text, math, and code. But that description misses the thing that makes the domain difficult in practice.
 
@@ -39,7 +39,7 @@ This is also why engineering is a more interesting challenge than a simple test 
 
 Seen that way, the question is not whether models can do engineering in some broad, promotional sense. The question is what conditions make engineering work stay controllable. That is a narrower question, but it is also the one that matters if the goal is not spectacle but dependable use.
 
-## The Harness Is Where Capability Gets Made
+## The Harness Is Where Engineering Capability Gets Made
 
 Once engineering is framed as artifact-bound and verification-sensitive work, the role of the harness looks different. It is no longer reasonable to think of the harness as a thin wrapper around model capability. The harness determines what the system can see, what method it can invoke, what constraints are explicit, what gets checked, what counts as a recoverable error, and what form the final answer must take. In other words, it helps determine not just how the system runs, but what kind of cognition the system is able to express.
 
@@ -53,7 +53,7 @@ Once you see that clearly, a lot of standard debates start to look underspecifie
 
 > If that is true, then progress in this domain will depend not only on better models, but on better harness engineering for engineering.
 
-## The Unknowns That Actually Matter
+## Open Questions for AI Agents in Engineering and AEC
 
 This is where the real research agenda begins. If we are serious about agentic engineering, there are several questions that still look underexplored and experimentally open. They are not small implementation questions. They are structural questions about where competence comes from, how reliability is made, and what exactly we are trying to optimise for.
 
@@ -69,7 +69,7 @@ The fifth question is how much capability a well-designed environment can supply
 
 Each question changes what we should build, what we should measure, and how we should interpret success. Taken together, they suggest that the real frontier in agentic engineering is not just model improvement. It is experimental clarity about how capability is distributed across the whole system.
 
-## From Tasks to Processes
+## From Tasks to Processes: Why Engineering Workflows Need More Than Single-Step Agents
 
 One reason this design space is easy to misunderstand is that we often talk about work as if it arrives in neatly bounded tasks. Sometimes it does. But many of the workflows that matter most in engineering are not really tasks in that sense. They are processes: longer-horizon structures with multiple artifacts, multiple experts, natural gates of review and control, and repeated moments where uncertainty has to be managed rather than ignored.
 
@@ -83,7 +83,7 @@ This is not just a matter of convenience. It is a cognitive issue. These systems
 
 Seen this way, agentic engineering is not only about building systems that can do tasks. It is about building systems that can participate in processes without dissolving the human capacity to understand, direct, and verify what is happening. That may be one of the deepest reasons harness design matters so much in engineering. The harness is not just coordinating tools around a model. It is helping define the structure through which work, judgment, and control move over time.
 
-## Progress Requires Experimental Environments
+## AEC Needs Better Benchmarks, Not Better Demos
 
 If capability is environmentally expressed, then environment design has to become an empirical science rather than a collection of intuitions. In engineering, and especially in AEC, that point still has not been fully absorbed. Too much of the current conversation remains stuck at the level of demos, generic prompting claims, or isolated examples of model fluency. What the field needs instead is controlled experimentation on engineering task environments. Instead of asking whether a model can solve a cherry-picked problem, we need task families that let us vary conditions deliberately, observe what changes, and learn which combinations of tools, constraints, interfaces, and verification loops actually produce dependable work.
 
@@ -97,7 +97,7 @@ It also raises a cognitive problem as well as a technical one. Once these system
 
 The point is not to make benchmarks larger for their own sake. The point is to make them shaped enough like the work that they can teach us something real. If the benchmark is too convenient, it will mainly reward convenience. If the environment is too unlike practice, it will tell us very little about what systems can actually be trusted to do.
 
-## Reliability Before Autonomy
+## Reliability Before Autonomy: What AEC Firms Actually Need from AI Agents
 
 The most useful near-term goal is probably not full engineering autonomy. It is reliable leverage on bounded tasks. Systems that can assist with scoped review, structured checking, discrepancy detection, and well-instrumented analysis may already create value long before end-to-end automation becomes plausible.
 
@@ -111,7 +111,7 @@ That is also why reliability has to come before ambition. A narrower system that
 
 This is especially important in domains like AEC, where the work is high consequence, low volume, and deeply review-shaped. The near-term question is not whether a system can replace expertise wholesale. It is whether it can make expert time more powerful without dissolving accountability. The prize is not a machine that replaces engineering judgment in the abstract. It is a system that can participate in engineering workflows in ways that are inspectable, recoverable, and worth trusting on defined slices of the job.
 
-## Why This Work Matters Now
+## Why Harness Engineering for AEC Matters Now
 
 This is the kind of work that matters if we want progress in engineering AI to be meaningful rather than theatrical. The glamorous parts of this field are easy to spot. The [boring middle](https://www.linkedin.com/pulse/when-expert-systems-need-coordination-building-workflow-galanos-zrudc/) is not. **But the boring middle is where much of the real leverage lives: task selection, workflow design, harness construction, interface design, verification, and evaluation.** If we skip that layer, we do not get reliable systems. We get better demos.
 

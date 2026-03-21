@@ -48,7 +48,7 @@ As [Delip Rao's prompt anatomy](https://delip.github.io/mini-apps/annotated-auto
 
 As [Philipp Schmid](https://www.philschmid.de/autoresearch) notes, when experiments run far faster than a human can manage, the bottleneck becomes the evaluation system. If the harness is a bottleneck, improving the harness becomes a high-leverage move.
 
-## Why Engineering Harnesses Are Different
+## Why Engineering Harnesses Are Different from Software Agent Harnesses
 
 Translating the autoresearch pattern to engineering harnesses requires three design changes.
 
@@ -76,7 +76,7 @@ Autoresearch optimises model architecture and hyperparameters. The artefact is c
 
 This is closer to optimising an organisation's operating procedure than to optimising code. The question is not "what parameters produce the lowest loss?" but "what workflow instructions produce the most reliable engineering review?"
 
-## The Design
+## The Design: Automated Prompt Optimisation for HVAC Audit Tasks
 
 The system has three layers with a strict information flow.
 
@@ -97,7 +97,7 @@ The loop mirrors autoresearch exactly:
 
 The `program.md` is organised into eleven sections: purpose, setup, scope constraints, artefact definition, experiment execution, feedback reading, optimisation targets, the loop itself, logging, autonomy mandate, and information discipline. The information discipline section is the one that has no analogue in Karpathy's version: it explicitly instructs the autoresearcher not to attempt reading task files or verifier code, and frames any desire to know specific task details as a signal to focus on process guidance instead.
 
-## What Behavioural Feedback Adds
+## What Behavioural Feedback Adds to Agent Evaluation
 
 The agentic-bonds classifier gives the autoresearcher something autoresearch does not have: a temporal view of how the agent distributed its effort across the trace.
 
@@ -139,7 +139,7 @@ The behavioural data sharpens the prompt improvement story. The successful chang
 
 In other words, the checklist made the agent behave more like the perfect traces already did: decisive execution, then concentrated verification.
 
-## Early Results
+## Early Results: How Small Harness Changes Moved HVAC Audit Performance
 
 We ran four experiment blocks on the system prompt that guides HVAC schedule audit tasks. One established the single-instance trap, one found a prompt improvement across five full-reference instances, one showed that the best strategy changes at `L0`, and one repeated the `L0` setup on a weaker model.
 
@@ -250,7 +250,7 @@ The ceiling also remained model-specific. GPT-4.1-mini improved dramatically, bu
 
 The early behavioural picture suggests the two wins differ not only in wording, but also in how the models stabilise. Claude's successful `L0` run remained relatively execution-compatible. GPT-4.1-mini's best run was much more verification-heavy.
 
-## What the Results Suggest
+## What the Results Suggest for Harness Engineering in AEC
 
 ### Self-improving harnesses are feasible
 

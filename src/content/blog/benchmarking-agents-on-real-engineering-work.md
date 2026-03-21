@@ -42,7 +42,7 @@ What follows is a first look at what current agents are good at, where they stil
 
 That is the core result in compressed form: **the benchmark ranks models, but more importantly, it makes the system dependence visible.**
 
-## The Benchmark Was Simple on Purpose
+## The Benchmark Was Simple on Purpose: HVAC Heat Load Tasks as a Starting Point
 
 That narrow setup matters because it tells us something specific.
 
@@ -104,7 +104,7 @@ For practitioners, this means you should be skeptical of any claim that a model 
 
 For evaluation researchers, it means benchmark design has to be treated with the same rigor as model comparison itself.
 
-## What Happened When We Removed Guidance
+## What Happened When We Removed Harness Guidance
 
 This is also where the setup gets more interesting.
 
@@ -280,7 +280,7 @@ In the same narrow setting, if you want the strongest quality-per-dollar tradeof
 
 If you want a deployable system, the right answer probably depends on where in the workflow the agent sits and how much review coverage a human still provides.
 
-## What This Means for AEC
+## What This Means for AI Agents in AEC
 
 The practical takeaway is not that AI can now replace engineering judgement. That would be the wrong lesson.
 
@@ -292,7 +292,7 @@ So if you are trying to bring agents into AEC practice, one sensible near-term p
 
 That is also where benchmarks can be genuinely useful: as a way to test whether an agent is ready for a specific class of work.
 
-## What This Means for Agentic Evaluation
+## What This Means for Agentic Evaluation and Benchmarks
 
 What this benchmark suggests is that three parts of the eval design matter especially strongly.
 
