@@ -417,7 +417,24 @@ img {
 }
 
 /* ──────────────────────────────────────────────────────────
-   13. Responsive adjustments
+   13. Masonry grid — no-JS fallback is CSS grid
+   ────────────────────────────────────────────────────────── */
+[data-masonry-grid] {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+[data-masonry-grid].masonry-active {
+  display: block;
+}
+
+[data-masonry-grid].masonry-active .masonry-card {
+  transition: top 0.3s var(--ease-standard), left 0.3s var(--ease-standard);
+}
+
+/* ──────────────────────────────────────────────────────────
+   14. Responsive adjustments
    ────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
 	h1 { font-size: 2rem; }
