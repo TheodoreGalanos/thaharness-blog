@@ -525,3 +525,18 @@ img {
 	opacity: 1;
 	transform: scaleX(1);
 }
+
+/* ──────────────────────────────────────────────────────────
+   Pull quote scroll reflow
+   ────────────────────────────────────────────────────────── */
+.pull-quote {
+	--pq-scale: 1;
+	transform: scale(var(--pq-scale));
+	transform-origin: left top;
+	transition: transform 0.15s var(--ease-standard),
+	            border-color 0.3s var(--ease-standard);
+}
+
+.pull-quote-active {
+	border-left-color: var(--color-accent);
+}
