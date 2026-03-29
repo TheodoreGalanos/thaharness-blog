@@ -38,6 +38,7 @@ const {
 	heroImage,
 	tags,
 	category,
+	layout = 'standard',
 	readingTime,
 	headings = [],
 } = Astro.props;
@@ -129,7 +130,7 @@ const {
 		<Header />
 		<main>
 			<div class="post-frame">
-				<article>
+				<article data-layout={layout}>
 					<header class="post-header px-5 pt-16 pb-8 sm:px-6 md:pt-28 md:pb-10">
 						<h1 class="font-heading font-medium text-3xl md:text-[2.75rem] tracking-[-0.02em] leading-[1.15]" style="color: var(--color-text-primary);">
 							{title}
@@ -188,5 +189,6 @@ const {
 		<Analytics />
 		<SpeedInsights />
 		<script src="../scripts/balanced-headlines.ts"></script>
+		<script src="../scripts/multi-column-layout.ts"></script>
 	</body>
 </html>

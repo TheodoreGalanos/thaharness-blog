@@ -486,3 +486,20 @@ img {
 		white-space: nowrap;
 	}
 }
+
+/* ──────────────────────────────────────────────────────────
+   Multi-column feature article layout
+   ────────────────────────────────────────────────────────── */
+.feature-columns-active blockquote,
+.feature-columns-active figure,
+.feature-columns-active pre,
+.feature-columns-active table,
+.feature-columns-active hr {
+	column-span: all;
+}
+
+@media (max-width: 1023px) {
+	.feature-columns-active {
+		column-count: 1 !important;
+	}
+}
