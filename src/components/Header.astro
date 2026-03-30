@@ -1,6 +1,8 @@
 <!-- ABOUTME: Sticky site header with terminal-style logo, nav links, and theme toggle. -->
 <!-- ABOUTME: Left side shows "> The Harness_" prompt, right side has nav links and theme switch. -->
 ---
+import { Image } from 'astro:assets';
+import logoIcon from '../assets/logo-icon-trimmed.png';
 import HeaderLink from './HeaderLink.astro';
 import ThemeToggle from './ThemeToggle.astro';
 ---
@@ -11,9 +13,8 @@ import ThemeToggle from './ThemeToggle.astro';
 			href="/"
 			class="flex min-w-0 items-center gap-0 no-underline hover:no-underline"
 		>
-			<span class="font-heading text-[--color-accent] text-xl font-medium">&gt;&nbsp;</span>
-			<span class="font-heading font-medium text-lg sm:text-xl text-[--color-text-primary] tracking-[-0.02em] truncate">The Harness</span>
-			<span class="cursor-blink font-heading text-lg sm:text-xl text-[--color-accent] ml-px">_</span>
+			<Image src={logoIcon} alt="" width={28} height={40} class="logo-icon" />
+			<span class="font-heading font-medium text-lg sm:text-xl text-[--color-text-primary] tracking-[-0.02em] truncate ml-2">The Harness</span>
 			<span class="text-[--color-border] mx-2 hidden md:inline">|</span>
 			<span class="font-heading text-[0.8125rem] text-[--color-text-secondary] hidden md:inline">Theodoros Galanos</span>
 		</a>
@@ -38,3 +39,9 @@ import ThemeToggle from './ThemeToggle.astro';
 		</div>
 	</nav>
 </header>
+
+<style>
+	.logo-icon {
+		filter: drop-shadow(0 0 4px rgba(232, 168, 76, 0.4));
+	}
+</style>
