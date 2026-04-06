@@ -1,0 +1,220 @@
+---
+title: "Recursive by Design"
+description: "Building Recursive Language Model agents for real engineering tasks — from 1.5M tokens to 53K with Lambda-RLM, and what we learned about agent harness design along the way."
+author: "Theodoros Galanos"
+category: "Engineering"
+draft: false
+pubDate: 2026-04-04
+tags: ["recursive-language-models", "rlm", "lambda-rlm", "harness-design", "ai-agents", "ai-in-aec", "report-generation", "context-management", "benchmarks"]
+featured: true
+layout: "standard"
+---
+
+Estimated reading time: 13 minutes
+
+In [The Harness Is All You Need](/blog/the-harness-is-all-you-need/), I argued that domain-specific tooling around the model matters more than the model itself. AEC-Bench showed this empirically: the biggest performance gains came from better retrieval and document parsing, not model upgrades. Earlier, in [Benchmarking Agents on Real Engineering Work](/blog/benchmarking-agents-on-real-engineering-work/), we'd seen the same pattern from the other direction — when harness support was stripped away, performance didn't degrade gracefully. It collapsed.
+
+These arguments seem to draw a line. Model on one side. Harness on the other. My goal in this article is to discuss with you how that is..more complex than it sounds.
+
+> The agent's reasoning architecture is itself a harness design choice. Agent design and harness design are the same problem.
+
+When [Zhang and Khattab](https://arxiv.org/abs/2512.24601) published the RLM paper (now accepted at ICML), I had the same reaction most people did: "So... this is Claude Code?", I asked. A model with a persistent REPL. We've had that. The performance gains were there, and reported independently. For example, [Prime Intellect](https://www.primeintellect.ai/blog/rlm) explored it further, and showed how a smaller model with RLM scaffolding outperforms a larger model without it — but I was still skeptical. What was new here?
+
+The answer to the question was the same it always is: I had to build one to fully understand it. And as it turns out, the difference is architectural, and it's easy to miss.
+
+Claude Code and Codex are powerful systems. But they still put the full context: the conversation, the documents, the task, all of it into the model's context window. The model attends over all of it, and as the window fills, capability degrades. This is "context rot," and every long-running agent session hits it eventually.
+
+RLMs do something fundamentally different. The context lives *outside* the model, as a variable in a persistent Python environment. The model never sees the full input. Instead, it writes code to programmatically interact with it — peeking at slices, filtering with regex, chunking and dispatching sub-LLM calls over pieces, accumulating results in variables. The model's context window stays compact. The work happens in the symbolic environment.
+
+Three conditions separate an RLM from "a model with a REPL":
+
+1. **Symbolic input** — the context is a variable in the REPL, not tokens in the window
+2. **Persistent execution** — REPL state persists across turns, variables are memory
+3. **Recursive LLM invocation** — code can invoke LLMs inside loops, not as discrete tool calls
+
+That third condition is the key. It means the model can do O(n) or O(n²) semantic work over an input of length n, something that's impossible when the entire input has to fit in a fixed-size attention window. The decomposition happens in code, not in the model's reasoning. And that decomposition strategy — how the model breaks context apart, what it delegates to sub-calls, how it reassembles results — is a design choice. A harness choice.
+
+This is where the line dissolves. The agent's recursive strategy *is* in fact the harness.
+
+## Report Generation: Where Recursion Is the Structure of the Work
+
+Report generation is one of the most common tasks in AEC, or any industry really, where agentic AI can deliver real value — if the harness is right. The agent receives source documents — project briefs, technical specifications, reference drawings, supplementary material — and must produce a structured deliverable: a fee proposal, a scope of works, a design report. These tasks share a common shape:
+
+- A **template with a dependency tree** — some sections depend on other sections being written first
+- **Multi-document source material** — often too large for a single context window
+- **Domain-specific writing rules** per section — construction idioms, discipline conventions, contractual phrasing
+- **Structured extraction → composition** — extract facts from sources, then compose prose from those facts
+
+The intuition that led me to RLMs was simple: that output template is a symbolic object with structure — a dependency tree. And the RLM paradigm is built for recursion over symbolic representations. Generating a report *is* recursive template filling. Decompose the document into sections. Decompose each section into source extractions. Extract from bounded chunks. Compose results back up the dependency tree. The recursion is the structure of the work.
+
+## Stage 1: Giving the Model a REPL — Power Without Predictability
+
+The first version gave the model a persistent Python REPL with tools for the job: `extract()` to pull structured data from documents, `summarise()` to compress text, `llm_query()` to compose sections from extracted facts, a `NOTE()`/`RECALL()` scratchpad for persistent memory, and a `ReportTemplate` object with dependency-aware section filling. The model generated code in ` ```repl ` blocks, executed it, stored results in variables, and composed sections by passing extracted data to sub-LLM calls.
+
+It worked! And it was also wildly unpredictable.
+
+Over a dozen experimental runs on the same task with the same model, input token usage ranged from 732K to 1.54M — a 2.1x spread for identical inputs. Some runs completed in 48 turns. Others hit a 150-turn limit and produced nothing useful. The model spent substantial capacity generating control code — Python loops, error handling, variable management — instead of reasoning about the actual engineering content. What the λ-RLM paper later formalised as the "coding tax."
+
+The most surprising run was the first one. The REPL commands were broken due to an injection bug — none of the scaffolding loaded. The model, with nothing but a raw REPL and the source documents, produced an excellent 30KB output in 7 turns and 10K tokens. Fully scaffolded runs with 50+ turns produced worse output at 100x the cost.
+
+That accidental result brought back visions of the bitter lesson. If the model performs better when you get out of its way, why are we building scaffolding at all?
+
+The answer, in this case at least, is that a single good run isn't a strategy. The model got lucky. On the next run it might burn a million tokens looping over documents it's already read. Without structure, you get high variance. Some runs are brilliant. Some are catastrophic. And while that can be a fun process, it isn't something you can deploy.
+
+## Stage 2: Context Compaction — Treating the Symptom
+
+The second version added intelligent history compaction. When the conversation approached 85% of the context window, a separate model summarised the trajectory — what was read, what was extracted, what sections were filled — and the conversation restarted from that summary. The scratchpad persisted on disk, so critical facts survived the reset. REPL variables persisted in memory.
+
+With prompt caching on top, the token economics went down to $0.56 per 9-section report (from $3.50 without caching), at a 96% cache hit rate. Fifty turns, every section filled, zero wasted turns.
+
+But the underlying problem remained. The agent still decided its own decomposition strategy on every run. Different runs still took different paths through the source material. Token usage was lower but still variable. We'd managed the symptom (context window pressure) without addressing the cause: unbounded decomposition.
+
+What if we computed the decomposition strategy upfront? What if we put domain expertise at use?
+
+## Stage 3: Lambda-RLM — When the Task Structure Is the Plan
+
+The key architectural decision was to stop letting the model decide how to decompose the work.
+
+Think about what the open REPL actually asks the model to do. It gets a pile of source documents and a template, and has to figure out: which documents feed which sections, how to chunk things that don't fit in context, when to extract vs summarise, how to handle dependencies between sections, and when it's done. That's a planning problem. And the model was solving it differently every run — which is why we got 2.1x token variance on identical inputs.
+
+But the structure of the task *already contains the plan*. The template is a dependency tree. The sources have measurable sizes. The composition operators follow from the section types. Why ask the model to rediscover this every run when you can compute it from the task definition?
+
+The [λ-RLM paper](https://arxiv.org/abs/2603.20105) formalised this insight. Replace the open-ended loop with a deterministic pipeline. Confine the model to bounded leaf operations — the part it's actually good at: understanding and synthesising domain content. Handle the decomposition with pure Python.
+
+![Open REPL vs Lambda-RLM: the model fills the leaves, the structure is the plan.](../../assets/blog/recursive-by-design/rlm-architecture-shift.svg)
+
+λ-RLM has four phases. 
+- **Plan** reads the template dependency tree, measures source documents, and computes the optimal decomposition — branching factor, leaf chunk sizes, composition operators — with zero LLM calls. Total cost is estimated before the first API call is made. 
+- **Extract** walks the plan in dependency order, pulling structured key-value pairs from bounded chunks. The model chooses *what* to extract (field names are model-inferred) but the decomposition is fixed. 
+- **Review** runs a contract alignment check per section: does the extracted data cover the requirements? Are the values specific enough? Sections that fail get a targeted re-extraction pass. 
+- **Generate** composes each section from extracted data plus dependency context, fills the template, and assembles the final document.
+    
+This is the answer to Stage 1's scaffolding paradox. The "broken run" wasn't evidence that models don't need structure, only that having the *wrong kind* of structure — teaching the model a workflow via scaffolding commands — is worse than no structure at all. The right kind of structure matches the shape of the work. The template *is* the plan. The recursion is designed in, not left to emerge.
+
+The configuration is compact:
+
+```toml
+[template]
+tier = "dependency_tree"
+definition = "report_template.toml"
+
+[planner]
+context_window_chars = 100_000
+accuracy_target = 0.80
+max_branching_factor = 20
+
+[review]
+enabled = true
+max_retries_per_source = 1
+```
+
+And swapping between the open REPL and the deterministic pipeline is a single flag in aec-bench:
+
+```bash
+# Open-ended REPL — the model decides how to decompose
+aec-bench run-local tasks/my-task --adapter rlm --model claude-sonnet-4-6
+
+# Deterministic pipeline — decomposition computed upfront
+aec-bench run-local tasks/my-task --adapter lambda-rlm --model claude-sonnet-4-6
+```
+
+The results on the same report generation task:
+
+| Metric | Open REPL (best run) | Lambda-RLM | Factor |
+|--------|---------------------|------------|--------|
+| Input tokens | 732K | 33K | 22x less |
+| Total tokens | 740K | 53K | 14x less |
+| API calls | 48 | 27 | 1.8x fewer |
+| Calls vs estimate | unknown | 27/27 | exact match |
+| Quality (reward) | 0.67 | 0.73 | +8.4% |
+
+The plan's call estimate matched the actual execution exactly — deterministic cost, no surprises. And the review phase caught genuine issues: 6 of 8 sections were flagged for extraction gaps. Extractions too vague where the writing guidance demanded specificity, provenance gaps where data couldn't be traced to source documents. Even when re-extraction couldn't fix the gap (you can't extract data from a document that doesn't exist in the workspace), the review output told us exactly what was missing and why.
+
+## The Expert Feedback Loop
+
+While these numbers tell us something about performance and whether the output improved, they don't tell us whether a domain professional would sign off on it. Like any other AI workflow, building a task specific harness is something you do alongside domain experts.
+
+So, after the initial lambda-RLM runs I put the output in front of experts and asked them to review and compare it against their own human-authored equivalent. Section by section. With a focus on "what's wrong, what's missing, what would you change?"
+
+The feedback was specific, and each piece became a concrete change to the harness:
+
+The agent used "fee proposal" language in a scope of works document — a terminology confusion traced back to an earlier task's prompts, fixed at the template level. Client-specific construction idioms were absent. These are conventions that live in the heads of discipline leads who've written dozens of these documents. No model would learn them from training data because most of this data were never in the training to begin with. So instead, we added them to the writing guidance rules.
+
+Both agent variants skipped a project objectives subsection. It was in the source brief. The template just didn't require it — added as a mandatory subsection, along with a contractual definitions section (a standard task feature neither agent generated).
+
+One reviewer caught a specification contradiction between two sections — the type of cabling specified in one place, was explicitly excluded in another. The human team had caught the same issue in their own review process. That finding inspired a cross-section consistency check: "does section X.XX (Security) contradict section X.XX (Electrical)?"
+
+Discipline leads noted that their workflow involved tagging sections by discipline lead, with each lead referencing the *specific* discipline specification. So we added discipline-specific extraction passes, routing each section's prompts through the relevant discipline spec summary rather than the whole document.
+
+The result: v2 output with 20+ properly placed, task-specific idioms (v1 had zero), project objectives, definitions, fewer terminology errors. Measurable improvement on the rubric — and output that a discipline lead would recognise as structurally correct, *right* in the ways that matter for the domain.
+
+This loop — build, evaluate against expert output, collect feedback, feed improvements back into the harness — is how the gap closes. And it depends on having the infrastructure to do it systematically. A rubric that scores specific dimensions. Trajectory data that shows what the agent extracted and how it composed each section. A comparison framework that puts agent output next to human output at the section level. All of which are embedded in aec-bench.
+
+## Practitioner's Notes: Designing for Agent Consumers
+
+Building the RLM adapters surfaced a set of lessons that apply beyond this specific paradigm. They all share a common thread: when your consumer is a model, the design rules change.
+
+**Agents guess method names.** The model called `get_section_context()` instead of `get_context()`, tried `.success` on plain dicts, passed wrong argument counts. Each fumble wasted 2-3 turns. By adding `__getattr__` with suggestion mappings to the report template — twenty redirects like "did you mean CONTEXT(section_id)?" — the fumbles stopped. If you're building tools for agents, the API surface needs to be *guessable*, not just documented.
+
+**HELP() is your API contract.** The original HELP function was 9 flat lines with no return types and no grouping. The agent couldn't discover the API. We restructured it into sections (Memory, Sub-Calls, Report Template) with return type annotations on every function. For a human developer, you write docs. For an agent, the docs need to be *inside the environment*, callable and complete. And progressive disclosure is essential.
+
+**The scratchpad is the real memory.** Conversation history gets compacted. Variables persist in memory but only until the process ends. The scratchpad — `NOTE(key, value)` writing to a JSON file, `RECALL(key)` reading it back — survives everything. Agents that NOTE after every extraction can survive unlimited compaction cycles without losing their place. A simple change to the system prompt to say "your scratchpad IS your memory" and the agent's behaviour adapted immediately. This is the RLM insight in microcosm: durable state lives outside the model's context window, and the model accesses it symbolically.
+
+**Make sub-calls visible to each other.** In multi-section reports, section 5's extraction often needs facts that section 3 already pulled. Without shared history, the agent either re-extracts (wasting tokens) or tries to remember from context (unreliable after compaction). We added a SUBCALL_LOG — an ordered record of every sub-call invocation, queryable by type. Later calls can see what earlier ones returned: `SUBCALL_LOG.by_type("extract")`. The scratchpad principle applied to tool results.
+
+**Parallelise at the right layer.** We built two parallel primitives: `parallel()` for general concurrent execution, and `fill_parallel()` that understands the template's dependency graph. The general one runs any list of lambdas via ThreadPoolExecutor. The template-aware one identifies which sections are unlocked, generates them concurrently, then fills sequentially. Generation is embarrassingly parallel (independent LLM calls), but filling is sequential (template state mutation). Separate the I/O-bound work from the state mutation and you get concurrency without locks on your domain objects.
+
+**Your test suite will lie to you.** All our unit tests used simple source labels: `"brief:Description"` mapping to a document key `"brief"`. The real task template used `"brief:Description/Background"`. The tests passed. The real run failed silently — the extraction prompt received an empty string instead of the document content. We only caught it by running against a real task with real documents. Synthetic test data hides the gaps that matter most.
+
+## Benchmarks as the Improvement Engine
+
+Each stage was driven by measured evaluation:
+
+- **Stage 1 → Stage 2**: Token variance and latency drove the compaction work. We could measure the 2.1x spread. We could see runs hitting 1.5M tokens for identical inputs.
+- **Stage 2 → Stage 3**: The insight that unbounded decomposition was the root cause, not context growth. The compacted runs were cheaper but still variable.
+- **Stage 3 → v2**: Expert comparison and rubric scoring drove specific harness improvements. Every missing idiom, every skipped subsection, every terminology error mapped to a template or prompt change.
+
+The point of this is obvious: anecdotes don't really compound. But benchmarks do. The RLM paradigm makes this especially concrete because every phase is inspectable — you can see what the plan was, what was extracted, what the review flagged, what was generated. The trajectory *is* the explanation.
+
+This is what aec-bench is built to support: evaluation-driven improvement as a workflow, not a philosophy. A handful of commands close the loop from "I have a task idea" to "I know which
+harness works best":
+
+```bash
+# Generate 50 voltage-drop variants from a single template
+aec-bench generate task templates/electrical/voltage-drop --count 50
+
+# Bundle them into a versioned, immutable dataset
+aec-bench dataset create --name voltage-drop-v2 --source tasks/electrical/voltage-drop/
+
+# Run the dataset across two reasoning architectures
+aec-bench run --config experiment.yaml   # rlm vs lambda-rlm, claude code vs codex, etc., same tasks, same models
+
+# Compare: which harness scored higher, and where did each fail?
+aec-bench evaluate compare run-A run-B
+```
+
+The experiment config is where you express the hypothesis:
+
+```yaml
+tasks:
+  dataset: "voltage-drop-v2@1.0.0"
+agents:
+  - adapter: rlm
+    model: claude-sonnet-4-6
+  - adapter: lambda-rlm
+    model: claude-sonnet-4-6
+```
+
+Same tasks. Same model. Different reasoning architecture. The rubric scores on dimensions that matter to domain experts — not just "did you get the number right" but "did you cite the correct standard, use the right cable table, show your working." And the trajectory viewer shows how each agent worked: what it planned, what it extracted, what the review phase flagged, what it generated.
+
+A lot more to share on aec-bench soon!
+
+## Agent Design Is Harness Design
+
+We started this whole experiment with a model and a REPL. We ended with a deterministic pipeline that costs 14x less, runs at half the time, produces higher-quality output, and tells you what it will cost before it starts. And all we had to do is change the harness.
+
+But "harness" undersells it. What changed in this case was the *reasoning architecture* — how context is managed, how work is decomposed, where the model is and isn't asked to make decisions. That's agent design. It's also harness design. The two are the same discipline, and the line between them was always artificial.
+
+The previous post said: stop collecting demos, start building benchmarks. This post is the worked example. Benchmarks show us variance. Expert reviews show us the domain gaps. Iteration narrows both of them. None of that required a better model. All of it required better engineering around the model.
+
+If you're building AI systems for engineering or construction, that loop — measure, review, iterate — is the work. The model is the easy part.
