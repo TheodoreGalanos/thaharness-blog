@@ -35,6 +35,7 @@ const posts = getPublishedBlogPosts(await getCollection('blog'));
 							data-masonry-card
 							data-title={post.data.title}
 							data-description={post.data.description}
+							data-tags={post.data.tags.join('|')}
 						>
 							<a
 								href={`/blog/${post.id}/`}
