@@ -2,7 +2,7 @@
 <!-- ABOUTME: Uses getStaticPaths to create a page for each blog post at /blog/[slug]/. -->
 ---
 import { type CollectionEntry, getCollection, render } from 'astro:content';
-import BlogPost from '../../layouts/BlogPost.astro';
+import EditorialPost from '../../layouts/EditorialPost.astro';
 import { getPublishedBlogPosts } from '../../utils/blog';
 
 export async function getStaticPaths() {
@@ -33,6 +33,6 @@ const relatedPosts = allPosts
 	.slice(0, 3);
 ---
 
-<BlogPost {...post.data} slug={post.id} readingTime={readingTime} relatedPosts={relatedPosts} headings={headings}>
+<EditorialPost {...post.data} slug={post.id} readingTime={readingTime} relatedPosts={relatedPosts} headings={headings}>
 	<Content />
-</BlogPost>
+</EditorialPost>

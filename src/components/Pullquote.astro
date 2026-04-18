@@ -1,0 +1,19 @@
+<!-- ABOUTME: Editorial pullquote — large Fraunces italic emphasis on a thesis statement. -->
+<!-- ABOUTME: Centred on the reading column, no decorative quote marks; optional attribution. -->
+---
+interface Props {
+	attribution?: string;
+	class?: string;
+}
+
+const { attribution, class: className } = Astro.props;
+---
+
+<aside class:list={['pullquote', className]}>
+	<blockquote class="pullquote-body">
+		<slot />
+	</blockquote>
+	{attribution && (
+		<p class="pullquote-attribution">— {attribution}</p>
+	)}
+</aside>

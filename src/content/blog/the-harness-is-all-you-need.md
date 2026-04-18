@@ -7,7 +7,6 @@ draft: false
 pubDate: 2026-04-03
 tags: ["benchmarks", "aec", "ai-agents", "harness-design", "evaluation", "ai-in-aec"]
 featured: true
-layout: "standard"
 ---
 
 Estimated reading time: 5 minutes

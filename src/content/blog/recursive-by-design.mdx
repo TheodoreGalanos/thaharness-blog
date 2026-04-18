@@ -7,8 +7,11 @@ draft: false
 pubDate: 2026-04-04
 tags: ["recursive-language-models", "rlm", "lambda-rlm", "harness-design", "ai-agents", "ai-in-aec", "report-generation", "context-management", "benchmarks"]
 featured: true
-layout: "standard"
 ---
+import Figure from '../../components/Figure.astro';
+import Pullquote from '../../components/Pullquote.astro';
+import Sidenote from '../../components/Sidenote.astro';
+import rlmArchitectureShift from '../../assets/blog/recursive-by-design/rlm-architecture-shift.svg';
 
 Estimated reading time: 13 minutes
 
@@ -16,9 +19,11 @@ In [The Harness Is All You Need](/blog/the-harness-is-all-you-need/), I argued t
 
 These arguments seem to draw a line. Model on one side. Harness on the other. My goal in this article is to discuss with you how that is..more complex than it sounds.
 
-> The agent's reasoning architecture is itself a harness design choice. Agent design and harness design are the same problem.
+<Pullquote>
+The agent's reasoning architecture is itself a harness design choice. Agent design and harness design are the same problem.
+</Pullquote>
 
-When [Zhang and Khattab](https://arxiv.org/abs/2512.24601) published the RLM paper (now accepted at ICML), I had the same reaction most people did: "So... this is Claude Code?", I asked. A model with a persistent REPL. We've had that. The performance gains were there, and reported independently. For example, [Prime Intellect](https://www.primeintellect.ai/blog/rlm) explored it further, and showed how a smaller model with RLM scaffolding outperforms a larger model without it — but I was still skeptical. What was new here?
+When [Zhang and Khattab](https://arxiv.org/abs/2512.24601) published the RLM paper<Sidenote>Now accepted at ICML.</Sidenote> I had the same reaction most people did: "So... this is Claude Code?", I asked. A model with a persistent REPL. We've had that. The performance gains were there, and reported independently. For example, [Prime Intellect](https://www.primeintellect.ai/blog/rlm) explored it further, and showed how a smaller model with RLM scaffolding outperforms a larger model without it — but I was still skeptical. What was new here?
 
 The answer to the question was the same it always is: I had to build one to fully understand it. And as it turns out, the difference is architectural, and it's easy to miss.
 
@@ -81,7 +86,11 @@ But the structure of the task *already contains the plan*. The template is a dep
 
 The [λ-RLM paper](https://arxiv.org/abs/2603.20105) formalised this insight. Replace the open-ended loop with a deterministic pipeline. Confine the model to bounded leaf operations — the part it's actually good at: understanding and synthesising domain content. Handle the decomposition with pure Python.
 
-![Open REPL vs Lambda-RLM: the model fills the leaves, the structure is the plan.](../../assets/blog/recursive-by-design/rlm-architecture-shift.svg)
+<Figure
+	src={rlmArchitectureShift}
+	alt="Open REPL vs Lambda-RLM: the model fills the leaves, the structure is the plan."
+	caption="Open REPL vs Lambda-RLM: the model fills the leaves, the structure is the plan."
+/>
 
 λ-RLM has four phases. 
 - **Plan** reads the template dependency tree, measures source documents, and computes the optimal decomposition — branching factor, leaf chunk sizes, composition operators — with zero LLM calls. Total cost is estimated before the first API call is made. 

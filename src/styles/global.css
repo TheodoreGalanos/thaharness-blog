@@ -7,28 +7,32 @@
    1. Theme tokens
    ────────────────────────────────────────────────────────── */
 @theme {
-	/* Typography */
-	--font-heading: "JetBrains Mono", ui-monospace, "Cascadia Code", "Fira Code", monospace;
-	--font-body: "Source Serif 4", Georgia, "Times New Roman", serif;
-	--font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", "Fira Code", monospace;
+  /* Typography */
+  --font-heading:
+    "JetBrains Mono", ui-monospace, "Cascadia Code", "Fira Code", monospace;
+  --font-body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-mono:
+    "JetBrains Mono", ui-monospace, "Cascadia Code", "Fira Code", monospace;
+  --font-display:
+    "Fraunces", "Source Serif 4", Georgia, "Times New Roman", serif;
 
-	/* Colors — dark mode defaults */
-	--color-bg: #111113;
-	--color-surface: #1A1A1D;
-	--color-text-primary: #FAF9F6;
-	--color-text-secondary: #8A8A96;
-	--color-text-tertiary: #55555F;
-	--color-accent: #E8A84C;
-	--color-accent-hover: #F0B84C;
-	--color-border: #2A2A2E;
-	--color-code-bg: #1E1E21;
+  /* Colors — warm-dark editorial palette, site-wide default */
+  --color-bg: #18130e;
+  --color-surface: #221c15;
+  --color-text-primary: #faf9f6;
+  --color-text-secondary: #9a9087;
+  --color-text-tertiary: #605850;
+  --color-accent: #e8a84c;
+  --color-accent-hover: #f0b84c;
+  --color-border: #332c24;
+  --color-code-bg: #1f1912;
 
-	/* Effects */
-	--ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Effects */
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
 
-	/* Spacing & Sizing */
-	--width-content: 680px;
-	--width-wide: 1080px;
+  /* Spacing & Sizing */
+  --width-content: 680px;
+  --width-wide: 1080px;
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -36,384 +40,931 @@
    ────────────────────────────────────────────────────────── */
 :root,
 [data-theme="dark"] {
-	--color-bg: #111113;
-	--color-surface: #1A1A1D;
-	--color-text-primary: #FAF9F6;
-	--color-text-secondary: #8A8A96;
-	--color-text-tertiary: #55555F;
-	--color-accent: #E8A84C;
-	--color-accent-hover: #F0B84C;
-	--color-border: #2A2A2E;
-	--color-code-bg: #1E1E21;
+  --color-bg: #18130e;
+  --color-surface: #221c15;
+  --color-text-primary: #faf9f6;
+  --color-text-secondary: #9a9087;
+  --color-text-tertiary: #605850;
+  --color-accent: #e8a84c;
+  --color-accent-hover: #f0b84c;
+  --color-border: #332c24;
+  --color-code-bg: #1f1912;
 }
 
 /* ──────────────────────────────────────────────────────────
    3. Light mode overrides
    ────────────────────────────────────────────────────────── */
 [data-theme="light"] {
-	--color-bg: #FAFAF9;
-	--color-surface: #FFFFFF;
-	--color-text-primary: #1C1C1E;
-	--color-text-secondary: #6B6B76;
-	--color-text-tertiary: #9D9DA8;
-	--color-accent: #D4882C;
-	--color-accent-hover: #B8741F;
-	--color-border: #E8E8EC;
-	--color-code-bg: #F4F4F5;
+  --color-bg: #fafaf9;
+  --color-surface: #ffffff;
+  --color-text-primary: #1c1c1e;
+  --color-text-secondary: #6b6b76;
+  --color-text-tertiary: #9d9da8;
+  --color-accent: #d4882c;
+  --color-accent-hover: #b8741f;
+  --color-border: #e8e8ec;
+  --color-code-bg: #f4f4f5;
+}
+
+/* ──────────────────────────────────────────────────────────
+   3b. Editorial layout — structural scope (palette is global).
+        Hosts the editorial post layout rules: chapter strip,
+        figure breakout grid, pullquote, sidenote.
+   ────────────────────────────────────────────────────────── */
+
+/* Sentinel sits above the chapter strip; IntersectionObserver watches it to trigger compact morph */
+.editorial-layout .chapter-strip-sentinel {
+  height: 1px;
+  width: 100%;
+  pointer-events: none;
+}
+
+/* Chapter strip — "in this piece" overview that morphs into a sticky compact bar on scroll */
+.editorial-layout .chapter-strip {
+  max-width: 60rem;
+  margin: 0 auto 3rem;
+  padding: 1.5rem 0 1.75rem;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  background-color: transparent;
+  transition:
+    padding 0.3s var(--ease-standard),
+    background-color 0.3s var(--ease-standard),
+    border-color 0.3s var(--ease-standard);
+}
+
+.editorial-layout .chapter-strip-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-text-tertiary);
+  margin-bottom: 1rem;
+}
+
+.editorial-layout .chapter-strip-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+  gap: 0.5rem 2rem;
+}
+
+.editorial-layout .chapter-strip-list li {
+  margin: 0;
+}
+
+.editorial-layout .chapter-strip-list a {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  column-gap: 0.75rem;
+  text-decoration: none;
+  background: none;
+  padding: 0.25rem 0;
+  color: var(--color-text-secondary);
+  transition: color 0.25s var(--ease-standard);
+}
+
+.editorial-layout .chapter-strip-list a:hover,
+.editorial-layout .chapter-strip-list a[aria-current="true"] {
+  color: var(--color-text-primary);
+}
+
+.editorial-layout .chapter-strip-list a[aria-current="true"] .chapter-num {
+  color: var(--color-accent);
+}
+
+.editorial-layout .chapter-strip-list .chapter-num {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  color: var(--color-text-tertiary);
+  transition: color 0.25s var(--ease-standard);
+}
+
+.editorial-layout .chapter-strip-list .chapter-text {
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+  .editorial-layout .chapter-strip-list {
+    grid-template-columns: 1fr;
+    gap: 0.35rem 0;
+  }
+
+  .editorial-layout .chapter-strip-list .chapter-text {
+    font-size: 0.875rem;
+  }
+}
+
+/* Compact state — strip becomes fixed under the site header, spanning the
+   body flow width (scrollbar excluded, unlike 100vw). */
+.editorial-layout .chapter-strip.is-compact {
+  position: fixed;
+  top: 4rem;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  max-width: none;
+  width: auto;
+  margin: 0;
+  padding: 0.5rem 1.25rem;
+  background-color: var(--color-bg);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+@media (min-width: 768px) {
+  .editorial-layout .chapter-strip.is-compact {
+    top: 4.25rem;
+    padding: 0.55rem 2rem;
+  }
+}
+
+.editorial-layout .chapter-strip.is-compact .chapter-strip-label {
+  opacity: 0;
+  max-height: 0;
+  margin: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Three-column grid centres the middle slot on the reading column.
+   minmax(0, 1fr) auto minmax(0, 1fr): outer columns flex and split the
+   remaining space equally, middle column is sized to its content — so the
+   middle item's centre always lands on the list's horizontal centre. */
+.editorial-layout .chapter-strip.is-compact .chapter-strip-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 1.5rem;
+  max-width: 50rem;
+  margin: 0 auto;
+}
+
+.editorial-layout .chapter-strip.is-compact .chapter-strip-list li {
+  /* Default (no slot class): collapsed. */
+  grid-row: 1;
+  grid-column: 2;
+  max-width: 0;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+  transition:
+    max-width 0.35s var(--ease-standard),
+    opacity 0.3s var(--ease-standard);
+}
+
+.editorial-layout
+  .chapter-strip.is-compact
+  .chapter-strip-list
+  li.is-slot-left {
+  grid-column: 1;
+  justify-self: end;
+  max-width: 20rem;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.editorial-layout
+  .chapter-strip.is-compact
+  .chapter-strip-list
+  li.is-slot-center {
+  grid-column: 2;
+  justify-self: center;
+  max-width: 20rem;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.editorial-layout
+  .chapter-strip.is-compact
+  .chapter-strip-list
+  li.is-slot-right {
+  grid-column: 3;
+  justify-self: start;
+  max-width: 20rem;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.editorial-layout .chapter-strip.is-compact .chapter-strip-list a {
+  display: inline-flex;
+  grid-template-columns: unset;
+  align-items: center;
+  column-gap: 0.45rem;
+  padding: 0.35rem 0;
+  opacity: 0.7;
+  border-bottom: 2px solid transparent;
+  transition:
+    opacity 0.25s var(--ease-standard),
+    color 0.25s var(--ease-standard),
+    border-color 0.25s var(--ease-standard);
+}
+
+.editorial-layout .chapter-strip.is-compact .chapter-strip-list a:hover {
+  opacity: 1;
+}
+
+.editorial-layout
+  .chapter-strip.is-compact
+  .chapter-strip-list
+  a[aria-current="true"] {
+  opacity: 1;
+  color: var(--color-text-primary);
+  border-bottom-color: var(--color-accent);
+}
+
+.editorial-layout .chapter-strip.is-compact .chapter-strip-list .chapter-num {
+  font-size: 0.625rem;
+}
+
+.editorial-layout .chapter-strip.is-compact .chapter-strip-list .chapter-text {
+  font-size: 0.8125rem;
+  line-height: 1.25;
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .editorial-layout .chapter-strip.is-compact .chapter-strip-list {
+    column-gap: 0.875rem;
+    max-width: none;
+  }
+
+  .editorial-layout
+    .chapter-strip.is-compact
+    .chapter-strip-list
+    .chapter-text {
+    font-size: 0.75rem;
+    max-width: 8rem;
+  }
+}
+
+/* View Transitions API — per-item stagger for the chapter-strip morph.
+   Supported browsers animate each chapter item from its grid position to its
+   flex position with a cascading delay. Unsupported browsers skip silently. */
+@supports (view-transition-name: chapter-1) {
+  ::view-transition-group(*) {
+    animation-duration: 0.5s;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Skip the root cross-fade — only the named chapter items should animate.
+     Prevents body text from flickering during mid-scroll slot swaps. */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0s;
+  }
+
+  ::view-transition-group(chapter-1) {
+    animation-delay: 0ms;
+  }
+  ::view-transition-group(chapter-2) {
+    animation-delay: 40ms;
+  }
+  ::view-transition-group(chapter-3) {
+    animation-delay: 80ms;
+  }
+  ::view-transition-group(chapter-4) {
+    animation-delay: 120ms;
+  }
+  ::view-transition-group(chapter-5) {
+    animation-delay: 160ms;
+  }
+  ::view-transition-group(chapter-6) {
+    animation-delay: 200ms;
+  }
+  ::view-transition-group(chapter-7) {
+    animation-delay: 240ms;
+  }
+  ::view-transition-group(chapter-8) {
+    animation-delay: 280ms;
+  }
+  ::view-transition-group(chapter-9) {
+    animation-delay: 320ms;
+  }
+  ::view-transition-group(chapter-10) {
+    animation-delay: 360ms;
+  }
+  ::view-transition-group(chapter-11) {
+    animation-delay: 400ms;
+  }
+  ::view-transition-group(chapter-12) {
+    animation-delay: 440ms;
+  }
+}
+
+/* Editorial body — grid-based so figures can break out of the reading column */
+.editorial-layout .editorial-body .prose {
+  display: grid;
+  grid-template-columns:
+    [wide-start] 1fr
+    [content-start] minmax(0, 42rem) [content-end]
+    1fr [wide-end];
+  row-gap: 0;
+  font-family: var(--font-body);
+  font-size: 1.1875rem;
+  line-height: 1.8;
+  counter-reset: section;
+}
+
+.editorial-layout .editorial-body .prose > * {
+  grid-column: content;
+}
+
+.editorial-layout .editorial-body .prose > figure,
+.editorial-layout .editorial-body .prose > .figure-wide {
+  grid-column: wide;
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+  text-align: center;
+}
+
+.editorial-layout .editorial-body .prose > figure img,
+.editorial-layout .editorial-body .prose > .figure-wide img {
+  width: 100%;
+  max-width: none;
+  height: auto;
+  margin: 0;
+  border: none;
+  background: transparent;
+  padding: 0;
+  border-radius: 4px;
+}
+
+.editorial-layout .editorial-body .prose figcaption {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--color-text-tertiary);
+  margin-top: 0.75em;
+  font-style: normal;
+}
+
+/* Numbered section headings — Anthropic-style "01" kicker before h2 */
+.editorial-layout .editorial-body .prose h2 {
+  counter-increment: section;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 2rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+  margin-top: 1.85em;
+  margin-bottom: 0.55em;
+  display: flex;
+  align-items: baseline;
+  gap: 0.85rem;
+}
+
+.editorial-layout .editorial-body .prose h2::before {
+  content: counter(section, decimal-leading-zero);
+  font-family: var(--font-mono);
+  font-size: 0.72em;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--color-accent);
+  flex-shrink: 0;
+  line-height: 1.2;
+}
+
+.editorial-layout .editorial-body .prose h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.5rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+  margin-top: 2em;
+  margin-bottom: 0.5em;
+}
+
+/* Accent economy — links underlined subtly in text colour, amber on hover */
+.editorial-layout .editorial-body .prose a {
+  color: var(--color-text-primary);
+  background-image: linear-gradient(
+    var(--color-text-tertiary),
+    var(--color-text-tertiary)
+  );
+  background-size: 100% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+}
+
+.editorial-layout .editorial-body .prose a:hover {
+  color: var(--color-accent);
+  background-image: linear-gradient(var(--color-accent), var(--color-accent));
+}
+
+@media (max-width: 768px) {
+  .editorial-layout .editorial-body .prose {
+    font-size: 1.0625rem;
+    line-height: 1.75;
+  }
+
+  .editorial-layout .editorial-body .prose h2 {
+    font-size: 1.625rem;
+    gap: 0.65rem;
+  }
+
+  .editorial-layout .editorial-body .prose h3 {
+    font-size: 1.3125rem;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────
+   Pullquote — Fraunces italic emphasis for thesis statements.
+   Overrides the default amber-border blockquote within editorial prose.
+   ────────────────────────────────────────────────────────── */
+.editorial-layout .editorial-body .prose .pullquote {
+  margin: 3em 0;
+  padding: 0;
+  border: none;
+  background: none;
+}
+
+.editorial-layout .editorial-body .prose .pullquote-body {
+  border-left: none;
+  padding: 0;
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-style: italic;
+  font-size: clamp(1.5rem, 2.4vw, 1.875rem);
+  line-height: 1.35;
+  letter-spacing: -0.005em;
+  color: var(--color-text-primary);
+}
+
+.editorial-layout .editorial-body .prose .pullquote-body p {
+  margin: 0;
+}
+
+.editorial-layout .editorial-body .prose .pullquote-attribution {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--color-text-tertiary);
+  margin-top: 1.25em;
+  margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .editorial-layout .editorial-body .prose .pullquote {
+    margin: 2em 0;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────
+   Sidenote — inline parenthetical at narrow viewports,
+   right-margin block note at ≥1440px (real sidenote behaviour).
+   ────────────────────────────────────────────────────────── */
+.editorial-layout .editorial-body .prose .sidenote {
+  display: inline;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  line-height: 1.5;
+  color: var(--color-text-tertiary);
+  font-style: italic;
+}
+
+.editorial-layout .editorial-body .prose .sidenote::before {
+  content: " (";
+}
+
+.editorial-layout .editorial-body .prose .sidenote::after {
+  content: ")";
+}
+
+@media (min-width: 1440px) {
+  /* Widen the article/body so there is room for the right-margin note */
+  .editorial-layout .editorial-article {
+    max-width: 80rem;
+  }
+
+  .editorial-layout .editorial-body {
+    max-width: 77rem;
+  }
+
+  /* Prose is still 60rem wide, but anchored to the LEFT of the widened body,
+     leaving 17rem of right-side space where sidenotes live. */
+  .editorial-layout .editorial-body .prose {
+    position: relative;
+    max-width: 60rem;
+    margin-left: 0;
+    margin-right: auto;
+  }
+
+  .editorial-layout .editorial-body .prose .sidenote {
+    position: absolute;
+    left: calc(100% + 2rem);
+    width: 15rem;
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.55;
+    color: var(--color-text-secondary);
+    font-style: normal;
+    margin-top: 0.35rem;
+  }
+
+  .editorial-layout .editorial-body .prose .sidenote::before,
+  .editorial-layout .editorial-body .prose .sidenote::after {
+    content: none;
+  }
 }
 
 /* ──────────────────────────────────────────────────────────
    4. Base styles
    ────────────────────────────────────────────────────────── */
 html {
-	scroll-behavior: smooth;
+  scroll-behavior: smooth;
+  /* Reserve scrollbar gutter at all times so 100vw stays consistent with body
+     flow width — prevents the compact chapter strip (which uses 100vw) from
+     sitting a few pixels right of centred article content. */
+  scrollbar-gutter: stable;
 }
 
 body {
-	font-family: var(--font-body);
-	font-size: 18px;
-	line-height: 1.75;
-	color: var(--color-text-primary);
-	background-color: var(--color-bg);
-	min-height: 100vh;
-	margin: 0;
-	padding: 0;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 1.75;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg);
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ──────────────────────────────────────────────────────────
    5. Typography base
    ────────────────────────────────────────────────────────── */
-h1, h2, h3, h4, h5, h6 {
-	font-family: var(--font-heading);
-	font-weight: 500;
-	letter-spacing: -0.02em;
-	line-height: 1.15;
-	color: var(--color-text-primary);
-	margin: 0 0 0.5rem 0;
-	scroll-margin-top: 5rem;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--color-text-primary);
+  margin: 0 0 0.5rem 0;
+  scroll-margin-top: 5rem;
 }
 
-h1 { font-size: 3rem; }
-h2 { font-size: 2.25rem; }
-h3 { font-size: 1.75rem; }
-h4 { font-size: 1.375rem; }
-h5 { font-size: 1.125rem; }
-h6 { font-size: 1rem; }
+h1 {
+  font-size: 3rem;
+}
+h2 {
+  font-size: 2.25rem;
+}
+h3 {
+  font-size: 1.75rem;
+}
+h4 {
+  font-size: 1.375rem;
+}
+h5 {
+  font-size: 1.125rem;
+}
+h6 {
+  font-size: 1rem;
+}
 
 a {
-	color: var(--color-accent);
-	text-decoration: none;
-	transition: color 0.25s var(--ease-standard);
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color 0.25s var(--ease-standard);
 }
 
 a:hover {
-	color: var(--color-accent-hover);
+  color: var(--color-accent-hover);
 }
 
 p {
-	margin-bottom: 1em;
+  margin-bottom: 1em;
 }
 
 main {
-	position: relative;
-	z-index: 1;
+  position: relative;
+  z-index: 1;
 }
 
 img {
-	max-width: 100%;
-	height: auto;
+  max-width: 100%;
+  height: auto;
 }
 
 /* ──────────────────────────────────────────────────────────
    6. Layout utilities
    ────────────────────────────────────────────────────────── */
 .page-shell {
-	max-width: var(--width-wide);
-	margin: 0 auto;
-	padding-left: 1.5rem;
-	padding-right: 1.5rem;
+  max-width: var(--width-wide);
+  margin: 0 auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
 }
 
 /* ──────────────────────────────────────────────────────────
    7. Prose styles for blog content
    ────────────────────────────────────────────────────────── */
 .prose {
-	font-family: var(--font-body);
-	font-size: 1.1875rem;
-	line-height: 1.8;
-	color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: 1.1875rem;
+  line-height: 1.8;
+  color: var(--color-text-primary);
 }
 
 .prose p {
-	margin-bottom: 1.5em;
+  margin-bottom: 1.5em;
 }
 
 .prose h2 {
-	font-family: var(--font-heading);
-	font-size: 2.25rem;
-	font-weight: 500;
-	letter-spacing: -0.02em;
-	line-height: 1.15;
-	color: var(--color-text-primary);
-	margin-top: 2.5em;
-	margin-bottom: 0.75em;
+  font-family: var(--font-heading);
+  font-size: 2.25rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--color-text-primary);
+  margin-top: 2.5em;
+  margin-bottom: 0.75em;
 }
 
 .prose h3 {
-	font-family: var(--font-heading);
-	font-size: 1.75rem;
-	font-weight: 500;
-	letter-spacing: -0.02em;
-	line-height: 1.15;
-	color: var(--color-text-primary);
-	margin-top: 2em;
-	margin-bottom: 0.5em;
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--color-text-primary);
+  margin-top: 2em;
+  margin-bottom: 0.5em;
 }
 
 .prose h4 {
-	font-family: var(--font-heading);
-	font-size: 1.375rem;
-	font-weight: 500;
-	color: var(--color-text-primary);
-	margin-top: 1.5em;
-	margin-bottom: 0.5em;
+  font-family: var(--font-heading);
+  font-size: 1.375rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
 }
 
 .prose a {
-	color: var(--color-accent);
-	text-decoration: none;
-	background-image: linear-gradient(var(--color-accent), var(--color-accent));
-	background-size: 0% 1px;
-	background-position: 0 100%;
-	background-repeat: no-repeat;
-	transition: background-size 0.3s var(--ease-standard), color 0.25s var(--ease-standard);
+  color: var(--color-accent);
+  text-decoration: none;
+  background-image: linear-gradient(var(--color-accent), var(--color-accent));
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition:
+    background-size 0.3s var(--ease-standard),
+    color 0.25s var(--ease-standard);
 }
 
 .prose a:hover {
-	color: var(--color-accent-hover);
-	background-size: 100% 1px;
+  color: var(--color-accent-hover);
+  background-size: 100% 1px;
 }
 
 .prose blockquote {
-	border-left: 4px solid var(--color-accent);
-	padding: 0.5em 0 0.5em 1.5em;
-	margin: 2.5em 0;
-	font-style: normal;
-	font-size: 1.375rem;
-	line-height: 1.6;
-	color: var(--color-text-secondary);
+  border-left: 4px solid var(--color-accent);
+  padding: 0.5em 0 0.5em 1.5em;
+  margin: 2.5em 0;
+  font-style: normal;
+  font-size: 1.375rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
 }
 
 .prose blockquote p:last-child {
-	margin-bottom: 0;
+  margin-bottom: 0;
 }
 
 .prose code {
-	font-family: var(--font-mono);
-	font-size: 0.9em;
-	padding: 2px 6px;
-	background-color: var(--color-code-bg);
-	border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  padding: 2px 6px;
+  background-color: var(--color-code-bg);
+  border-radius: 4px;
 }
 
 .prose pre {
-	background-color: var(--color-code-bg);
-	padding: 1.5em;
-	border-radius: 8px;
-	overflow-x: auto;
-	margin: 2em 0;
-	font-size: 0.9em;
-	line-height: 1.6;
+  background-color: var(--color-code-bg);
+  padding: 1.5em;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 2em 0;
+  font-size: 0.9em;
+  line-height: 1.6;
 }
 
 .prose pre > code {
-	all: unset;
-	font-family: var(--font-mono);
+  all: unset;
+  font-family: var(--font-mono);
 }
 
-.prose ul, .prose ol {
-	margin: 1.5em 0;
-	padding-left: 1.5em;
+.prose ul,
+.prose ol {
+  margin: 1.5em 0;
+  padding-left: 1.5em;
 }
 
 .prose ul {
-	list-style: disc;
+  list-style: disc;
 }
 
 .prose ol {
-	list-style: decimal;
+  list-style: decimal;
 }
 
 .prose li {
-	margin-bottom: 0.5em;
+  margin-bottom: 0.5em;
 }
 
 .prose li::marker {
-	color: var(--color-text-tertiary);
+  color: var(--color-text-tertiary);
 }
 
 .prose hr {
-	border: none;
-	border-top: 1px solid var(--color-border);
-	margin: 3em 0;
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 3em 0;
 }
 
 .prose figure {
-	margin: 2.5em auto;
-	max-width: min(100%, 48.4rem);
-	text-align: center;
+  margin: 2.5em auto;
+  max-width: min(100%, 48.4rem);
+  text-align: center;
 }
 
 .prose figure img {
-	border-radius: 0;
-	border: 1px solid #ffffff;
-	background-color: #ffffff;
-	padding: 0.9rem;
-	box-sizing: border-box;
-	width: 100%;
-	height: auto;
-	display: block;
-	margin: 0;
+  border-radius: 0;
+  border: 1px solid #ffffff;
+  background-color: #ffffff;
+  padding: 0.9rem;
+  box-sizing: border-box;
+  width: 100%;
+  height: auto;
+  display: block;
+  margin: 0;
 }
 
 .prose figure img[alt*="four bond types"] {
-	border: none;
-	background-color: transparent;
-	padding: 0;
+  border: none;
+  background-color: transparent;
+  padding: 0;
 }
-
 
 .prose figure:has(img[alt*="Architecture of the autoresearch setup"]) {
-	max-width: min(100%, 56rem);
+  max-width: min(100%, 56rem);
 }
 
-.prose figure:has(img[alt*="Architecture of the autoresearch setup"]) figcaption {
-	margin-top: 0.8rem;
+.prose
+  figure:has(img[alt*="Architecture of the autoresearch setup"])
+  figcaption {
+  margin-top: 0.8rem;
 }
 
 .prose figure figcaption {
-	font-family: var(--font-heading);
-	font-size: 0.8125rem;
-	line-height: 1.5;
-	color: var(--color-text-secondary);
-	margin-top: 0.75em;
-	font-style: italic;
+  font-family: var(--font-heading);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+  margin-top: 0.75em;
+  font-style: italic;
 }
 
 .prose img {
-	border-radius: 0;
-	border: 1px solid #ffffff;
-	background-color: #ffffff;
-	margin: 2em auto;
-	max-width: min(100%, 48.4rem);
-	height: auto;
-	display: block;
+  border-radius: 0;
+  border: 1px solid #ffffff;
+  background-color: #ffffff;
+  margin: 2em auto;
+  max-width: min(100%, 48.4rem);
+  height: auto;
+  display: block;
 }
 
 .prose figure img[alt*="Architecture of the autoresearch setup"],
 .prose img[alt*="Architecture of the autoresearch setup"] {
-	border: none;
-	background-color: transparent;
-	padding: 0;
-	max-width: min(100%, 56rem);
+  border: none;
+  background-color: transparent;
+  padding: 0;
+  max-width: min(100%, 56rem);
 }
 
 .prose table {
-	width: 100%;
-	border-collapse: collapse;
-	margin: 2em 0;
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2em 0;
 }
 
-.prose th, .prose td {
-	text-align: left;
-	padding: 0.75em 1em;
-	border-bottom: 1px solid var(--color-border);
+.prose th,
+.prose td {
+  text-align: left;
+  padding: 0.75em 1em;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .prose th {
-	font-family: var(--font-heading);
-	font-weight: 500;
-	font-size: 0.9em;
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 0.9em;
 }
 
 /* ──────────────────────────────────────────────────────────
    8. Utility — blinking cursor animation
    ────────────────────────────────────────────────────────── */
 @keyframes blink {
-	0%, 100% { opacity: 1; }
-	50% { opacity: 0; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 
 .cursor-blink {
-	animation: blink 1.2s step-end infinite;
+  animation: blink 1.2s step-end infinite;
 }
 
 /* ──────────────────────────────────────────────────────────
    9. Selection styling
    ────────────────────────────────────────────────────────── */
 ::selection {
-	background: rgba(232, 168, 76, 0.25);
-	color: var(--color-text-primary);
+  background: rgba(232, 168, 76, 0.25);
+  color: var(--color-text-primary);
 }
 
 [data-theme="light"] ::selection {
-	background: rgba(212, 136, 44, 0.25);
-	color: var(--color-text-primary);
+  background: rgba(212, 136, 44, 0.25);
+  color: var(--color-text-primary);
 }
 
 /* ──────────────────────────────────────────────────────────
    10. Pagefind search UI overrides
    ────────────────────────────────────────────────────────── */
 .pagefind-ui {
-	--pagefind-ui-scale: 1;
-	--pagefind-ui-primary: var(--color-accent);
-	--pagefind-ui-text: var(--color-text-primary);
-	--pagefind-ui-background: var(--color-surface);
-	--pagefind-ui-border: var(--color-border);
-	--pagefind-ui-tag: var(--color-code-bg);
-	--pagefind-ui-border-width: 1px;
-	--pagefind-ui-border-radius: 8px;
-	--pagefind-ui-font: var(--font-mono);
+  --pagefind-ui-scale: 1;
+  --pagefind-ui-primary: var(--color-accent);
+  --pagefind-ui-text: var(--color-text-primary);
+  --pagefind-ui-background: var(--color-surface);
+  --pagefind-ui-border: var(--color-border);
+  --pagefind-ui-tag: var(--color-code-bg);
+  --pagefind-ui-border-width: 1px;
+  --pagefind-ui-border-radius: 8px;
+  --pagefind-ui-font: var(--font-mono);
 }
 
 /* ──────────────────────────────────────────────────────────
    11. Scrollbar styling
    ────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
-	width: 8px;
-	height: 8px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-	background: var(--color-bg);
+  background: var(--color-bg);
 }
 
 ::-webkit-scrollbar-thumb {
-	background: var(--color-border);
-	border-radius: 4px;
+  background: var(--color-border);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-	background: var(--color-text-tertiary);
+  background: var(--color-text-tertiary);
 }
 
 /* ──────────────────────────────────────────────────────────
    12. Screen reader utility
    ────────────────────────────────────────────────────────── */
 .sr-only {
-	border: 0;
-	padding: 0;
-	margin: 0;
-	position: absolute !important;
-	height: 1px;
-	width: 1px;
-	overflow: hidden;
-	clip: rect(1px 1px 1px 1px);
-	clip: rect(1px, 1px, 1px, 1px);
-	clip-path: inset(50%);
-	white-space: nowrap;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  position: absolute !important;
+  height: 1px;
+  width: 1px;
+  overflow: hidden;
+  clip: rect(1px 1px 1px 1px);
+  clip: rect(1px, 1px, 1px, 1px);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -430,113 +981,67 @@ img {
 }
 
 [data-masonry-grid].masonry-active .masonry-card {
-  transition: top 0.3s var(--ease-standard), left 0.3s var(--ease-standard);
+  transition:
+    top 0.3s var(--ease-standard),
+    left 0.3s var(--ease-standard);
 }
 
 /* ──────────────────────────────────────────────────────────
    14. Responsive adjustments
    ────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-	h1 { font-size: 2rem; }
-	h2 { font-size: 1.75rem; }
-	h3 { font-size: 1.5rem; }
+  h1 {
+    font-size: 2rem;
+  }
+  h2 {
+    font-size: 1.75rem;
+  }
+  h3 {
+    font-size: 1.5rem;
+  }
 
-	body {
-		font-size: 17px;
-	}
+  body {
+    font-size: 17px;
+  }
 
-	.page-shell {
-		padding-left: 1rem;
-		padding-right: 1rem;
-	}
+  .page-shell {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
 
-	.prose {
-		font-size: 1.0625rem;
-		line-height: 1.75;
-	}
+  .prose {
+    font-size: 1.0625rem;
+    line-height: 1.75;
+  }
 
-	.prose h2 {
-		font-size: 1.75rem;
-		margin-top: 2.25em;
-	}
+  .prose h2 {
+    font-size: 1.75rem;
+    margin-top: 2.25em;
+  }
 
-	.prose h3 {
-		font-size: 1.5rem;
-	}
+  .prose h3 {
+    font-size: 1.5rem;
+  }
 
-	.prose blockquote {
-		font-size: 1.125rem;
-		padding-left: 1rem;
-		margin: 2em 0;
-	}
+  .prose blockquote {
+    font-size: 1.125rem;
+    padding-left: 1rem;
+    margin: 2em 0;
+  }
 
-	.prose pre {
-		padding: 1rem;
-		border-radius: 0.625rem;
-	}
+  .prose pre {
+    padding: 1rem;
+    border-radius: 0.625rem;
+  }
 
-	.prose figure,
-	.prose img {
-		margin: 1.5em auto;
-	}
+  .prose figure,
+  .prose img {
+    margin: 1.5em auto;
+  }
 
-	.prose table {
-		display: block;
-		overflow-x: auto;
-		white-space: nowrap;
-	}
-}
-
-/* ──────────────────────────────────────────────────────────
-   Multi-column feature article layout
-   ────────────────────────────────────────────────────────── */
-.feature-columns-active blockquote,
-.feature-columns-active figure,
-.feature-columns-active pre,
-.feature-columns-active table,
-.feature-columns-active hr {
-	column-span: all;
-}
-
-@media (max-width: 1023px) {
-	.feature-columns-active {
-		column-count: 1 !important;
-	}
-}
-
-/* ──────────────────────────────────────────────────────────
-   ASCII section dividers
-   ────────────────────────────────────────────────────────── */
-.ascii-divider {
-	font-family: var(--font-mono);
-	font-size: 0.75rem;
-	line-height: 1;
-	color: var(--color-text-tertiary);
-	text-align: center;
-	margin: 3em 0 0 0;
-	opacity: 0;
-	transform: scaleX(0.8);
-	transition: opacity 0.6s var(--ease-standard), transform 0.6s var(--ease-standard);
-	user-select: none;
-	pointer-events: none;
-}
-
-.ascii-divider-visible {
-	opacity: 1;
-	transform: scaleX(1);
-}
-
-/* ──────────────────────────────────────────────────────────
-   Pull quote scroll reflow
-   ────────────────────────────────────────────────────────── */
-.pull-quote {
-	--pq-scale: 1;
-	transform: scale(var(--pq-scale));
-	transform-origin: left top;
-	transition: transform 0.15s var(--ease-standard),
-	            border-color 0.3s var(--ease-standard);
-}
-
-.pull-quote-active {
-	border-left-color: var(--color-accent);
+  .prose table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
 }

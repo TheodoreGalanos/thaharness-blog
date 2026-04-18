@@ -1,0 +1,230 @@
+<!-- ABOUTME: Dark-mode editorial blog post layout inspired by Anthropic's long-form features. -->
+<!-- ABOUTME: Warm-dark surface, Fraunces display headlines with mono kickers, no TOC furniture. -->
+---
+import { Image } from 'astro:assets';
+import Analytics from '@vercel/analytics/astro';
+import SpeedInsights from '@vercel/speed-insights/astro';
+import type { CollectionEntry } from 'astro:content';
+import BaseHead from '../components/BaseHead.astro';
+import ChapterStrip from '../components/ChapterStrip.astro';
+import Footer from '../components/Footer.astro';
+import FormattedDate from '../components/FormattedDate.astro';
+import Header from '../components/Header.astro';
+import TagPill from '../components/TagPill.astro';
+
+type RelatedPost = CollectionEntry<'blog'>;
+
+interface Heading {
+	depth: number;
+	slug: string;
+	text: string;
+}
+
+type PostData = CollectionEntry<'blog'>['data'];
+
+interface Props extends PostData {
+	slug: string;
+	readingTime: number;
+	relatedPosts: RelatedPost[];
+	headings: Heading[];
+}
+
+const {
+	title,
+	description,
+	pubDate,
+	updatedDate,
+	author,
+	heroImage,
+	tags,
+	category,
+	readingTime,
+	headings = [],
+} = Astro.props;
+---
+
+<html lang="en" data-theme="dark">
+	<head>
+		<BaseHead
+			title={title}
+			description={description}
+			image={heroImage}
+			type="article"
+			author={author}
+			publishedTime={pubDate}
+			modifiedTime={updatedDate}
+			tags={tags}
+			wordCount={readingTime * 180}
+			articleSection={category}
+		/>
+	</head>
+
+	<body class="editorial-layout" style="background-color: var(--color-bg);">
+		<div class="editorial-progress" aria-hidden="true">
+			<div class="editorial-progress-bar"></div>
+		</div>
+		<Header />
+		<main>
+			<article class="editorial-article">
+				<header class="editorial-header">
+					<span class="editorial-kicker">
+						{category ? `${category} · ` : ''}{readingTime} min read
+					</span>
+					<h1 class="editorial-headline">{title}</h1>
+					{description && (
+						<p class="editorial-deck">{description}</p>
+					)}
+					<div class="editorial-meta">
+						<span>By {author}</span>
+						<span class="editorial-meta-sep">·</span>
+						<FormattedDate date={pubDate} />
+						{updatedDate && (
+							<>
+								<span class="editorial-meta-sep">·</span>
+								<span>Updated {updatedDate.toISOString().split('T')[0]}</span>
+							</>
+						)}
+					</div>
+					{tags.length > 0 && (
+						<div class="editorial-tags">
+							{tags.map((tag: string) => (
+								<TagPill tag={tag} />
+							))}
+						</div>
+					)}
+				</header>
+
+				<div class="chapter-strip-sentinel" aria-hidden="true"></div>
+			<ChapterStrip headings={headings} />
+
+				{heroImage && (
+					<div class="editorial-hero">
+						<Image width={1040} height={585} src={heroImage} alt="" />
+					</div>
+				)}
+
+				<div class="editorial-body">
+					<div class="prose post-content" data-pagefind-body>
+						<slot />
+					</div>
+				</div>
+			</article>
+		</main>
+		<Footer />
+		<Analytics />
+		<SpeedInsights />
+		<script src="../scripts/editorial.ts"></script>
+		<script src="../scripts/image-lightbox.ts"></script>
+
+		<style>
+			.editorial-progress {
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				height: 2px;
+				z-index: 100;
+				pointer-events: none;
+			}
+
+			.editorial-progress-bar {
+				height: 100%;
+				width: 100%;
+				background-color: var(--color-accent);
+				transform: scaleX(0);
+				transform-origin: left center;
+				transition: transform 0.1s linear;
+				will-change: transform;
+			}
+
+			.editorial-article {
+				max-width: 1180px;
+				margin: 0 auto;
+				padding: 0 1.25rem;
+			}
+
+			.editorial-header {
+				max-width: 42rem;
+				margin: 0 auto;
+				padding: 4rem 0 2.5rem;
+			}
+
+			@media (min-width: 768px) {
+				.editorial-header {
+					padding: 6.5rem 0 3.25rem;
+				}
+			}
+
+			.editorial-kicker {
+				display: inline-block;
+				font-family: var(--font-mono);
+				font-size: 0.6875rem;
+				text-transform: uppercase;
+				letter-spacing: 0.14em;
+				color: var(--color-accent);
+				margin-bottom: 1.25rem;
+			}
+
+			.editorial-headline {
+				font-family: var(--font-display);
+				font-weight: 500;
+				font-size: clamp(2.25rem, 5vw, 3.75rem);
+				letter-spacing: -0.015em;
+				line-height: 1.08;
+				color: var(--color-text-primary);
+				margin: 0;
+			}
+
+			.editorial-deck {
+				font-family: var(--font-body);
+				font-size: 1.25rem;
+				line-height: 1.5;
+				color: var(--color-text-secondary);
+				margin: 1.25rem 0 0;
+				max-width: 36rem;
+			}
+
+			.editorial-meta {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.5rem;
+				align-items: center;
+				font-family: var(--font-mono);
+				font-size: 0.75rem;
+				color: var(--color-text-tertiary);
+				margin-top: 1.75rem;
+			}
+
+			.editorial-meta-sep {
+				color: var(--color-text-tertiary);
+			}
+
+			.editorial-tags {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.5rem;
+				margin-top: 1rem;
+			}
+
+			.editorial-hero {
+				max-width: 1040px;
+				margin: 0 auto 3rem;
+			}
+
+			.editorial-hero img {
+				width: 100%;
+				height: auto;
+				border-radius: 4px;
+				border: none;
+				background: transparent;
+				padding: 0;
+			}
+
+			.editorial-body {
+				max-width: 60rem;
+				margin: 0 auto;
+				padding-bottom: 5rem;
+			}
+		</style>
+	</body>
+</html>

@@ -6,7 +6,7 @@ import type { CollectionEntry } from 'astro:content';
 export type BlogPostEntry = CollectionEntry<'blog'>;
 
 export function isPublishedBlogPost(post: BlogPostEntry) {
-	return !post.data.draft;
+	return !post.data.draft || import.meta.env.DEV;
 }
 
 export function sortBlogPostsByDate(posts: BlogPostEntry[]) {

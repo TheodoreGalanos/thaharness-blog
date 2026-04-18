@@ -1,0 +1,45 @@
+<!-- ABOUTME: Minimal numbered chapter list that sits under the editorial header. -->
+<!-- ABOUTME: Renders only when the article has enough h2 sections to be worth scanning. -->
+---
+interface Heading {
+	depth: number;
+	slug: string;
+	text: string;
+}
+
+interface Props {
+	headings: Heading[];
+	minSections?: number;
+}
+
+const { headings, minSections = 3 } = Astro.props;
+const sections = headings.filter((h) => h.depth === 2);
+const show = sections.length >= minSections;
+---
+
+{show && (
+	<nav class="chapter-strip" data-chapter-strip aria-label="In this piece">
+		<span class="chapter-strip-label">In this piece</span>
+		<ol class="chapter-strip-list">
+			{sections.map((section, index) => (
+				<li
+					style={`view-transition-name: chapter-${index + 1};`}
+					class:list={[
+						index === 0 && 'is-slot-left',
+						index === 1 && 'is-slot-center',
+						index === 2 && 'is-slot-right',
+					]}
+				>
+					<a
+						href={`#${section.slug}`}
+						data-chapter-link={section.slug}
+						aria-current={index === 0 ? 'true' : undefined}
+					>
+						<span class="chapter-num">{String(index + 1).padStart(2, '0')}</span>
+						<span class="chapter-text">{section.text}</span>
+					</a>
+				</li>
+			))}
+		</ol>
+	</nav>
+)}

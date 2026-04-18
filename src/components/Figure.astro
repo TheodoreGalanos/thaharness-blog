@@ -1,0 +1,32 @@
+<!-- ABOUTME: Editorial figure wrapper — breakout-grid positioning, optional caption. -->
+<!-- ABOUTME: Accepts imported image metadata or a remote src string; caption via prop or default slot. -->
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+	src: ImageMetadata | string;
+	alt: string;
+	caption?: string;
+	width?: number;
+	height?: number;
+	class?: string;
+}
+
+const { src, alt, caption, width, height, class: className } = Astro.props;
+const isImportedImage = typeof src !== 'string';
+const hasSlot = Astro.slots.has('default');
+---
+
+<figure class:list={['editorial-figure', className]}>
+	{isImportedImage ? (
+		<Image src={src} alt={alt} width={width ?? src.width} height={height ?? src.height} />
+	) : (
+		<img src={src} alt={alt} width={width} height={height} loading="lazy" decoding="async" />
+	)}
+	{(caption || hasSlot) && (
+		<figcaption>
+			{hasSlot ? <slot /> : caption}
+		</figcaption>
+	)}
+</figure>

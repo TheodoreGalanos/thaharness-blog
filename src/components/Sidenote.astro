@@ -1,0 +1,13 @@
+<!-- ABOUTME: Editorial sidenote — inline parenthetical at narrow viewports, right-margin note at ≥1440px. -->
+<!-- ABOUTME: Anchored inside the paragraph where the note is written; absolutely positioned on wide screens. -->
+---
+interface Props {
+	class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<span class:list={['sidenote', className]} role="note">
+	<slot />
+</span>
