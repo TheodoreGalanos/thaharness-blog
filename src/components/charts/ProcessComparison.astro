@@ -1,0 +1,280 @@
+<!-- ABOUTME: Editorial process-comparison diagram — two parallel vertical pipelines side by side. -->
+<!-- ABOUTME: Each column is a labelled sequence of steps with per-step meta and a stats footer. -->
+---
+export interface ProcessStep {
+	key: string;
+	label: string;
+	detail?: string;
+	meta?: string;
+}
+
+export interface ProcessStat {
+	value: string;
+	highlight?: boolean;
+}
+
+export interface ProcessColumn {
+	key: string;
+	kicker: string;
+	subtitle?: string;
+	highlight?: boolean;
+	steps: ProcessStep[];
+	loop?: string;
+	stats: ProcessStat[];
+}
+
+interface Props {
+	title?: string;
+	columns: ProcessColumn[];
+	caption?: string;
+}
+
+const { title, columns, caption } = Astro.props;
+---
+
+<figure class="pc">
+	{title && <div class="pc-title">{title}</div>}
+
+	<div class="pc-grid" data-cols={columns.length}>
+		{columns.map((col) => (
+			<div class="pc-column" data-highlight={col.highlight ? 'true' : 'false'}>
+				<div class="pc-col-header">
+					<div class="pc-col-kicker">{col.kicker}</div>
+					{col.subtitle && <div class="pc-col-subtitle">{col.subtitle}</div>}
+				</div>
+
+				<ol class="pc-steps">
+					{col.steps.map((step, i) => (
+						<>
+							<li class="pc-step">
+								<div class="pc-step-body">
+									<span class="pc-step-label">{step.label}</span>
+									{step.detail && <span class="pc-step-detail">{step.detail}</span>}
+								</div>
+								{step.meta && <span class="pc-step-meta">{step.meta}</span>}
+							</li>
+							{i < col.steps.length - 1 && (
+								<li class="pc-arrow" aria-hidden="true">↓</li>
+							)}
+						</>
+					))}
+				</ol>
+
+				{col.loop && (
+					<div class="pc-loop">
+						<span aria-hidden="true">↻</span>
+						<span>{col.loop}</span>
+					</div>
+				)}
+
+				<div class="pc-stats">
+					{col.stats.map((stat) => (
+						<div class="pc-stat" data-highlight={stat.highlight ? 'true' : 'false'}>
+							{stat.value}
+						</div>
+					))}
+				</div>
+			</div>
+		))}
+	</div>
+
+	{caption && <figcaption class="pc-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.pc {
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+	}
+
+	.pc-title {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+		margin: 0 0 1.25rem;
+	}
+
+	.pc-grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 1.5rem;
+	}
+
+	@media (min-width: 720px) {
+		.pc-grid[data-cols="2"] {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 1.25rem;
+		}
+	}
+
+	.pc-column {
+		--pc-border: var(--color-border);
+		--pc-kicker-color: var(--color-text-secondary);
+		--pc-label-color: var(--color-text-primary);
+		--pc-rail-color: var(--color-border);
+
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+	}
+
+	.pc-column[data-highlight="true"] {
+		--pc-border: color-mix(in srgb, var(--color-accent) 55%, var(--color-border));
+		--pc-kicker-color: var(--color-accent);
+		--pc-label-color: var(--color-accent);
+		--pc-rail-color: var(--color-accent);
+	}
+
+	.pc-col-header {
+		margin-bottom: 0.9rem;
+	}
+
+	.pc-col-kicker {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		letter-spacing: 0.18em;
+		text-transform: uppercase;
+		color: var(--pc-kicker-color);
+	}
+
+	.pc-col-subtitle {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		color: var(--color-text-tertiary);
+		margin-top: 0.25rem;
+	}
+
+	.pc-steps {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.1rem;
+	}
+
+	.pc-step {
+		position: relative;
+		display: grid;
+		grid-template-columns: 1fr auto;
+		gap: 0.5rem 0.75rem;
+		align-items: start;
+		padding: 0.75rem 0.9rem;
+		border: 1px solid var(--pc-border);
+		border-radius: 4px;
+		background: var(--color-surface);
+		overflow: hidden;
+	}
+
+	.pc-step::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		width: 2px;
+		background: var(--pc-rail-color);
+	}
+
+	.pc-step-body {
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+		min-width: 0;
+	}
+
+	.pc-step-label {
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		font-weight: 500;
+		letter-spacing: 0.04em;
+		color: var(--pc-label-color);
+	}
+
+	.pc-step-detail {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		line-height: 1.5;
+		color: var(--color-text-secondary);
+		word-break: break-word;
+	}
+
+	.pc-step-meta {
+		font-family: var(--font-mono);
+		font-size: 0.625rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+		padding-top: 0.2rem;
+		white-space: nowrap;
+	}
+
+	.pc-arrow {
+		list-style: none;
+		text-align: center;
+		font-family: var(--font-mono);
+		font-size: 0.875rem;
+		line-height: 1;
+		color: var(--pc-rail-color);
+		padding: 0.1rem 0;
+	}
+
+	.pc-loop {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		margin-top: 0.5rem;
+		padding: 0.3rem 0.6rem;
+		border: 1px dashed var(--pc-border);
+		border-radius: 3px;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.04em;
+		color: var(--color-text-tertiary);
+		align-self: flex-start;
+	}
+
+	.pc-loop > span:first-child {
+		color: var(--pc-kicker-color);
+	}
+
+	.pc-stats {
+		margin-top: 1rem;
+		padding-top: 0.75rem;
+		border-top: 1px dashed var(--color-border);
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+	}
+
+	.pc-stat {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		letter-spacing: 0.02em;
+		color: var(--color-text-secondary);
+	}
+
+	.pc-stat[data-highlight="true"] {
+		font-size: 0.9375rem;
+		font-weight: 500;
+		color: var(--pc-kicker-color);
+		letter-spacing: 0.04em;
+		margin-bottom: 0.15rem;
+	}
+
+	.pc-caption {
+		margin-top: 1.5rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--color-text-tertiary);
+		line-height: 1.55;
+		font-style: normal;
+	}
+</style>

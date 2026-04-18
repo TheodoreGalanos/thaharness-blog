@@ -8,10 +8,10 @@ pubDate: 2026-04-04
 tags: ["recursive-language-models", "rlm", "lambda-rlm", "harness-design", "ai-agents", "ai-in-aec", "report-generation", "context-management", "benchmarks"]
 featured: true
 ---
-import Figure from '../../components/Figure.astro';
+import ProcessComparison from '../../components/charts/ProcessComparison.astro';
 import Pullquote from '../../components/Pullquote.astro';
 import Sidenote from '../../components/Sidenote.astro';
-import rlmArchitectureShift from '../../assets/blog/recursive-by-design/rlm-architecture-shift.svg';
+import { rlmArchitectureShiftData } from '../../data/recursive-by-design-charts';
 
 Estimated reading time: 13 minutes
 
@@ -86,11 +86,7 @@ But the structure of the task *already contains the plan*. The template is a dep
 
 The [λ-RLM paper](https://arxiv.org/abs/2603.20105) formalised this insight. Replace the open-ended loop with a deterministic pipeline. Confine the model to bounded leaf operations — the part it's actually good at: understanding and synthesising domain content. Handle the decomposition with pure Python.
 
-<Figure
-	src={rlmArchitectureShift}
-	alt="Open REPL vs Lambda-RLM: the model fills the leaves, the structure is the plan."
-	caption="Open REPL vs Lambda-RLM: the model fills the leaves, the structure is the plan."
-/>
+<ProcessComparison {...rlmArchitectureShiftData} />
 
 λ-RLM has four phases. 
 - **Plan** reads the template dependency tree, measures source documents, and computes the optimal decomposition — branching factor, leaf chunk sizes, composition operators — with zero LLM calls. Total cost is estimated before the first API call is made. 
