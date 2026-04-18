@@ -1,28 +1,28 @@
-<!-- ABOUTME: Minimal one-line site footer with copyright, RSS link, and GitHub link. -->
-<!-- ABOUTME: Separated by a horizontal rule, matching The Harness terminal aesthetic. -->
+<!-- ABOUTME: Editorial site footer with Fraunces subscribe prompt, hairline rules, and a one-line colophon. -->
+<!-- ABOUTME: Keeps the footer quiet — no surface card, no heavy accents — matching the editorial reading language. -->
 ---
 import SubscribeForm from './SubscribeForm.astro';
 
 const today = new Date();
 ---
 
-<footer class="mt-20 px-6 pb-12">
+<footer class="mt-24 px-6 pb-12">
 	<div class="mx-auto max-w-[--width-wide]">
-		<div class="border-t border-[--color-border] pt-6">
+		<div class="border-t border-[--color-border] pt-10">
 			<SubscribeForm
-				variant="compact"
+				variant="inline"
 				anchorId="newsletter"
 				title="Get new posts in your inbox"
-				description="Join the newsletter and get a note whenever something new goes live."
+				description="Join the newsletter — a note lands in your inbox whenever something new goes live."
 				inputId="footer-subscribe-email"
 			/>
-			<div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-				<p class="mb-0 font-heading text-[0.8125rem] leading-relaxed text-[--color-text-tertiary]">
+			<div class="mt-10 flex flex-col gap-3 border-t border-[--color-border] pt-6 sm:flex-row sm:items-center sm:justify-between">
+				<p class="mb-0 font-mono text-[0.75rem] leading-relaxed text-[--color-text-tertiary]">
 					&copy; {today.getFullYear()} Theodoros Galanos &middot; The Harness
 				</p>
-				<div class="flex items-center gap-4 font-heading text-[0.8125rem] text-[--color-text-tertiary]">
-					<a href="/rss.xml" class="text-[--color-text-tertiary] hover:text-[--color-text-secondary] transition-colors duration-250">RSS</a>
-					<a href="https://github.com" class="text-[--color-text-tertiary] hover:text-[--color-text-secondary] transition-colors duration-250">GitHub</a>
+				<div class="flex items-center gap-5 font-mono text-[0.75rem] text-[--color-text-tertiary]">
+					<a href="/rss.xml" class="text-[--color-text-tertiary] hover:text-[--color-text-primary] transition-colors duration-250">RSS</a>
+					<a href="https://github.com" class="text-[--color-text-tertiary] hover:text-[--color-text-primary] transition-colors duration-250">GitHub</a>
 				</div>
 			</div>
 		</div>

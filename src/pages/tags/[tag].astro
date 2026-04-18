@@ -1,13 +1,13 @@
 <!-- ABOUTME: Tag-filtered blog listing page generated for each unique tag. -->
-<!-- ABOUTME: Uses getStaticPaths to create a page per tag showing all matching posts. -->
+<!-- ABOUTME: Editorial treatment — Fraunces title, mono kicker, hairline-separated rows matching the archive style. -->
 ---
 import Analytics from '@vercel/analytics/astro';
 import SpeedInsights from '@vercel/speed-insights/astro';
 import { getCollection } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
-import TagPill from '../../components/TagPill.astro';
 import { SITE_TITLE } from '../../consts';
 import { getPublishedBlogPosts } from '../../utils/blog';
 
@@ -37,55 +37,185 @@ interface Props {
 
 const { tag } = Astro.params;
 const { posts } = Astro.props;
+
+const prettyTag = (tag ?? '')
+	.split('-')
+	.map((part) => part.length > 0 ? part[0].toUpperCase() + part.slice(1) : part)
+	.join(' ');
 ---
 
 <!doctype html>
 <html lang="en" data-theme="dark">
 	<head>
-		<BaseHead title={`${tag} — articles and research | ${SITE_TITLE}`} description={`Articles on ${tag}: harness engineering research, agent evaluation, and practical AI for AEC and domain-specific engineering.`} />
+		<BaseHead title={`${prettyTag} — articles and research | ${SITE_TITLE}`} description={`Articles tagged ${prettyTag}: harness engineering research, agent evaluation, and practical AI for AEC and domain-specific engineering.`} />
 	</head>
 	<body class="bg-[--color-bg]">
 		<Header />
-		<main class="page-shell py-14 md:py-16">
-			<h1 class="font-heading font-medium text-3xl md:text-[3rem] tracking-[-0.02em] text-[--color-accent] mb-4 md:mb-6">
-				#{tag}
-			</h1>
-			<p class="max-w-[--width-content] mb-8 md:mb-10 text-base md:text-lg text-[--color-text-secondary]">
-				Posts in this topic thread.
-			</p>
+		<main class="px-6 py-16 md:py-24">
+			<div class="mx-auto max-w-[50rem]">
+				<header class="tag-header">
+					<span class="tag-kicker">Topic</span>
+					<h1 class="tag-headline">{prettyTag}</h1>
+					<p class="tag-deck">
+						{posts.length} {posts.length === 1 ? 'piece' : 'pieces'} in this thread.
+					</p>
+				</header>
 
-			<section>
-				{
-					posts.map((post) => (
-						<a
-							href={`/blog/${post.id}/`}
-							class="flex flex-col gap-1.5 py-5 border-t border-[--color-border] no-underline group transition-colors duration-250 hover:bg-[--color-surface] -mx-3 px-3 rounded md:flex-row md:items-baseline md:gap-6"
-						>
-							<span class="font-heading text-[0.8125rem] text-[--color-text-tertiary] shrink-0 w-[7rem]">
-								{post.data.pubDate.toISOString().split('T')[0]}
-							</span>
-							<div class="flex-1 min-w-0">
-								<span class="font-body font-semibold text-[--color-text-primary] group-hover:text-[--color-accent] transition-colors duration-250">
-									{post.data.title}
-								</span>
-								<p class="mt-1 mb-0 text-sm text-[--color-text-secondary] line-clamp-1">
-									{post.data.description}
-								</p>
-							</div>
-							{post.data.tags.length > 0 && (
-								<span class="mt-0.5 flex w-full flex-wrap gap-x-4 gap-y-3 text-left md:mt-0 md:w-auto md:shrink-0 md:justify-end">
-									{post.data.tags.map((t: string) => (
-										<TagPill tag={t} />
-									))}
-								</span>
-							)}
-						</a>
-					))
-				}
-			</section>
+				<ol class="archive-list" role="list">
+					{posts.map((post) => (
+						<li class={`archive-item${post.data.featured ? ' is-featured' : ''}`}>
+							<a href={`/blog/${post.id}/`} class="archive-link">
+								<div class="archive-meta">
+									<FormattedDate date={post.data.pubDate} />
+									{post.data.featured && (
+										<span class="archive-featured">Featured</span>
+									)}
+								</div>
+								<h2 class="archive-title">{post.data.title}</h2>
+								<p class="archive-description">{post.data.description}</p>
+								{post.data.tags.length > 0 && (
+									<div class="archive-tags">
+										{post.data.tags.slice(0, 4).map((t: string) => (
+											<span class={`archive-tag${t === tag ? ' is-active' : ''}`}>{t}</span>
+										))}
+									</div>
+								)}
+							</a>
+						</li>
+					))}
+				</ol>
+			</div>
 		</main>
 		<Footer />
 		<Analytics />
 		<SpeedInsights />
 	</body>
 </html>
+
+<style>
+	.tag-header {
+		margin-bottom: 3rem;
+		border-bottom: 1px solid var(--color-border);
+		padding-bottom: 1rem;
+	}
+
+	.tag-kicker {
+		display: inline-block;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+		margin-bottom: 1rem;
+	}
+
+	.tag-headline {
+		font-family: var(--font-display);
+		font-weight: 500;
+		font-size: clamp(2.25rem, 5vw, 3.5rem);
+		line-height: 1.1;
+		letter-spacing: -0.015em;
+		color: var(--color-text-primary);
+		margin: 0;
+	}
+
+	.tag-deck {
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		letter-spacing: 0.04em;
+		color: var(--color-text-tertiary);
+		margin: 1rem 0 0;
+	}
+
+	.archive-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.archive-item {
+		margin: 0;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.archive-link {
+		display: block;
+		padding: 2rem 0 2.25rem;
+		text-decoration: none;
+		color: inherit;
+	}
+
+	.archive-meta {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		color: var(--color-text-tertiary);
+		margin-bottom: 0.75rem;
+	}
+
+	.archive-featured {
+		color: var(--color-accent);
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		font-size: 0.6875rem;
+	}
+
+	.archive-title {
+		font-family: var(--font-display);
+		font-weight: 500;
+		font-size: 1.75rem;
+		line-height: 1.15;
+		letter-spacing: -0.01em;
+		color: var(--color-text-primary);
+		margin: 0 0 0.6rem;
+		transition: color 0.25s var(--ease-standard);
+	}
+
+	.archive-item.is-featured .archive-title {
+		font-size: clamp(2rem, 3.6vw, 2.5rem);
+	}
+
+	.archive-link:hover .archive-title {
+		color: var(--color-accent);
+	}
+
+	.archive-description {
+		font-family: var(--font-body);
+		font-size: 1.0625rem;
+		line-height: 1.6;
+		color: var(--color-text-secondary);
+		margin: 0;
+		max-width: 40rem;
+	}
+
+	.archive-tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 1.25rem;
+		margin-top: 1rem;
+	}
+
+	.archive-tag {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--color-text-tertiary);
+	}
+
+	.archive-tag.is-active {
+		color: var(--color-accent);
+	}
+
+	@media (max-width: 768px) {
+		.archive-title {
+			font-size: 1.5rem;
+		}
+
+		.archive-description {
+			font-size: 1rem;
+		}
+	}
+</style>

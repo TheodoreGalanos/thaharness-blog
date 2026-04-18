@@ -390,6 +390,15 @@
   text-align: center;
 }
 
+/* Code blocks break out to the wide column so long lines are readable
+   without squashing against the narrow reading measure. */
+.editorial-layout .editorial-body .prose > pre {
+  grid-column: wide;
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+}
+
 .editorial-layout .editorial-body .prose > figure img,
 .editorial-layout .editorial-body .prose > .figure-wide img {
   width: 100%;
@@ -520,6 +529,28 @@
 @media (max-width: 768px) {
   .editorial-layout .editorial-body .prose .pullquote {
     margin: 2em 0;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────
+   Blockquote — markdown `>` asides. Subtle hairline, no amber.
+   Reserve <Pullquote> for thesis moments.
+   ────────────────────────────────────────────────────────── */
+.editorial-layout .editorial-body .prose blockquote {
+  border-left: 2px solid var(--color-border);
+  padding: 0.25em 0 0.25em 1.5em;
+  margin: 2em 0;
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 1.1875rem;
+  line-height: 1.65;
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 768px) {
+  .editorial-layout .editorial-body .prose blockquote {
+    padding-left: 1.1em;
+    font-size: 1.0625rem;
   }
 }
 
@@ -968,26 +999,7 @@ img {
 }
 
 /* ──────────────────────────────────────────────────────────
-   13. Masonry grid — no-JS fallback is CSS grid
-   ────────────────────────────────────────────────────────── */
-[data-masonry-grid] {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
-}
-
-[data-masonry-grid].masonry-active {
-  display: block;
-}
-
-[data-masonry-grid].masonry-active .masonry-card {
-  transition:
-    top 0.3s var(--ease-standard),
-    left 0.3s var(--ease-standard);
-}
-
-/* ──────────────────────────────────────────────────────────
-   14. Responsive adjustments
+   13. Responsive adjustments
    ────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   h1 {

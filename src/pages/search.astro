@@ -1,5 +1,5 @@
 <!-- ABOUTME: Search page powered by Pagefind for full-text static search. -->
-<!-- ABOUTME: Loads the Pagefind UI library from the build output directory at /pagefind/. -->
+<!-- ABOUTME: Editorial treatment — Fraunces headline, mono kicker, Pagefind result styling tuned to editorial link language. -->
 ---
 import Analytics from '@vercel/analytics/astro';
 import SpeedInsights from '@vercel/speed-insights/astro';
@@ -15,16 +15,35 @@ import { SITE_TITLE } from '../consts';
 		<BaseHead title={`Search | ${SITE_TITLE}`} description="Search all posts and pages." noindex={true} />
 		<link href="/pagefind/pagefind-ui.css" rel="stylesheet" />
 		<style>
-			.search-shell {
-				display: grid;
-				gap: 1.5rem;
+			.search-kicker {
+				display: inline-block;
+				font-family: var(--font-mono);
+				font-size: 0.6875rem;
+				text-transform: uppercase;
+				letter-spacing: 0.14em;
+				color: var(--color-accent);
+				margin-bottom: 1.25rem;
 			}
-			.search-intro {
-				max-width: 36rem;
-				font-size: 1rem;
-				line-height: 1.7;
+
+			.search-headline {
+				font-family: var(--font-display);
+				font-weight: 500;
+				font-size: clamp(2.25rem, 5vw, 3.5rem);
+				line-height: 1.1;
+				letter-spacing: -0.015em;
+				color: var(--color-text-primary);
+				margin: 0;
+			}
+
+			.search-deck {
+				font-family: var(--font-body);
+				font-size: 1.1875rem;
+				line-height: 1.55;
 				color: var(--color-text-secondary);
+				max-width: 36rem;
+				margin: 1.25rem 0 2.5rem;
 			}
+
 			.pagefind-ui .pagefind-ui__search-input {
 				font-family: var(--font-mono);
 				font-size: 16px;
@@ -44,24 +63,34 @@ import { SITE_TITLE } from '../consts';
 				box-shadow: 0 0 0 2px rgba(212, 136, 44, 0.2);
 			}
 			.pagefind-ui .pagefind-ui__result-link {
-				font-family: var(--font-body);
-				font-weight: 600;
-				font-size: 1.125rem;
-				line-height: 1.35;
+				font-family: var(--font-display);
+				font-weight: 500;
+				font-size: 1.375rem;
+				line-height: 1.2;
+				letter-spacing: -0.01em;
 				color: var(--color-text-primary);
+				text-decoration: none;
+				background-image: linear-gradient(var(--color-text-tertiary), var(--color-text-tertiary));
+				background-size: 100% 1px;
+				background-position: 0 100%;
+				background-repeat: no-repeat;
+				transition: color 0.25s var(--ease-standard), background-image 0.25s var(--ease-standard);
 			}
 			.pagefind-ui .pagefind-ui__result-link:hover {
 				color: var(--color-accent);
+				background-image: linear-gradient(var(--color-accent), var(--color-accent));
 			}
 			.pagefind-ui .pagefind-ui__result-excerpt {
 				font-family: var(--font-body);
+				font-size: 1rem;
+				line-height: 1.6;
 				color: var(--color-text-secondary);
 			}
 			.pagefind-ui .pagefind-ui__results-area {
-				margin-top: 2rem;
+				margin-top: 2.5rem;
 			}
 			.pagefind-ui .pagefind-ui__result {
-				padding: 1.4rem 0;
+				padding: 1.75rem 0;
 				border-top: 1px solid var(--color-border);
 			}
 			.pagefind-ui .pagefind-ui__button,
@@ -72,41 +101,33 @@ import { SITE_TITLE } from '../consts';
 			.pagefind-ui .pagefind-ui__message,
 			.pagefind-ui .pagefind-ui__button {
 				font-family: var(--font-mono);
+				font-size: 0.8125rem;
 				color: var(--color-text-secondary);
 			}
 			@media (max-width: 768px) {
-				.search-shell {
-					gap: 1.25rem;
-				}
-
-				.search-intro {
-					font-size: 0.95rem;
-				}
-
 				.pagefind-ui .pagefind-ui__search-input {
 					padding: 1rem;
 					font-size: 16px;
 				}
 
 				.pagefind-ui .pagefind-ui__result-link {
-					font-size: 1rem;
+					font-size: 1.1875rem;
 				}
 
 				.pagefind-ui .pagefind-ui__result {
-					padding: 1.1rem 0;
+					padding: 1.4rem 0;
 				}
 			}
 		</style>
 	</head>
 	<body class="bg-[--color-bg]">
 		<Header />
-		<main class="page-shell py-14 md:py-16">
-			<section class="search-shell mx-auto max-w-[--width-content]">
-				<h1 class="font-heading font-medium text-3xl md:text-[3rem] tracking-[-0.02em] text-[--color-text-primary] mb-8">
-					Search
-				</h1>
-				<p class="search-intro -mt-4">
-					Search across the published writing on The Harness. Results update as you type.
+		<main class="px-6 py-16 md:py-24">
+			<section class="mx-auto max-w-[42rem]">
+				<span class="search-kicker">Search</span>
+				<h1 class="search-headline">Find a piece</h1>
+				<p class="search-deck">
+					Full-text search across the published writing on The Harness. Results update as you type.
 				</p>
 				<div id="search"></div>
 			</section>

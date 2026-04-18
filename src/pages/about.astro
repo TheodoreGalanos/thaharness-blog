@@ -1,5 +1,5 @@
-<!-- ABOUTME: About page with monospace heading and centered prose content. -->
-<!-- ABOUTME: Describes The Harness blog and its purpose using the reading layout. -->
+<!-- ABOUTME: About page introducing Theodoros Galanos and the work behind The Harness. -->
+<!-- ABOUTME: Editorial treatment — Fraunces display headline, mono kicker, serif body at reading scale. -->
 ---
 import Analytics from '@vercel/analytics/astro';
 import SpeedInsights from '@vercel/speed-insights/astro';
@@ -16,15 +16,17 @@ import { SITE_TITLE } from '../consts';
 	</head>
 	<body class="bg-[--color-bg]">
 		<Header />
-		<main class="px-5 py-14 sm:px-6 md:py-20">
-			<div class="mx-auto max-w-[--width-content]">
-				<h1 class="font-heading font-medium text-3xl md:text-[3rem] tracking-[-0.02em] text-[--color-text-primary] mb-6 md:mb-8">
-					About
-				</h1>
-				<p class="max-w-2xl mb-8 md:mb-10 text-base md:text-lg text-[--color-text-secondary] leading-relaxed">
-					The Harness is where I write about harness engineering, agentic systems, and the work of making AI useful in real engineering practice.
-				</p>
-				<div class="prose">
+		<main class="px-6 py-16 md:py-24">
+			<article class="mx-auto max-w-[42rem]">
+				<header class="about-header">
+					<span class="about-kicker">About</span>
+					<h1 class="about-headline">The Harness</h1>
+					<p class="about-deck">
+						A working notebook on harness engineering, agentic systems, and the work of making AI useful in real engineering practice.
+					</p>
+				</header>
+
+				<div class="about-body">
 					<p>
 						Hello, I am Theodoros Galanos. I have been working at the intersection of AI, design, and engineering for the better part of the last 12 years.
 					</p>
@@ -42,24 +44,85 @@ import { SITE_TITLE } from '../consts';
 					</p>
 
 					<p>
-						If you want to follow along, you can subscribe by email from the <a href="/#newsletter">footer form</a> or use the <a href="/rss.xml">RSS feed</a>. If you want a broader snapshot of my work, the external links in the header point to my <a href="https://www.linkedin.com/in/theodorosgalanos/" target="_blank" rel="noopener noreferrer">LinkedIn</a> and <a href="https://x.com/TheodoreGalanos" target="_blank" rel="noopener noreferrer">X</a>. Otherwise, the <a href="/blog">archive</a> stays simple on purpose.
+						If you want to follow along, you can <a href="/#newsletter">subscribe by email</a> or use the <a href="/rss.xml">RSS feed</a>. If you want a broader snapshot of my work, the header links point to my <a href="https://www.linkedin.com/in/theodorosgalanos/" target="_blank" rel="noopener noreferrer">LinkedIn</a> and <a href="https://x.com/TheodoreGalanos" target="_blank" rel="noopener noreferrer">X</a>. Otherwise, the <a href="/blog">archive</a> stays simple on purpose.
 					</p>
 				</div>
-				<div class="mt-10 flex flex-wrap gap-3">
-					<a href="/#newsletter" class="inline-flex min-h-11 items-center justify-center rounded border border-[--color-accent] bg-[--color-accent] px-4 py-2 font-heading text-[0.8125rem] text-[#111113] no-underline transition-colors duration-250 hover:border-[--color-accent-hover] hover:bg-[--color-accent-hover]">
-						Subscribe by email
-					</a>
-					<a href="/rss.xml" class="inline-flex min-h-11 items-center justify-center rounded border border-[--color-border] bg-[--color-surface] px-4 py-2 font-heading text-[0.8125rem] text-[--color-text-primary] no-underline transition-colors duration-250 hover:border-[--color-accent] hover:text-[--color-accent]">
-						Follow via RSS
-					</a>
-					<a href="/blog" class="inline-flex min-h-11 items-center justify-center rounded border border-[--color-border] bg-[--color-surface] px-4 py-2 font-heading text-[0.8125rem] text-[--color-text-primary] no-underline transition-colors duration-250 hover:border-[--color-accent] hover:text-[--color-accent]">
-						Read the archive
-					</a>
-				</div>
-			</div>
+			</article>
 		</main>
 		<Footer />
 		<Analytics />
 		<SpeedInsights />
 	</body>
 </html>
+
+<style>
+	.about-header {
+		margin-bottom: 3rem;
+	}
+
+	.about-kicker {
+		display: inline-block;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+		margin-bottom: 1.25rem;
+	}
+
+	.about-headline {
+		font-family: var(--font-display);
+		font-weight: 500;
+		font-size: clamp(2.25rem, 5vw, 3.5rem);
+		line-height: 1.1;
+		letter-spacing: -0.015em;
+		color: var(--color-text-primary);
+		margin: 0;
+	}
+
+	.about-deck {
+		font-family: var(--font-body);
+		font-size: 1.25rem;
+		line-height: 1.5;
+		color: var(--color-text-secondary);
+		margin: 1.25rem 0 0;
+		max-width: 36rem;
+	}
+
+	.about-body {
+		font-family: var(--font-body);
+		font-size: 1.1875rem;
+		line-height: 1.8;
+		color: var(--color-text-primary);
+	}
+
+	.about-body p {
+		margin: 0 0 1.5em;
+	}
+
+	.about-body p:last-child {
+		margin-bottom: 0;
+	}
+
+	.about-body a {
+		color: var(--color-text-primary);
+		text-decoration: none;
+		background-image: linear-gradient(var(--color-text-tertiary), var(--color-text-tertiary));
+		background-size: 100% 1px;
+		background-position: 0 100%;
+		background-repeat: no-repeat;
+		transition: color 0.25s var(--ease-standard), background-image 0.25s var(--ease-standard);
+	}
+
+	.about-body a:hover {
+		color: var(--color-accent);
+		background-image: linear-gradient(var(--color-accent), var(--color-accent));
+	}
+
+	@media (max-width: 768px) {
+		.about-body {
+			font-size: 1.0625rem;
+			line-height: 1.75;
+		}
+	}
+</style>

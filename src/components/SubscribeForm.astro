@@ -4,7 +4,7 @@
 import { SITE_NEWSLETTER_BLURB } from '../consts';
 
 interface Props {
-	variant?: 'full' | 'compact';
+	variant?: 'full' | 'compact' | 'inline';
 	title?: string;
 	description?: string;
 	inputId?: string;
@@ -20,20 +20,33 @@ const {
 } = Astro.props;
 
 const isCompact = variant === 'compact';
+const isInline = variant === 'inline';
+
+const sectionClass = isInline
+	? ''
+	: isCompact
+		? 'rounded-lg border border-[--color-border] bg-[--color-surface] p-4 sm:p-5'
+		: 'rounded-xl border border-[--color-border] bg-[--color-surface] px-5 py-6 sm:px-6 sm:py-7';
 ---
 
-<section id={anchorId} class:list={[isCompact ? 'rounded-lg border border-[--color-border] bg-[--color-surface] p-4 sm:p-5' : 'rounded-xl border border-[--color-border] bg-[--color-surface] px-5 py-6 sm:px-6 sm:py-7']}>
-	<div class:list={[isCompact ? 'max-w-2xl' : 'max-w-3xl']}>
-		<div class={isCompact ? 'max-w-xl' : ''}>
+<section id={anchorId} class={sectionClass}>
+	<div class:list={[isCompact || isInline ? 'max-w-2xl' : 'max-w-3xl']}>
+		<div class={isCompact || isInline ? 'max-w-xl' : ''}>
 			<h2 class:list={[
-				'font-heading font-medium tracking-[-0.02em] text-[--color-text-primary]',
-				isCompact ? 'text-base sm:text-lg' : 'text-2xl sm:text-[2rem]'
+				'tracking-[-0.01em] text-[--color-text-primary]',
+				isInline
+					? 'font-display font-medium text-[1.5rem] sm:text-[1.75rem] leading-[1.15]'
+					: 'font-heading font-medium tracking-[-0.02em]',
+				!isInline && isCompact ? 'text-base sm:text-lg' : '',
+				!isInline && !isCompact ? 'text-2xl sm:text-[2rem]' : '',
 			]}>
 				{title}
 			</h2>
 			<p class:list={[
 				'mb-0 text-[--color-text-secondary]',
-				isCompact ? 'mt-1 text-sm leading-relaxed' : 'mt-3 text-base sm:text-lg'
+				isInline ? 'mt-2 text-[0.9375rem] leading-relaxed' : '',
+				!isInline && isCompact ? 'mt-1 text-sm leading-relaxed' : '',
+				!isInline && !isCompact ? 'mt-3 text-base sm:text-lg' : '',
 			]}>
 				{description}
 			</p>
@@ -42,7 +55,9 @@ const isCompact = variant === 'compact';
 		<form
 			class:list={[
 				'newsletter-subscribe-form flex w-full gap-3',
-				isCompact ? 'mt-3 flex-col sm:flex-row sm:items-center' : 'mt-5 flex-col lg:flex-row lg:items-end'
+				isInline ? 'mt-4 flex-col sm:flex-row sm:items-center' : '',
+				!isInline && isCompact ? 'mt-3 flex-col sm:flex-row sm:items-center' : '',
+				!isInline && !isCompact ? 'mt-5 flex-col lg:flex-row lg:items-end' : '',
 			]}
 			data-subscribe-form
 			data-success-message="You are subscribed. New posts will land in your inbox."
