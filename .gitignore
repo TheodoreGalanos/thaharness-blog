@@ -47,3 +47,6 @@ src/assets/logo-transparent.png
 
 # binary archives
 *.zip
+
+# raw PNG exports for the autoresearch post — SVGs are the source of truth
+src/assets/blog/autoresearch/*.png
