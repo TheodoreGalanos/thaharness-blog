@@ -1,0 +1,329 @@
+<!-- ABOUTME: Editorial scatter chart — quality (reward) vs estimated cost per trial. -->
+<!-- ABOUTME: SSR via Observable Plot + JSDOM; hover panel reuses the right-gutter pattern. -->
+---
+import { Plot, renderPlot } from '../../lib/plot-ssr';
+
+export interface QualityVsCostPoint {
+	key: string;
+	label: string;
+	cost: number;
+	reward: number;
+	accent?: string;
+	note?: string;
+}
+
+interface Props {
+	title?: string;
+	data: QualityVsCostPoint[];
+	xDomain?: [number, number];
+	yDomain?: [number, number];
+	caption?: string;
+}
+
+const { title, data, xDomain, yDomain, caption } = Astro.props;
+
+const DEFAULT_ACCENTS = ['#e8a84c', '#7ab5af', '#5a8a84', '#d87b55'];
+
+const points = data.map((p, i) => ({
+	...p,
+	accent: p.accent ?? DEFAULT_ACCENTS[i % DEFAULT_ACCENTS.length],
+	__idx: i,
+}));
+
+const xMin = xDomain?.[0] ?? 0;
+const xMax = xDomain?.[1] ?? Math.max(...points.map((p) => p.cost)) * 1.15;
+const yMin = yDomain?.[0] ?? 0;
+const yMax = yDomain?.[1] ?? 1;
+
+const svg = renderPlot({
+	width: 640,
+	height: 420,
+	marginTop: 24,
+	marginRight: 28,
+	marginBottom: 52,
+	marginLeft: 58,
+	style: {
+		background: 'transparent',
+		color: '#9a9087',
+		fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+		fontSize: '11px',
+		overflow: 'visible',
+	},
+	x: {
+		label: 'Estimated cost per trial (USD) →',
+		labelOffset: 40,
+		labelAnchor: 'center',
+		domain: [xMin, xMax],
+		tickFormat: (d: number) => `$${d.toFixed(2)}`,
+		grid: true,
+	},
+	y: {
+		label: '↑ Mean reward',
+		labelOffset: 42,
+		labelAnchor: 'center',
+		domain: [yMin, yMax],
+		tickFormat: (d: number) => d.toFixed(1),
+		grid: true,
+	},
+	marks: [
+		Plot.frame({ stroke: '#332c24', strokeWidth: 1 }),
+		Plot.dot(points, {
+			x: 'cost',
+			y: 'reward',
+			fill: 'accent',
+			r: 9,
+			stroke: '#18130e',
+			strokeWidth: 2,
+			className: 'qvc-point',
+		}),
+		Plot.text(points, {
+			x: 'cost',
+			y: 'reward',
+			text: 'label',
+			dx: 14,
+			textAnchor: 'start',
+			fontSize: 11,
+			fill: '#9a9087',
+			fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+		}),
+	],
+});
+---
+
+<figure class="qvc" data-qvc-root>
+	{title && <div class="qvc-title">{title}</div>}
+
+	<div class="qvc-body">
+		<aside class="qvc-panel" aria-live="polite">
+			<div class="qvc-panel-sticky">
+				<div class="qvc-panel-inner">
+					<span class="qvc-panel-kicker" data-qvc-kicker></span>
+					<span class="qvc-panel-body" data-qvc-body></span>
+				</div>
+			</div>
+		</aside>
+
+		<div class="qvc-chart" set:html={svg}></div>
+	</div>
+
+	{caption && <figcaption class="qvc-caption">{caption}</figcaption>}
+
+	<script
+		type="application/json"
+		data-qvc-points
+		set:html={JSON.stringify(
+			points.map((p) => ({ key: p.key, label: p.label, cost: p.cost, reward: p.reward, note: p.note ?? '' })),
+		)}
+	/>
+</figure>
+
+<style>
+	.qvc {
+		--qvc-sticky-top: 8rem;
+		position: relative;
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+	}
+
+	.qvc-title {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+		margin: 0 0 1.25rem;
+	}
+
+	.qvc-body {
+		position: relative;
+	}
+
+	.qvc-chart {
+		width: 100%;
+		overflow: visible;
+	}
+
+	.qvc-chart :global(svg) {
+		width: 100%;
+		height: auto;
+		max-width: 100%;
+	}
+
+	/* Tighten Plot's default axis/tick styling to match editorial palette. */
+	.qvc-chart :global(svg text) {
+		fill: var(--color-text-secondary);
+		font-family: var(--font-mono);
+		font-size: 11px;
+	}
+
+	.qvc-chart :global(svg [aria-label="y-axis tick"] line),
+	.qvc-chart :global(svg [aria-label="x-axis tick"] line) {
+		stroke: var(--color-text-tertiary);
+	}
+
+	.qvc-chart :global(svg [aria-label="y-grid"] line),
+	.qvc-chart :global(svg [aria-label="x-grid"] line) {
+		stroke: var(--color-border);
+		stroke-opacity: 0.7;
+	}
+
+	.qvc-chart :global(.qvc-point) {
+		cursor: pointer;
+		transition:
+			filter 0.18s var(--ease-standard),
+			r 0.18s var(--ease-standard);
+	}
+
+	.qvc-chart :global(.qvc-point:hover),
+	.qvc-chart :global(.qvc-point.is-active) {
+		filter: brightness(1.15);
+	}
+
+	.qvc[data-qvc-hover] .qvc-chart :global(.qvc-point:not(.is-active)) {
+		opacity: 0.35;
+	}
+
+	/* Panel — ephemeral, matches GroupedBars pattern. Right gutter at ≥1440px,
+	   inline collapse at narrower widths. */
+	.qvc-panel {
+		margin: 0;
+		padding: 0;
+		opacity: 0;
+		max-height: 0;
+		overflow: hidden;
+		transition:
+			opacity 0.18s var(--ease-standard),
+			max-height 0.22s var(--ease-standard),
+			margin 0.22s var(--ease-standard);
+		pointer-events: none;
+	}
+
+	.qvc.is-active .qvc-panel {
+		opacity: 1;
+		max-height: 24rem;
+		margin-bottom: 1rem;
+	}
+
+	.qvc-panel-sticky {
+		padding-top: 0.6rem;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.qvc-panel-inner {
+		display: block;
+		font-family: var(--font-body);
+		font-size: 0.875rem;
+		line-height: 1.55;
+		color: var(--color-text-primary);
+	}
+
+	.qvc-panel-kicker {
+		display: block;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin-bottom: 0.5rem;
+		min-height: 0.9rem;
+	}
+
+	.qvc-panel-body {
+		display: block;
+		color: var(--color-text-secondary);
+	}
+
+	@media (min-width: 1440px) {
+		.qvc-panel {
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: calc(100% + 2rem);
+			width: 14rem;
+			max-height: none;
+			margin: 0;
+			overflow: visible;
+		}
+
+		.qvc.is-active .qvc-panel {
+			max-height: none;
+			margin: 0;
+		}
+
+		.qvc-panel-sticky {
+			position: sticky;
+			top: var(--qvc-sticky-top);
+			padding: 0 0 0 1rem;
+			border-top: none;
+			border-left: 1px solid var(--color-border);
+		}
+	}
+
+	.qvc-caption {
+		margin-top: 1.5rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--color-text-tertiary);
+		line-height: 1.55;
+		font-style: normal;
+	}
+</style>
+
+<script>
+	(() => {
+		const roots = document.querySelectorAll<HTMLElement>('[data-qvc-root]');
+		roots.forEach((root) => {
+			const kickerEl = root.querySelector<HTMLElement>('[data-qvc-kicker]');
+			const bodyEl = root.querySelector<HTMLElement>('[data-qvc-body]');
+			const dataScript = root.querySelector<HTMLScriptElement>('[data-qvc-points]');
+			if (!kickerEl || !bodyEl || !dataScript) return;
+
+			type Point = { key: string; label: string; cost: number; reward: number; note: string };
+			let points: Point[] = [];
+			try {
+				points = JSON.parse(dataScript.textContent ?? '[]') as Point[];
+			} catch {
+				return;
+			}
+
+			const marks = root.querySelectorAll<SVGElement>('.qvc-point');
+
+			function setPanel(kicker: string, body: string) {
+				kickerEl!.textContent = kicker;
+				bodyEl!.textContent = body;
+				root.classList.add('is-active');
+			}
+
+			function resetPanel() {
+				root.classList.remove('is-active');
+				root.removeAttribute('data-qvc-hover');
+				marks.forEach((m) => m.classList.remove('is-active'));
+			}
+
+			marks.forEach((mark, i) => {
+				const show = () => {
+					const p = points[i];
+					if (!p) return;
+					root.setAttribute('data-qvc-hover', p.key);
+					marks.forEach((m, j) => m.classList.toggle('is-active', i === j));
+					setPanel(
+						`${p.label} · $${p.cost.toFixed(2)} · reward ${p.reward.toFixed(2)}`,
+						p.note,
+					);
+				};
+				mark.addEventListener('mouseenter', show);
+				mark.addEventListener('focus', show);
+				mark.addEventListener('mouseleave', resetPanel);
+				mark.addEventListener('blur', resetPanel);
+				// Keyboard affordance
+				mark.setAttribute('tabindex', '0');
+				mark.setAttribute('role', 'button');
+				mark.setAttribute('aria-label', `${points[i]?.label ?? ''}`);
+			});
+		});
+	})();
+</script>

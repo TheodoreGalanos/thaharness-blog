@@ -1,0 +1,420 @@
+<!-- ABOUTME: Local preview route for the GroupedBars chart component. Delete before production. -->
+<!-- ABOUTME: Renders the benchmarking article's hero-reward data inside the editorial layout shell. -->
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import BarsWithBaselineChart from '../../components/charts/BarsWithBaseline.astro';
+import GroupedBarsChart from '../../components/charts/GroupedBars.astro';
+import OutcomeDistributionChart from '../../components/charts/OutcomeDistribution.astro';
+import QualityVsCostChart from '../../components/charts/QualityVsCost.astro';
+
+const outcomeDistributionData = {
+	title: 'Outcome distribution · per-trace reward, 20 buckets',
+	models: [
+		{
+			key: 'sonnet-4-6',
+			label: 'Sonnet 4.6',
+			bins: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 4, 0, 11, 104],
+			total: 120,
+			mean: 0.983,
+			zeros: 0,
+			perfect: 104,
+			accent: '#e8a84c',
+			note: 'Tightly concentrated at the top — 104 of 120 are exact-perfect, sixteen more land in the high-partial tail (0.7–0.95), and there are zero zero-score trials.',
+		},
+		{
+			key: 'haiku-4-5',
+			label: 'Haiku 4.5',
+			bins: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 23, 83],
+			total: 118,
+			mean: 0.963,
+			zeros: 0,
+			perfect: 82,
+			accent: '#7ab5af',
+			note: 'Also bunched at the top, but with a longer partial tail — 23 traces in the 0.9–0.95 band and 12 in 0.8–0.85 trade small accuracy hits for a very different cost profile.',
+		},
+		{
+			key: 'sonnet-4',
+			label: 'Sonnet 4',
+			bins: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 23, 0, 10, 82],
+			total: 118,
+			mean: 0.947,
+			zeros: 0,
+			perfect: 81,
+			accent: '#5a8a84',
+			note: 'Broader spread into the partial range, visible around 0.65–0.75. Zero zero-score trials, but noticeably more audit recall misses than the newer generation models.',
+		},
+		{
+			key: 'gpt-4-1-mini',
+			label: 'GPT-4.1-mini',
+			bins: [77, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 2, 2, 0, 2, 34],
+			total: 120,
+			mean: 0.341,
+			zeros: 77,
+			perfect: 33,
+			accent: '#d87b55',
+			note: 'Strongly bimodal. 77 of 120 traces are outright zeros — mostly format failures and truncated outputs — with a separate cluster of 34 exact-perfect runs. The shape matters as much as the mean.',
+		},
+	],
+	caption:
+		"Per-trace reward across ~120 trials per model, in 0.05-wide buckets. Average reward compresses this story — the real difference is failure shape. GPT-4.1-mini's 77-trace zero spike is the article's central point about why cheap wrong answers are not a bargain.",
+};
+
+
+const ablationData = {
+	title: 'Harness ablation',
+	subject: 'Sonnet 4.6, office-building audit',
+	bars: [
+		{
+			key: 'L0',
+			label: 'L0',
+			value: 0.0,
+			note: 'Bare problem statement, no embedded formulas or lookup table. All zero-score trials — once the method is not carried by the environment, the task collapses.',
+		},
+		{
+			key: 'L1',
+			label: 'L1',
+			value: 0.0,
+			note: 'Effectively the same as L0 in the current task set — informative in its own right. Still zero across the board.',
+		},
+		{
+			key: 'L2',
+			label: 'L2',
+			value: 0.0,
+			note: 'Adds psychrometric constants and explicit outside-air rules. Does not rescue the task.',
+		},
+		{
+			key: 'L3',
+			label: 'L3',
+			value: 0.0,
+			note: 'Replaces L2 support with a compact AS 1668.2 reference table and general calculation guidance. Still collapses to zero.',
+		},
+		{
+			key: 'No-tool',
+			label: 'No-tool',
+			value: 0.153,
+			note: 'Removes the calculator tool entirely — the model must audit directly from prompt context. One perfect trial, one partial, eight zeroes.',
+		},
+	],
+	baseline: {
+		value: 0.966,
+		label: 'tool baseline · 0.966',
+		note: 'Sonnet 4.6 with the full tool-enabled harness on the same office-building audit set. Strong performance, many perfect trials.',
+	},
+	domain: [0, 1] as [number, number],
+	valueFormat: 'decimal-3' as const,
+	caption:
+		'Mean reward for Sonnet 4.6 on the office-building audit as harness support is removed in stages. Reducing the turn budget is a degradation; removing guidance is a collapse. The gap between harness-enabled and low-guidance performance is larger than most model-to-model differences in this run.',
+};
+
+const verificationGradientData = {
+	title: 'Verification behaviour · perfect traces vs worst outcome',
+	categories: [
+		{
+			key: 'sonnet-4-6',
+			label: 'Sonnet 4.6',
+			description:
+				'Highest baseline verification at 23% of perfect traces — treats checking as part of default workflow, not a late-stage rescue. Moderate gradient to 40% in the worst bucket.',
+		},
+		{
+			key: 'haiku-4-5',
+			label: 'Haiku 4.5',
+			description:
+				'Steepest gradient of any model (+24pp). Verification shoots up when traces start struggling — strong runtime distress signal, useful for monitoring.',
+		},
+		{
+			key: 'sonnet-4',
+			label: 'Sonnet 4',
+			description:
+				'Rigid workhorse pattern. Low verification baseline (11%) in successful traces, clear jump to 32% in failing ones.',
+		},
+		{
+			key: 'gpt-4-1-mini',
+			label: 'GPT-4.1-mini',
+			description:
+				'Shallowest gradient (+5pp). Success and failure are behaviourally near-indistinguishable — hard to rescue a model that does not reveal when it is failing.',
+		},
+	],
+	series: [
+		{
+			key: 'perfect',
+			label: 'Perfect',
+			description:
+				'Verification share across turns in perfect-reward trajectories. Higher values suggest verification is a default habit, not a distress response.',
+			accent: '#7ab5af',
+		},
+		{
+			key: 'worst',
+			label: 'Worst bucket',
+			description:
+				'Verification share across turns in the worst-outcome bucket (zero / partial). The gap to the perfect-trace share is the runtime distress gradient.',
+			accent: '#d87b55',
+		},
+	],
+	values: [
+		{ category: 'sonnet-4-6', series: 'perfect', value: 0.23, note: 'Highest success-case verification of any model — checking is part of the default workflow.' },
+		{ category: 'sonnet-4-6', series: 'worst', value: 0.4 },
+		{ category: 'haiku-4-5', series: 'perfect', value: 0.14 },
+		{ category: 'haiku-4-5', series: 'worst', value: 0.38, note: 'Biggest jump from success (+24pp). Strong behavioural tell when things go wrong.' },
+		{ category: 'sonnet-4', series: 'perfect', value: 0.11 },
+		{ category: 'sonnet-4', series: 'worst', value: 0.32 },
+		{ category: 'gpt-4-1-mini', series: 'perfect', value: 0.13 },
+		{ category: 'gpt-4-1-mini', series: 'worst', value: 0.18, note: 'Only 5pp above its success rate — weak distress signal makes runtime intervention hard.' },
+	],
+	domain: [0, 0.5] as [number, number],
+	valueFormat: 'percent-0' as const,
+	caption:
+		'Verification turn share across four models, split by outcome bucket. All models verify more when struggling, but the gradient varies sharply: Haiku swings the most, GPT-4.1-mini barely reacts, and Sonnet 4.6 sits with the highest baseline. Source: 477 classified turns from the aurecon-bench heat-load benchmark.',
+};
+
+const qualityVsCostData = {
+	title: 'Quality vs estimated cost · per trial',
+	data: [
+		{
+			key: 'sonnet-4-6',
+			label: 'Sonnet 4.6',
+			cost: 0.35,
+			reward: 0.98,
+			accent: '#e8a84c',
+			note: 'Highest quality ceiling. Output verbosity pushes the cost up — long traces limit how much prompt caching can rescue.',
+		},
+		{
+			key: 'haiku-4-5',
+			label: 'Haiku 4.5',
+			cost: 0.08,
+			reward: 0.96,
+			accent: '#7ab5af',
+			note: 'The quality-per-dollar sweet spot. Fast, much cheaper than Sonnet 4.6, and accurate enough to dominate on reward²-per-$.',
+		},
+		{
+			key: 'sonnet-4',
+			label: 'Sonnet 4',
+			cost: 0.25,
+			reward: 0.95,
+			accent: '#5a8a84',
+			note: 'Middle of the pack. Cheaper than 4.6, clearly ahead of GPT-4.1-mini, but the newer generation has moved the frontier.',
+		},
+		{
+			key: 'gpt-4-1-mini',
+			label: 'GPT-4.1-mini',
+			cost: 0.02,
+			reward: 0.34,
+			accent: '#d87b55',
+			note: 'Cheapest in raw dollars, but too much of the spend was wasted on unusable or incomplete outputs. A cheap wrong answer is not a bargain.',
+		},
+	],
+	xDomain: [0, 0.4] as [number, number],
+	yDomain: [0, 1] as [number, number],
+	caption:
+		'Approximate per-trial cost estimated from public per-token pricing × typical trial token usage (20-turn budget, oracle-tool-enabled). Reward is the overall mean across task families. Exact per-model billing was not captured during the run — treat costs as order-of-magnitude.',
+};
+
+const heroRewardData = {
+	title: 'Mean reward by task type · across four models',
+	categories: [
+		{
+			key: 'single-room-office',
+			label: 'single-room office',
+			description:
+				'Single-room heat-load calculation. Effectively saturated for the Anthropic models once the harness supplies an oracle-like calculator — useful as a baseline, not a separator.',
+		},
+		{
+			key: 'multi-room-mixed',
+			label: 'multi-room mixed',
+			description:
+				'Multi-room calculation across a mixed programme. Same saturation profile as the single-room task for the top three models.',
+		},
+		{
+			key: 'audit-office-bldg',
+			label: 'audit office-bldg',
+			description:
+				'Auditing an office-building schedule for discrepancies. This is where disciplined checking and completeness start to separate strong agents from stronger ones.',
+		},
+		{
+			key: 'audit-mixed-use',
+			label: 'audit mixed-use',
+			description:
+				'Mixed-use schedule audit. The hardest task in this set — recall, cross-row consistency, and reliable finish behaviour all matter.',
+		},
+	],
+	series: [
+		{
+			key: 'sonnet-4-6',
+			label: 'Sonnet 4.6',
+			description:
+				'Strongest overall. Treats verification as part of its default workflow rather than a late-stage rescue, which appears to drive its recall lead.',
+		},
+		{
+			key: 'haiku-4-5',
+			label: 'Haiku 4.5',
+			description:
+				'Second on accuracy, first on value. 96.3% overall reward at substantially lower cost per trial — strongest quality-per-dollar in this run.',
+		},
+		{
+			key: 'sonnet-4',
+			label: 'Sonnet 4',
+			description:
+				'Solid and cheaper than 4.6, but the newer generation has moved the frontier on audit recall.',
+		},
+		{
+			key: 'gpt-4-1-mini',
+			label: 'GPT-4.1-mini',
+			description:
+				'34.1% overall reward, 64% zero-rate. A large share of failures were format failures and truncated outputs — not purely reasoning failures.',
+		},
+	],
+	values: [
+		{ category: 'single-room-office', series: 'sonnet-4-6', value: 1.0 },
+		{ category: 'single-room-office', series: 'haiku-4-5', value: 1.0 },
+		{ category: 'single-room-office', series: 'sonnet-4', value: 1.0 },
+		{
+			category: 'single-room-office',
+			series: 'gpt-4-1-mini',
+			value: 0.46,
+			note: 'Format failures and truncated outputs drive most of the gap here — the calculation itself is not the limiter.',
+		},
+
+		{ category: 'multi-room-mixed', series: 'sonnet-4-6', value: 1.0 },
+		{ category: 'multi-room-mixed', series: 'haiku-4-5', value: 1.0 },
+		{ category: 'multi-room-mixed', series: 'sonnet-4', value: 1.0 },
+		{
+			category: 'multi-room-mixed',
+			series: 'gpt-4-1-mini',
+			value: 0.46,
+			note: 'Same failure shape as single-room — the oracle tool handles the math; the finish discipline does not.',
+		},
+
+		{
+			category: 'audit-office-bldg',
+			series: 'sonnet-4-6',
+			value: 0.96,
+			note: 'Best audit recall. Verification-as-default workflow keeps discrepancies from slipping past.',
+		},
+		{ category: 'audit-office-bldg', series: 'haiku-4-5', value: 0.93 },
+		{ category: 'audit-office-bldg', series: 'sonnet-4', value: 0.9 },
+		{
+			category: 'audit-office-bldg',
+			series: 'gpt-4-1-mini',
+			value: 0.22,
+			note: 'Heavy collapse — long fluent traces that drift off the assigned schedule.',
+		},
+
+		{
+			category: 'audit-mixed-use',
+			series: 'sonnet-4-6',
+			value: 0.96,
+			note: 'Holds up on the hardest task. The gap to other frontier models widens here.',
+		},
+		{ category: 'audit-mixed-use', series: 'haiku-4-5', value: 0.93 },
+		{ category: 'audit-mixed-use', series: 'sonnet-4', value: 0.89 },
+		{
+			category: 'audit-mixed-use',
+			series: 'gpt-4-1-mini',
+			value: 0.22,
+			note: 'Instance substitution and standard hallucination dominate here — the audit slips into a different problem.',
+		},
+	],
+	domain: [0, 1] as [number, number],
+	valueFormat: 'decimal-2' as const,
+	caption:
+		'Mean reward across four task families and four models (n ≈ 30 trials per cell). Hover a bar for task-specific notes; hover a legend pill for a one-line model summary. Calculation tasks are effectively saturated for the Anthropic models; audit tasks expose the real spread.',
+};
+---
+
+<html lang="en" data-theme="dark">
+	<head>
+		<BaseHead title="GroupedBars preview" description="Preview route — grouped bar chart component." />
+		<meta name="robots" content="noindex, nofollow" />
+	</head>
+	<body class="editorial-layout" style="background-color: var(--color-bg);">
+		<Header />
+		<main>
+			<article class="editorial-article">
+				<header class="editorial-header">
+					<span class="editorial-kicker">Preview · chart component</span>
+					<h1 class="editorial-headline">GroupedBars</h1>
+					<p class="editorial-deck">
+						Hero-reward data from the benchmarking article, rendered through the new
+						interactive component. Hover or tab into the bars, legend pills, and
+						category info circles.
+					</p>
+				</header>
+
+				<div class="editorial-body">
+					<div class="prose post-content">
+						<GroupedBarsChart {...heroRewardData} />
+
+						<h2 style="font-family: var(--font-display); font-weight: 500; font-size: 2rem; margin-top: 4rem;">
+							Harness ablation
+						</h2>
+
+						<BarsWithBaselineChart {...ablationData} />
+
+						<h2 style="font-family: var(--font-display); font-weight: 500; font-size: 2rem; margin-top: 4rem;">
+							Verification gradient
+						</h2>
+
+						<GroupedBarsChart {...verificationGradientData} />
+
+						<h2 style="font-family: var(--font-display); font-weight: 500; font-size: 2rem; margin-top: 4rem;">
+							Outcome distribution
+						</h2>
+
+						<OutcomeDistributionChart {...outcomeDistributionData} />
+
+						<h2 style="font-family: var(--font-display); font-weight: 500; font-size: 2rem; margin-top: 4rem;">
+							Quality vs cost
+						</h2>
+
+						<QualityVsCostChart {...qualityVsCostData} />
+					</div>
+				</div>
+			</article>
+		</main>
+		<Footer />
+
+		<style>
+			.editorial-article {
+				max-width: 1180px;
+				margin: 0 auto;
+				padding: 0 1.25rem;
+			}
+			.editorial-header {
+				max-width: 42rem;
+				margin: 0 auto;
+				padding: 4rem 0 2.5rem;
+			}
+			.editorial-kicker {
+				display: inline-block;
+				font-family: var(--font-mono);
+				font-size: 0.6875rem;
+				text-transform: uppercase;
+				letter-spacing: 0.14em;
+				color: var(--color-accent);
+				margin-bottom: 1.25rem;
+			}
+			.editorial-headline {
+				font-family: var(--font-display);
+				font-weight: 500;
+				font-size: clamp(2.25rem, 5vw, 3.75rem);
+				letter-spacing: -0.015em;
+				line-height: 1.08;
+				margin: 0;
+			}
+			.editorial-deck {
+				font-family: var(--font-body);
+				font-size: 1.25rem;
+				line-height: 1.5;
+				color: var(--color-text-secondary);
+				margin: 1.25rem 0 0;
+				max-width: 36rem;
+			}
+			.editorial-body {
+				max-width: 60rem;
+				margin: 0 auto;
+				padding-bottom: 5rem;
+			}
+		</style>
+	</body>
+</html>

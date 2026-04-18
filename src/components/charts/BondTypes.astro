@@ -1,0 +1,149 @@
+<!-- ABOUTME: Editorial concept diagram for the four Agentic Bonds categories. -->
+<!-- ABOUTME: Static 2×2 grid — periodic-element aesthetic, warm-dark palette, no interactivity. -->
+---
+export interface BondType {
+	key: string;
+	symbol: string;
+	label: string;
+	definition: string;
+	accent?: string;
+}
+
+interface Props {
+	title?: string;
+	bonds: BondType[];
+	caption?: string;
+}
+
+const { title, bonds, caption } = Astro.props;
+
+const DEFAULT_ACCENTS = ['#e8a84c', '#7ab5af', '#5a8a84', '#d87b55'];
+
+const bondsWithAccent = bonds.map((b, i) => ({
+	...b,
+	accent: b.accent ?? DEFAULT_ACCENTS[i % DEFAULT_ACCENTS.length],
+	index: i + 1,
+}));
+---
+
+<figure class="bt">
+	{title && <div class="bt-title">{title}</div>}
+
+	<div class="bt-grid">
+		{bondsWithAccent.map((b) => (
+			<div class="bt-cell" style={`--bt-accent: ${b.accent};`}>
+				<div class="bt-cell-header">
+					<span class="bt-index">{String(b.index).padStart(2, '0')}</span>
+					<span class="bt-symbol">{b.symbol}</span>
+				</div>
+				<div class="bt-label">{b.label}</div>
+				<p class="bt-definition">{b.definition}</p>
+			</div>
+		))}
+	</div>
+
+	{caption && <figcaption class="bt-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.bt {
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+	}
+
+	.bt-title {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+		margin: 0 0 1.25rem;
+	}
+
+	.bt-grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 0.75rem;
+	}
+
+	@media (min-width: 640px) {
+		.bt-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 1rem;
+		}
+	}
+
+	.bt-cell {
+		position: relative;
+		padding: 1.25rem 1.25rem 1.1rem;
+		border: 1px solid var(--color-border);
+		border-radius: 4px;
+		background: var(--color-surface);
+		overflow: hidden;
+	}
+
+	/* Accent rail on the left of each cell — thin colour stripe. */
+	.bt-cell::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		width: 3px;
+		background: var(--bt-accent);
+	}
+
+	.bt-cell-header {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.bt-index {
+		font-family: var(--font-mono);
+		font-size: 0.65rem;
+		letter-spacing: 0.14em;
+		color: var(--color-text-tertiary);
+	}
+
+	.bt-symbol {
+		font-family: var(--font-display);
+		font-size: 2.25rem;
+		line-height: 1;
+		font-weight: 500;
+		letter-spacing: -0.02em;
+		color: var(--bt-accent);
+	}
+
+	.bt-label {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		letter-spacing: 0.08em;
+		text-transform: lowercase;
+		color: var(--color-text-primary);
+		margin-bottom: 0.55rem;
+	}
+
+	.bt-definition {
+		font-family: var(--font-body);
+		font-size: 0.9375rem;
+		line-height: 1.55;
+		color: var(--color-text-secondary);
+		margin: 0;
+	}
+
+	.bt-caption {
+		margin-top: 1.5rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--color-text-tertiary);
+		line-height: 1.55;
+		font-style: normal;
+	}
+</style>

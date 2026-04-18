@@ -1,0 +1,602 @@
+<!-- ABOUTME: Editorial vertical stacked-bar chart — one column per category, segments per series. -->
+<!-- ABOUTME: Shares palette + right-gutter hover panel with the other chart components. -->
+---
+export interface StackedBarsCategory {
+	key: string;
+	label: string;
+	total?: number;
+	description?: string;
+}
+
+export interface StackedBarsSeries {
+	key: string;
+	label: string;
+	description?: string;
+	accent?: string;
+}
+
+export interface StackedBarsValue {
+	category: string;
+	series: string;
+	value: number;
+	note?: string;
+}
+
+interface Props {
+	title?: string;
+	categories: StackedBarsCategory[];
+	series: StackedBarsSeries[];
+	values: StackedBarsValue[];
+	domainMax?: number;
+	yTicks?: number[];
+	yLabel?: string;
+	caption?: string;
+}
+
+const {
+	title,
+	categories,
+	series,
+	values,
+	domainMax,
+	yTicks,
+	yLabel,
+	caption,
+} = Astro.props;
+
+const DEFAULT_ACCENTS = ['#e8a84c', '#7ab5af', '#d87b55'];
+
+const seriesWithAccent = series.map((s, i) => ({
+	...s,
+	accent: s.accent ?? DEFAULT_ACCENTS[i % DEFAULT_ACCENTS.length],
+}));
+
+const maxValue =
+	domainMax ??
+	Math.max(
+		...categories.map((c) =>
+			series.reduce((sum, s) => {
+				const v = values.find((x) => x.category === c.key && x.series === s.key);
+				return sum + (v?.value ?? 0);
+			}, 0),
+		),
+	);
+
+const ticks = yTicks ?? [0, Math.round(maxValue / 2), maxValue];
+
+function valuesFor(categoryKey: string) {
+	return seriesWithAccent.flatMap((s) => {
+		const v = values.find((x) => x.category === categoryKey && x.series === s.key);
+		return v ? [{ series: s, value: v.value, note: v.note }] : [];
+	});
+}
+
+function totalFor(categoryKey: string): number {
+	return valuesFor(categoryKey).reduce((sum, r) => sum + r.value, 0);
+}
+---
+
+<figure class="sb" data-sb-root>
+	{title && <div class="sb-title">{title}</div>}
+
+	<div class="sb-legend" role="list">
+		{seriesWithAccent.map((s) => (
+			<button
+				type="button"
+				class="sb-legend-pill"
+				data-sb-legend
+				data-series={s.key}
+				data-series-label={s.label}
+				data-description={s.description ?? ''}
+				style={`--sb-series-color: ${s.accent}`}
+				role="listitem"
+			>
+				<span class="sb-swatch" aria-hidden="true"></span>
+				<span class="sb-legend-label">{s.label}</span>
+			</button>
+		))}
+	</div>
+
+	<div class="sb-body">
+		<aside class="sb-panel" aria-live="polite">
+			<div class="sb-panel-sticky">
+				<div class="sb-panel-inner">
+					<span class="sb-panel-kicker" data-sb-kicker></span>
+					<span class="sb-panel-body" data-sb-body></span>
+				</div>
+			</div>
+		</aside>
+
+		<div class="sb-chart">
+			{yLabel && <div class="sb-y-label">{yLabel}</div>}
+			<div class="sb-chart-plot">
+				<div class="sb-y-ticks" aria-hidden="true">
+					{[...ticks].reverse().map((t) => (
+						<div class="sb-y-tick" style={`top: ${((maxValue - t) / maxValue) * 100}%`}>
+							<span class="sb-y-tick-value">{t}</span>
+						</div>
+					))}
+				</div>
+				<div class="sb-columns">
+					{categories.map((cat) => {
+						const total = cat.total ?? totalFor(cat.key);
+						const rows = valuesFor(cat.key)
+							.filter((r) => r.value > 0)
+							.reverse();
+						return (
+							<div class="sb-column" data-sb-category={cat.key}>
+								<div class="sb-column-stack">
+									{rows.map(({ series: s, value, note }) => (
+										<div
+											class="sb-segment"
+											data-sb-segment
+											data-series={s.key}
+											data-series-label={s.label}
+											data-category={cat.key}
+											data-category-label={cat.label}
+											data-value={value}
+											data-total={total}
+											data-share={total > 0 ? ((value / total) * 100).toFixed(0) : '0'}
+											data-note={note ?? s.description ?? ''}
+											style={`height: ${(value / maxValue) * 100}%; --sb-series-color: ${s.accent};`}
+											tabindex="0"
+											role="button"
+											aria-label={`${cat.label}, ${s.label}: ${value} of ${total}`}
+										>
+											<span class="sb-segment-value">{value}</span>
+										</div>
+									))}
+								</div>
+								<button
+									type="button"
+									class="sb-column-label"
+									data-sb-cat-trigger
+									data-category={cat.key}
+									data-category-label={cat.label}
+									data-description={cat.description ?? ''}
+									data-total={total}
+								>
+									{cat.label}
+								</button>
+							</div>
+						);
+					})}
+				</div>
+			</div>
+		</div>
+	</div>
+
+	{caption && <figcaption class="sb-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.sb {
+		--sb-sticky-top: 8rem;
+		--sb-track-bg: color-mix(in srgb, var(--color-border) 70%, transparent);
+
+		position: relative;
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+	}
+
+	.sb-title {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+		margin: 0 0 1.25rem;
+	}
+
+	.sb-legend {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem 0.75rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.sb-legend-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.3rem 0.6rem 0.3rem 0.4rem;
+		background: transparent;
+		border: 1px solid var(--color-border);
+		border-radius: 999px;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.04em;
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		transition:
+			color 0.2s var(--ease-standard),
+			border-color 0.2s var(--ease-standard),
+			background-color 0.2s var(--ease-standard);
+	}
+
+	.sb-legend-pill:hover,
+	.sb-legend-pill:focus-visible {
+		color: var(--color-text-primary);
+		border-color: var(--sb-series-color);
+		background: color-mix(in srgb, var(--sb-series-color) 8%, transparent);
+		outline: none;
+	}
+
+	.sb-swatch {
+		display: inline-block;
+		width: 0.55rem;
+		height: 0.55rem;
+		border-radius: 2px;
+		background: var(--sb-series-color);
+	}
+
+	.sb-body {
+		position: relative;
+	}
+
+	.sb-chart {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: 0.75rem;
+		align-items: stretch;
+	}
+
+	.sb-y-label {
+		writing-mode: vertical-rl;
+		transform: rotate(180deg);
+		align-self: center;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.08em;
+		color: var(--color-text-tertiary);
+		padding-right: 0.25rem;
+	}
+
+	.sb-chart-plot {
+		position: relative;
+		display: grid;
+		grid-template-columns: 2.25rem 1fr;
+		gap: 0.75rem;
+		min-height: 20rem;
+	}
+
+	.sb-y-ticks {
+		position: relative;
+		height: calc(100% - 1.75rem);
+	}
+
+	.sb-y-tick {
+		position: absolute;
+		right: 0;
+		transform: translateY(-50%);
+		font-family: var(--font-mono);
+		font-size: 0.68rem;
+		color: var(--color-text-tertiary);
+		white-space: nowrap;
+	}
+
+	.sb-y-tick-value {
+		display: inline-block;
+	}
+
+	.sb-columns {
+		position: relative;
+		display: grid;
+		grid-auto-flow: column;
+		grid-auto-columns: 1fr;
+		gap: 1rem;
+		align-items: end;
+	}
+
+	/* Horizontal gridlines — one per tick, behind the columns. */
+	.sb-columns::before {
+		content: '';
+		position: absolute;
+		inset: 0 0 1.75rem 0;
+		background-image: repeating-linear-gradient(
+			to top,
+			transparent 0,
+			transparent calc(50% - 1px),
+			var(--color-border) calc(50% - 1px),
+			var(--color-border) calc(50%),
+			transparent calc(50% + 1px)
+		);
+		opacity: 0.4;
+		pointer-events: none;
+	}
+
+	.sb-column {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		height: 100%;
+	}
+
+	.sb-column-stack {
+		position: relative;
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-end;
+		overflow: visible;
+	}
+
+	.sb-segment {
+		position: relative;
+		background: var(--sb-series-color);
+		cursor: pointer;
+		border: none;
+		padding: 0;
+		transition:
+			filter 0.18s var(--ease-standard),
+			opacity 0.18s var(--ease-standard);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 1px;
+	}
+
+	.sb-segment:hover,
+	.sb-segment:focus-visible {
+		filter: brightness(1.12);
+		outline: none;
+	}
+
+	.sb[data-hover-series] .sb-segment:not(.is-series-active) {
+		opacity: 0.35;
+	}
+
+	.sb[data-hover-category] .sb-segment:not(.is-category-active) {
+		opacity: 0.35;
+	}
+
+	.sb-segment-value {
+		font-family: var(--font-mono);
+		font-size: 0.78rem;
+		font-weight: 500;
+		color: var(--color-bg);
+		mix-blend-mode: normal;
+		letter-spacing: 0.02em;
+		pointer-events: none;
+	}
+
+	/* Hide value labels on very thin segments to avoid clipping. */
+	.sb-segment[style*='height: 0%'] .sb-segment-value,
+	.sb-segment[style*='height: 1%'] .sb-segment-value,
+	.sb-segment[style*='height: 2%'] .sb-segment-value,
+	.sb-segment[style*='height: 3%'] .sb-segment-value {
+		display: none;
+	}
+
+	.sb-column-label {
+		background: transparent;
+		border: none;
+		padding: 0.5rem 0 0;
+		margin-top: 0.5rem;
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		letter-spacing: 0.04em;
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		text-align: center;
+		transition: color 0.2s var(--ease-standard);
+	}
+
+	.sb-column-label:hover,
+	.sb-column-label:focus-visible {
+		color: var(--color-text-primary);
+		outline: none;
+	}
+
+	/* Panel — identical pattern to sibling charts. */
+	.sb-panel {
+		margin: 0;
+		padding: 0;
+		opacity: 0;
+		max-height: 0;
+		overflow: hidden;
+		transition:
+			opacity 0.18s var(--ease-standard),
+			max-height 0.22s var(--ease-standard),
+			margin 0.22s var(--ease-standard);
+		pointer-events: none;
+	}
+
+	.sb.is-active .sb-panel {
+		opacity: 1;
+		max-height: 24rem;
+		margin-bottom: 1rem;
+	}
+
+	.sb-panel-sticky {
+		padding-top: 0.6rem;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.sb-panel-inner {
+		display: block;
+		font-family: var(--font-body);
+		font-size: 0.875rem;
+		line-height: 1.55;
+		color: var(--color-text-primary);
+	}
+
+	.sb-panel-kicker {
+		display: block;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin-bottom: 0.5rem;
+		min-height: 0.9rem;
+	}
+
+	.sb-panel-body {
+		display: block;
+		color: var(--color-text-secondary);
+	}
+
+	@media (min-width: 1440px) {
+		.sb-panel {
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: calc(100% + 2rem);
+			width: 14rem;
+			max-height: none;
+			margin: 0;
+			overflow: visible;
+		}
+
+		.sb.is-active .sb-panel {
+			max-height: none;
+			margin: 0;
+		}
+
+		.sb-panel-sticky {
+			position: sticky;
+			top: var(--sb-sticky-top);
+			padding: 0 0 0 1rem;
+			border-top: none;
+			border-left: 1px solid var(--color-border);
+		}
+	}
+
+	.sb-caption {
+		margin-top: 1.5rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--color-text-tertiary);
+		line-height: 1.55;
+		font-style: normal;
+	}
+
+	@media (max-width: 640px) {
+		.sb-chart-plot {
+			grid-template-columns: 1.75rem 1fr;
+			gap: 0.5rem;
+		}
+		.sb-columns {
+			gap: 0.5rem;
+		}
+		.sb-segment-value {
+			font-size: 0.7rem;
+		}
+		.sb-column-label {
+			font-size: 0.65rem;
+		}
+	}
+</style>
+
+<script>
+	(() => {
+		const roots = document.querySelectorAll<HTMLElement>('[data-sb-root]');
+		roots.forEach((root) => {
+			const kickerEl = root.querySelector<HTMLElement>('[data-sb-kicker]');
+			const bodyEl = root.querySelector<HTMLElement>('[data-sb-body]');
+			if (!kickerEl || !bodyEl) return;
+
+			const segments = root.querySelectorAll<HTMLElement>('[data-sb-segment]');
+			const legendPills = root.querySelectorAll<HTMLElement>('[data-sb-legend]');
+			const catTriggers = root.querySelectorAll<HTMLElement>('[data-sb-cat-trigger]');
+
+			function setPanel(kicker: string, body: string) {
+				kickerEl!.textContent = kicker;
+				bodyEl!.textContent = body;
+				root.classList.add('is-active');
+			}
+
+			function resetPanel() {
+				root.classList.remove('is-active');
+			}
+
+			function activateSeries(key: string | null) {
+				if (!key) {
+					root.removeAttribute('data-hover-series');
+					segments.forEach((s) => s.classList.remove('is-series-active'));
+					return;
+				}
+				root.setAttribute('data-hover-series', key);
+				segments.forEach((s) => {
+					s.classList.toggle('is-series-active', s.dataset.series === key);
+				});
+			}
+
+			function activateCategory(key: string | null) {
+				if (!key) {
+					root.removeAttribute('data-hover-category');
+					segments.forEach((s) => s.classList.remove('is-category-active'));
+					return;
+				}
+				root.setAttribute('data-hover-category', key);
+				segments.forEach((s) => {
+					s.classList.toggle('is-category-active', s.dataset.category === key);
+				});
+			}
+
+			segments.forEach((seg) => {
+				const show = () => {
+					const seriesLabel = seg.dataset.seriesLabel ?? '';
+					const categoryLabel = seg.dataset.categoryLabel ?? '';
+					const value = seg.dataset.value ?? '';
+					const total = seg.dataset.total ?? '';
+					const share = seg.dataset.share ?? '';
+					const note = seg.dataset.note ?? '';
+					setPanel(
+						`${categoryLabel} · ${seriesLabel} · ${value} of ${total} (${share}%)`,
+						note,
+					);
+					activateSeries(seg.dataset.series ?? null);
+				};
+				const hide = () => {
+					resetPanel();
+					activateSeries(null);
+				};
+				seg.addEventListener('mouseenter', show);
+				seg.addEventListener('focus', show);
+				seg.addEventListener('mouseleave', hide);
+				seg.addEventListener('blur', hide);
+			});
+
+			legendPills.forEach((pill) => {
+				const show = () => {
+					const seriesLabel = pill.dataset.seriesLabel ?? '';
+					const description = pill.dataset.description ?? '';
+					setPanel(seriesLabel, description);
+					activateSeries(pill.dataset.series ?? null);
+				};
+				const hide = () => {
+					resetPanel();
+					activateSeries(null);
+				};
+				pill.addEventListener('mouseenter', show);
+				pill.addEventListener('focus', show);
+				pill.addEventListener('mouseleave', hide);
+				pill.addEventListener('blur', hide);
+			});
+
+			catTriggers.forEach((trigger) => {
+				const show = () => {
+					const categoryLabel = trigger.dataset.categoryLabel ?? '';
+					const description = trigger.dataset.description ?? '';
+					const total = trigger.dataset.total ?? '';
+					setPanel(`${categoryLabel} · total ${total}`, description);
+					activateCategory(trigger.dataset.category ?? null);
+				};
+				const hide = () => {
+					resetPanel();
+					activateCategory(null);
+				};
+				trigger.addEventListener('mouseenter', show);
+				trigger.addEventListener('focus', show);
+				trigger.addEventListener('mouseleave', hide);
+				trigger.addEventListener('blur', hide);
+			});
+		});
+	})();
+</script>

@@ -1,0 +1,599 @@
+<!-- ABOUTME: Editorial grouped-bar chart — horizontal bars grouped by category, hover reveals notes. -->
+<!-- ABOUTME: No framework. Themed via palette tokens. Accepts categories, series, and value tuples. -->
+---
+export interface GroupedBarsCategory {
+	key: string;
+	label: string;
+	description?: string;
+}
+
+export interface GroupedBarsSeries {
+	key: string;
+	label: string;
+	description?: string;
+	accent?: string;
+}
+
+export interface GroupedBarsValue {
+	category: string;
+	series: string;
+	value: number;
+	note?: string;
+}
+
+interface Props {
+	title?: string;
+	categories: GroupedBarsCategory[];
+	series: GroupedBarsSeries[];
+	values: GroupedBarsValue[];
+	domain?: [number, number];
+	valueFormat?: 'decimal-2' | 'percent-0' | 'percent-1';
+	caption?: string;
+}
+
+const {
+	title,
+	categories,
+	series,
+	values,
+	domain = [0, 1],
+	valueFormat = 'decimal-2',
+	caption,
+} = Astro.props;
+
+const DEFAULT_ACCENTS = ['#e8a84c', '#7ab5af', '#5a8a84', '#d87b55'];
+
+const seriesWithAccent = series.map((s, i) => ({
+	...s,
+	accent: s.accent ?? DEFAULT_ACCENTS[i % DEFAULT_ACCENTS.length],
+}));
+
+const [domainMin, domainMax] = domain;
+const domainRange = domainMax - domainMin;
+
+function formatValue(n: number): string {
+	switch (valueFormat) {
+		case 'percent-0':
+			return `${Math.round(n * 100)}%`;
+		case 'percent-1':
+			return `${(n * 100).toFixed(1)}%`;
+		case 'decimal-2':
+		default:
+			return n.toFixed(2);
+	}
+}
+
+function barFillPercent(v: number): number {
+	if (domainRange <= 0) return 0;
+	const clamped = Math.min(Math.max(v, domainMin), domainMax);
+	return ((clamped - domainMin) / domainRange) * 100;
+}
+
+const instanceId = `gb-${Math.random().toString(36).slice(2, 9)}`;
+
+const valuesByCategory = categories.map((cat) => {
+	const rows = seriesWithAccent.flatMap((s) => {
+		const v = values.find((x) => x.category === cat.key && x.series === s.key);
+		return v ? [{ series: s, value: v.value, note: v.note }] : [];
+	});
+	return { category: cat, rows };
+});
+---
+
+<figure class="gb" data-gb-root data-gb-id={instanceId}>
+	{title && <div class="gb-title">{title}</div>}
+
+	<div class="gb-legend" role="list">
+		{seriesWithAccent.map((s) => (
+			<button
+				type="button"
+				class="gb-legend-pill"
+				data-gb-legend
+				data-series={s.key}
+				data-series-label={s.label}
+				data-description={s.description ?? ''}
+				style={`--gb-series-color: ${s.accent}`}
+				role="listitem"
+			>
+				<span class="gb-swatch" aria-hidden="true"></span>
+				<span class="gb-legend-label">{s.label}</span>
+			</button>
+		))}
+	</div>
+
+	<div class="gb-body">
+		<aside class="gb-panel" aria-live="polite">
+			<div class="gb-panel-sticky">
+				<div class="gb-panel-inner">
+					<span class="gb-panel-kicker" data-gb-kicker></span>
+					<span class="gb-panel-body" data-gb-body></span>
+				</div>
+			</div>
+		</aside>
+
+		<div class="gb-groups">
+			{valuesByCategory.map(({ category, rows }) => (
+				<section class="gb-group" data-gb-category={category.key}>
+					<header class="gb-group-header">
+						<span class="gb-cat-label">{category.label}</span>
+						{category.description && (
+							<button
+								type="button"
+								class="gb-cat-desc-trigger"
+								data-gb-cat-trigger
+								data-category={category.key}
+								data-category-label={category.label}
+								data-description={category.description}
+								aria-label={`About ${category.label}`}
+							>
+								<span aria-hidden="true">i</span>
+							</button>
+						)}
+					</header>
+					<ol class="gb-bars">
+						{rows.map(({ series: s, value, note }) => (
+							<li
+								class="gb-bar-row"
+								data-gb-bar
+								data-series={s.key}
+								data-series-label={s.label}
+								data-category={category.key}
+								data-category-label={category.label}
+								data-value={formatValue(value)}
+								data-note={note ?? s.description ?? ''}
+								style={`--gb-series-color: ${s.accent}`}
+								tabindex="0"
+								aria-label={`${s.label}, ${category.label}: ${formatValue(value)}`}
+							>
+								<span class="gb-bar-series">{s.label}</span>
+								<span class="gb-bar-track" aria-hidden="true">
+									<span
+										class="gb-bar-fill"
+										style={`width: ${barFillPercent(value)}%;`}
+									></span>
+								</span>
+								<span class="gb-bar-value">{formatValue(value)}</span>
+							</li>
+						))}
+					</ol>
+				</section>
+			))}
+		</div>
+	</div>
+
+	{caption && <figcaption class="gb-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.gb {
+		--gb-track-bg: color-mix(in srgb, var(--color-border) 70%, transparent);
+		--gb-panel-width: 13rem;
+		--gb-sticky-top: 8rem;
+
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+	}
+
+	.gb-title {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+		margin: 0 0 1.25rem;
+	}
+
+	.gb-legend {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem 0.75rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.gb-legend-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.3rem 0.6rem 0.3rem 0.4rem;
+		background: transparent;
+		border: 1px solid var(--color-border);
+		border-radius: 999px;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.04em;
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		transition:
+			color 0.2s var(--ease-standard),
+			border-color 0.2s var(--ease-standard),
+			background-color 0.2s var(--ease-standard);
+	}
+
+	.gb-legend-pill:hover,
+	.gb-legend-pill:focus-visible {
+		color: var(--color-text-primary);
+		border-color: var(--gb-series-color);
+		background: color-mix(in srgb, var(--gb-series-color) 8%, transparent);
+		outline: none;
+	}
+
+	.gb-swatch {
+		display: inline-block;
+		width: 0.55rem;
+		height: 0.55rem;
+		border-radius: 2px;
+		background: var(--gb-series-color);
+	}
+
+	/* Chart body takes the full prose column — no grid, no side column, so
+	   legend + bars stay centered in normal editorial flow. */
+	.gb-body {
+		position: relative;
+	}
+
+	.gb-groups {
+		display: grid;
+		gap: 1.5rem;
+	}
+
+	.gb-group {
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	.gb-group-header {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding-bottom: 0.4rem;
+		border-bottom: 1px dashed var(--color-border);
+	}
+
+	.gb-cat-label {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		letter-spacing: 0.04em;
+		color: var(--color-text-secondary);
+	}
+
+	.gb-cat-desc-trigger {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.05rem;
+		height: 1.05rem;
+		padding: 0;
+		border: 1px solid var(--color-border);
+		border-radius: 999px;
+		background: transparent;
+		color: var(--color-text-tertiary);
+		font-family: var(--font-mono);
+		font-size: 0.65rem;
+		font-style: italic;
+		cursor: pointer;
+		transition:
+			color 0.2s var(--ease-standard),
+			border-color 0.2s var(--ease-standard);
+	}
+
+	.gb-cat-desc-trigger:hover,
+	.gb-cat-desc-trigger:focus-visible {
+		color: var(--color-accent);
+		border-color: var(--color-accent);
+		outline: none;
+	}
+
+	.gb-bars {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 0.5rem;
+	}
+
+	.gb-bar-row {
+		display: grid;
+		grid-template-columns: 6.5rem 1fr 3rem;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.25rem 0.4rem;
+		border-radius: 3px;
+		cursor: pointer;
+		transition:
+			background-color 0.2s var(--ease-standard),
+			opacity 0.2s var(--ease-standard);
+	}
+
+	.gb-bar-row:hover,
+	.gb-bar-row:focus-visible {
+		background: color-mix(in srgb, var(--gb-series-color) 10%, transparent);
+		outline: none;
+	}
+
+	.gb-bar-series {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		letter-spacing: 0.04em;
+		color: var(--color-text-secondary);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.gb-bar-row:hover .gb-bar-series,
+	.gb-bar-row:focus-visible .gb-bar-series {
+		color: var(--color-text-primary);
+	}
+
+	.gb-bar-track {
+		position: relative;
+		display: block;
+		height: 1rem;
+		background: var(--gb-track-bg);
+		border-radius: 2px;
+		overflow: hidden;
+	}
+
+	.gb-bar-fill {
+		display: block;
+		height: 100%;
+		min-width: 2px;
+		background: var(--gb-series-color);
+		border-radius: 2px;
+		transform-origin: left center;
+		transition: filter 0.2s var(--ease-standard);
+	}
+
+	.gb-bar-row:hover .gb-bar-fill,
+	.gb-bar-row:focus-visible .gb-bar-fill {
+		filter: brightness(1.1);
+	}
+
+	.gb-bar-value {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		letter-spacing: 0.04em;
+		color: var(--color-text-secondary);
+		text-align: right;
+	}
+
+	.gb-bar-row:hover .gb-bar-value,
+	.gb-bar-row:focus-visible .gb-bar-value {
+		color: var(--color-text-primary);
+	}
+
+	/* Series focus dimming — set via [data-hover-series] on the root. */
+	.gb[data-hover-series] .gb-bar-row:not([data-series=""]) {
+		opacity: 0.35;
+	}
+
+	.gb[data-hover-series="x"] .gb-bar-row {
+		opacity: 0.35;
+	}
+
+	.gb[data-hover-series] .gb-bar-row.is-series-active {
+		opacity: 1;
+	}
+
+	/* Group (category) focus — dim other groups. */
+	.gb[data-hover-category] .gb-group {
+		opacity: 0.5;
+	}
+
+	.gb[data-hover-category] .gb-group.is-category-active {
+		opacity: 1;
+	}
+
+	/* Panel — ephemeral overlay. Hidden until a bar/legend/category is
+	   activated. Narrow viewports: collapses inline above the bars. Wide
+	   viewports (≥1440px, where editorial-body reserves right-side gutter for
+	   sidenotes): absolute-positioned into that right gutter so the chart
+	   itself never shifts. */
+	.gb-panel {
+		margin: 0;
+		padding: 0;
+		opacity: 0;
+		max-height: 0;
+		overflow: hidden;
+		transition:
+			opacity 0.18s var(--ease-standard),
+			max-height 0.22s var(--ease-standard),
+			margin 0.22s var(--ease-standard);
+		pointer-events: none;
+	}
+
+	.gb.is-active .gb-panel {
+		opacity: 1;
+		max-height: 24rem;
+		margin-bottom: 1rem;
+	}
+
+	.gb-panel-sticky {
+		padding-top: 0.6rem;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.gb-panel-inner {
+		display: block;
+		font-family: var(--font-body);
+		font-size: 0.875rem;
+		line-height: 1.55;
+		color: var(--color-text-primary);
+	}
+
+	.gb-panel-kicker {
+		display: block;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin-bottom: 0.5rem;
+		min-height: 0.9rem;
+	}
+
+	.gb-panel-body {
+		display: block;
+		color: var(--color-text-secondary);
+	}
+
+	/* Wide viewports — float the panel into the right-side gutter reserved
+	   for sidenotes. Outer .gb-panel becomes an absolute spanning element;
+	   the inner .gb-panel-sticky tracks the viewport within the chart's
+	   vertical bounds. */
+	@media (min-width: 1440px) {
+		.gb-panel {
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: calc(100% + 2rem);
+			width: 14rem;
+			max-height: none;
+			margin: 0;
+			overflow: visible;
+		}
+
+		.gb.is-active .gb-panel {
+			max-height: none;
+			margin: 0;
+		}
+
+		.gb-panel-sticky {
+			position: sticky;
+			top: var(--gb-sticky-top);
+			padding: 0 0 0 1rem;
+			border-top: none;
+			border-left: 1px solid var(--color-border);
+		}
+	}
+
+	.gb-caption {
+		margin-top: 1.5rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--color-text-tertiary);
+		line-height: 1.55;
+		font-style: normal;
+	}
+
+	@media (max-width: 640px) {
+		.gb-bar-row {
+			grid-template-columns: 5.25rem 1fr 2.75rem;
+			gap: 0.5rem;
+		}
+
+		.gb-bar-series {
+			font-size: 0.68rem;
+		}
+	}
+</style>
+
+<script>
+	(() => {
+		const roots = document.querySelectorAll<HTMLElement>('[data-gb-root]');
+		roots.forEach((root) => {
+			const kickerEl = root.querySelector<HTMLElement>('[data-gb-kicker]');
+			const bodyEl = root.querySelector<HTMLElement>('[data-gb-body]');
+			if (!kickerEl || !bodyEl) return;
+
+			const bars = root.querySelectorAll<HTMLElement>('[data-gb-bar]');
+			const legendPills = root.querySelectorAll<HTMLElement>('[data-gb-legend]');
+			const catTriggers = root.querySelectorAll<HTMLElement>('[data-gb-cat-trigger]');
+			const groups = root.querySelectorAll<HTMLElement>('.gb-group');
+
+			function setPanel(kicker: string, body: string) {
+				kickerEl!.textContent = kicker;
+				bodyEl!.textContent = body;
+				root.classList.add('is-active');
+			}
+
+			function resetPanel() {
+				root.classList.remove('is-active');
+			}
+
+			function activateSeries(seriesKey: string | null) {
+				if (!seriesKey) {
+					root.removeAttribute('data-hover-series');
+					bars.forEach((b) => b.classList.remove('is-series-active'));
+					return;
+				}
+				root.setAttribute('data-hover-series', seriesKey);
+				bars.forEach((b) => {
+					b.classList.toggle('is-series-active', b.dataset.series === seriesKey);
+				});
+			}
+
+			function activateCategory(categoryKey: string | null) {
+				if (!categoryKey) {
+					root.removeAttribute('data-hover-category');
+					groups.forEach((g) => g.classList.remove('is-category-active'));
+					return;
+				}
+				root.setAttribute('data-hover-category', categoryKey);
+				groups.forEach((g) => {
+					g.classList.toggle(
+						'is-category-active',
+						g.getAttribute('data-gb-category') === categoryKey,
+					);
+				});
+			}
+
+			bars.forEach((bar) => {
+				const show = () => {
+					const seriesLabel = bar.dataset.seriesLabel ?? '';
+					const categoryLabel = bar.dataset.categoryLabel ?? '';
+					const value = bar.dataset.value ?? '';
+					const note = bar.dataset.note ?? '';
+					setPanel(`${seriesLabel} · ${categoryLabel} · ${value}`, note);
+					activateSeries(bar.dataset.series ?? null);
+				};
+				const hide = () => {
+					resetPanel();
+					activateSeries(null);
+				};
+				bar.addEventListener('mouseenter', show);
+				bar.addEventListener('focus', show);
+				bar.addEventListener('mouseleave', hide);
+				bar.addEventListener('blur', hide);
+			});
+
+			legendPills.forEach((pill) => {
+				const show = () => {
+					const seriesLabel = pill.dataset.seriesLabel ?? '';
+					const description = pill.dataset.description ?? '';
+					setPanel(seriesLabel, description);
+					activateSeries(pill.dataset.series ?? null);
+				};
+				const hide = () => {
+					resetPanel();
+					activateSeries(null);
+				};
+				pill.addEventListener('mouseenter', show);
+				pill.addEventListener('focus', show);
+				pill.addEventListener('mouseleave', hide);
+				pill.addEventListener('blur', hide);
+			});
+
+			catTriggers.forEach((trigger) => {
+				const show = () => {
+					const categoryLabel = trigger.dataset.categoryLabel ?? '';
+					const description = trigger.dataset.description ?? '';
+					setPanel(categoryLabel, description);
+					activateCategory(trigger.dataset.category ?? null);
+				};
+				const hide = () => {
+					resetPanel();
+					activateCategory(null);
+				};
+				trigger.addEventListener('mouseenter', show);
+				trigger.addEventListener('focus', show);
+				trigger.addEventListener('mouseleave', hide);
+				trigger.addEventListener('blur', hide);
+			});
+		});
+	})();
+</script>

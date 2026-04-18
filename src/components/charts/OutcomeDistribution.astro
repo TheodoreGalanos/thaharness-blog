@@ -1,0 +1,370 @@
+<!-- ABOUTME: Editorial faceted histogram — per-model reward distributions with shared x and y scales. -->
+<!-- ABOUTME: SSR via Observable Plot + JSDOM; hover panel reuses the right-gutter pattern from sibling charts. -->
+---
+import { Plot, renderPlot } from '../../lib/plot-ssr';
+
+export interface OutcomeDistributionModel {
+	key: string;
+	label: string;
+	bins: number[];
+	total: number;
+	mean: number;
+	zeros: number;
+	perfect: number;
+	accent?: string;
+	note?: string;
+}
+
+interface Props {
+	title?: string;
+	models: OutcomeDistributionModel[];
+	caption?: string;
+}
+
+const { title, models, caption } = Astro.props;
+
+const DEFAULT_ACCENTS = ['#e8a84c', '#7ab5af', '#5a8a84', '#d87b55'];
+
+const modelsWithAccent = models.map((m, i) => ({
+	...m,
+	accent: m.accent ?? DEFAULT_ACCENTS[i % DEFAULT_ACCENTS.length],
+}));
+
+const binCount = Math.max(...modelsWithAccent.map((m) => m.bins.length), 10);
+const binWidth = 1 / binCount;
+
+function binLabel(i: number): string {
+	const a = i * binWidth;
+	const b = a + binWidth;
+	return `${a.toFixed(1)}–${b.toFixed(1)}`;
+}
+
+interface Bar {
+	model: string;
+	modelKey: string;
+	accent: string;
+	note: string;
+	binStart: number;
+	binEnd: number;
+	binLabelText: string;
+	count: number;
+}
+
+const bars: Bar[] = [];
+modelsWithAccent.forEach((m) => {
+	m.bins.forEach((count, i) => {
+		bars.push({
+			model: m.label,
+			modelKey: m.key,
+			accent: m.accent,
+			note: m.note ?? '',
+			binStart: i * binWidth,
+			binEnd: (i + 1) * binWidth,
+			binLabelText: binLabel(i),
+			count,
+		});
+	});
+});
+
+const maxCount = Math.max(...bars.map((b) => b.count), 1);
+const yMax = Math.ceil(maxCount / 20) * 20;
+
+const svg = renderPlot({
+	width: 680,
+	height: 520,
+	marginTop: 10,
+	marginBottom: 44,
+	marginLeft: 110,
+	marginRight: 14,
+	style: {
+		background: 'transparent',
+		color: '#9a9087',
+		fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+		fontSize: '11px',
+		overflow: 'visible',
+	},
+	fy: {
+		label: null,
+		domain: modelsWithAccent.map((m) => m.label),
+	},
+	x: {
+		domain: [0, 1],
+		label: 'Reward →',
+		labelOffset: 34,
+		labelAnchor: 'center',
+		tickFormat: (d: number) => d.toFixed(1),
+		ticks: 11,
+	},
+	y: {
+		domain: [0, yMax],
+		label: null,
+		grid: true,
+		ticks: 4,
+	},
+	color: {
+		type: 'categorical',
+		domain: modelsWithAccent.map((m) => m.label),
+		range: modelsWithAccent.map((m) => m.accent),
+	},
+	marks: [
+		Plot.axisFy({ anchor: 'left', label: null, tickSize: 0 }),
+		Plot.rectY(bars, {
+			x1: 'binStart',
+			x2: 'binEnd',
+			y: 'count',
+			fy: 'model',
+			fill: 'model',
+			inset: 0.5,
+			className: 'od-bar',
+		}),
+		Plot.ruleY([0], { stroke: '#332c24' }),
+	],
+});
+---
+
+<figure class="od" data-od-root>
+	{title && <div class="od-title">{title}</div>}
+
+	<div class="od-body">
+		<aside class="od-panel" aria-live="polite">
+			<div class="od-panel-sticky">
+				<div class="od-panel-inner">
+					<span class="od-panel-kicker" data-od-kicker></span>
+					<span class="od-panel-body" data-od-body></span>
+				</div>
+			</div>
+		</aside>
+
+		<div class="od-chart" set:html={svg}></div>
+	</div>
+
+	{caption && <figcaption class="od-caption">{caption}</figcaption>}
+
+	<script
+		type="application/json"
+		data-od-bars
+		set:html={JSON.stringify(
+			bars.map((b) => ({
+				model: b.model,
+				modelKey: b.modelKey,
+				bin: b.binLabelText,
+				count: b.count,
+				note: b.note,
+			})),
+		)}
+	/>
+</figure>
+
+<style>
+	.od {
+		--od-sticky-top: 8rem;
+		position: relative;
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+	}
+
+	.od-title {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+		margin: 0 0 1.25rem;
+	}
+
+	.od-body {
+		position: relative;
+	}
+
+	.od-chart {
+		width: 100%;
+		overflow: visible;
+	}
+
+	.od-chart :global(svg) {
+		width: 100%;
+		height: auto;
+		max-width: 100%;
+	}
+
+	.od-chart :global(svg text) {
+		fill: var(--color-text-secondary);
+		font-family: var(--font-mono);
+		font-size: 11px;
+	}
+
+	.od-chart :global(svg [aria-label="y-axis tick"] line),
+	.od-chart :global(svg [aria-label="x-axis tick"] line) {
+		stroke: var(--color-text-tertiary);
+	}
+
+	.od-chart :global(svg [aria-label="y-grid"] line),
+	.od-chart :global(svg [aria-label="x-grid"] line) {
+		stroke: var(--color-border);
+		stroke-opacity: 0.7;
+	}
+
+	.od-chart :global(.od-bar) {
+		cursor: pointer;
+		transition:
+			filter 0.18s var(--ease-standard),
+			opacity 0.18s var(--ease-standard);
+	}
+
+	.od-chart :global(.od-bar:hover),
+	.od-chart :global(.od-bar.is-active) {
+		filter: brightness(1.18);
+	}
+
+	.od[data-od-hover] .od-chart :global(.od-bar:not(.is-active)) {
+		opacity: 0.4;
+	}
+
+	/* Panel — identical pattern to sibling charts. */
+	.od-panel {
+		margin: 0;
+		padding: 0;
+		opacity: 0;
+		max-height: 0;
+		overflow: hidden;
+		transition:
+			opacity 0.18s var(--ease-standard),
+			max-height 0.22s var(--ease-standard),
+			margin 0.22s var(--ease-standard);
+		pointer-events: none;
+	}
+
+	.od.is-active .od-panel {
+		opacity: 1;
+		max-height: 24rem;
+		margin-bottom: 1rem;
+	}
+
+	.od-panel-sticky {
+		padding-top: 0.6rem;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.od-panel-inner {
+		display: block;
+		font-family: var(--font-body);
+		font-size: 0.875rem;
+		line-height: 1.55;
+		color: var(--color-text-primary);
+	}
+
+	.od-panel-kicker {
+		display: block;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin-bottom: 0.5rem;
+		min-height: 0.9rem;
+	}
+
+	.od-panel-body {
+		display: block;
+		color: var(--color-text-secondary);
+	}
+
+	@media (min-width: 1440px) {
+		.od-panel {
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: calc(100% + 2rem);
+			width: 14rem;
+			max-height: none;
+			margin: 0;
+			overflow: visible;
+		}
+
+		.od.is-active .od-panel {
+			max-height: none;
+			margin: 0;
+		}
+
+		.od-panel-sticky {
+			position: sticky;
+			top: var(--od-sticky-top);
+			padding: 0 0 0 1rem;
+			border-top: none;
+			border-left: 1px solid var(--color-border);
+		}
+	}
+
+	.od-caption {
+		margin-top: 1.5rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--color-text-tertiary);
+		line-height: 1.55;
+		font-style: normal;
+	}
+</style>
+
+<script>
+	(() => {
+		const roots = document.querySelectorAll<HTMLElement>('[data-od-root]');
+		roots.forEach((root) => {
+			const kickerEl = root.querySelector<HTMLElement>('[data-od-kicker]');
+			const bodyEl = root.querySelector<HTMLElement>('[data-od-body]');
+			const dataScript = root.querySelector<HTMLScriptElement>('[data-od-bars]');
+			if (!kickerEl || !bodyEl || !dataScript) return;
+
+			type BarData = {
+				model: string;
+				modelKey: string;
+				bin: string;
+				count: number;
+				note: string;
+			};
+			let barData: BarData[] = [];
+			try {
+				barData = JSON.parse(dataScript.textContent ?? '[]') as BarData[];
+			} catch {
+				return;
+			}
+
+			const bars = root.querySelectorAll<SVGElement>('.od-bar');
+
+			function setPanel(kicker: string, body: string) {
+				kickerEl!.textContent = kicker;
+				bodyEl!.textContent = body;
+				root.classList.add('is-active');
+			}
+
+			function resetPanel() {
+				root.classList.remove('is-active');
+				root.removeAttribute('data-od-hover');
+				bars.forEach((b) => b.classList.remove('is-active'));
+			}
+
+			bars.forEach((bar, i) => {
+				const show = () => {
+					const d = barData[i];
+					if (!d) return;
+					root.setAttribute('data-od-hover', d.modelKey);
+					bars.forEach((b, j) => b.classList.toggle('is-active', i === j));
+					const suffix = d.count === 1 ? 'trace' : 'traces';
+					setPanel(
+						`${d.model} · reward ${d.bin} · ${d.count} ${suffix}`,
+						d.note,
+					);
+				};
+				bar.addEventListener('mouseenter', show);
+				bar.addEventListener('focus', show);
+				bar.addEventListener('mouseleave', resetPanel);
+				bar.addEventListener('blur', resetPanel);
+				bar.setAttribute('tabindex', '0');
+				bar.setAttribute('role', 'button');
+			});
+		});
+	})();
+</script>

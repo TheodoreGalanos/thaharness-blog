@@ -1,0 +1,442 @@
+<!-- ABOUTME: Editorial single-series horizontal bars with a dashed baseline reference line. -->
+<!-- ABOUTME: Matches GroupedBars visual language — same palette tokens, right-gutter hover panel. -->
+---
+export interface BarsWithBaselineBar {
+	key: string;
+	label: string;
+	value: number;
+	note?: string;
+}
+
+export interface BarsWithBaselineReference {
+	value: number;
+	label: string;
+	note?: string;
+}
+
+interface Props {
+	title?: string;
+	subject?: string;
+	bars: BarsWithBaselineBar[];
+	baseline?: BarsWithBaselineReference;
+	domain?: [number, number];
+	valueFormat?: 'decimal-2' | 'decimal-3' | 'percent-1';
+	caption?: string;
+}
+
+const {
+	title,
+	subject,
+	bars,
+	baseline,
+	domain = [0, 1],
+	valueFormat = 'decimal-3',
+	caption,
+} = Astro.props;
+
+const [domainMin, domainMax] = domain;
+const domainRange = domainMax - domainMin;
+
+function formatValue(n: number): string {
+	switch (valueFormat) {
+		case 'decimal-2':
+			return n.toFixed(2);
+		case 'percent-1':
+			return `${(n * 100).toFixed(1)}%`;
+		case 'decimal-3':
+		default:
+			return n.toFixed(3);
+	}
+}
+
+function pct(v: number): number {
+	if (domainRange <= 0) return 0;
+	const clamped = Math.min(Math.max(v, domainMin), domainMax);
+	return ((clamped - domainMin) / domainRange) * 100;
+}
+
+const barAccent = '#d87b55';
+const baselinePct = baseline ? pct(baseline.value) : null;
+---
+
+<figure class="bwb" data-bwb-root>
+	{title && <div class="bwb-title">{title}{subject && <span class="bwb-subject"> · {subject}</span>}</div>}
+
+	<div class="bwb-body">
+		<aside class="bwb-panel" aria-live="polite">
+			<div class="bwb-panel-sticky">
+				<div class="bwb-panel-inner">
+					<span class="bwb-panel-kicker" data-bwb-kicker></span>
+					<span class="bwb-panel-body" data-bwb-body></span>
+				</div>
+			</div>
+		</aside>
+
+		<div class="bwb-chart">
+			{baseline && baselinePct !== null && (
+				<div class="bwb-chart-header" style={`--bwb-baseline-pct: ${baselinePct}%`}>
+					<button
+						type="button"
+						class="bwb-baseline-label"
+						data-bwb-baseline
+						data-baseline-label={baseline.label}
+						data-description={baseline.note ?? ''}
+					>
+						<span class="bwb-baseline-tick" aria-hidden="true"></span>
+						<span class="bwb-baseline-text">{baseline.label}</span>
+					</button>
+				</div>
+			)}
+
+			<ol class="bwb-bars">
+				{bars.map((b) => {
+					const fillPercent = pct(b.value);
+					const hasValue = b.value > 0;
+					return (
+						<li
+							class="bwb-bar-row"
+							data-bwb-bar
+							data-label={b.label}
+							data-value={formatValue(b.value)}
+							data-note={b.note ?? ''}
+							style={`--bwb-bar-color: ${barAccent}; --bwb-baseline-pct: ${baselinePct ?? 0}%;`}
+							tabindex="0"
+							aria-label={`${b.label}: ${formatValue(b.value)}`}
+						>
+							<span class="bwb-bar-label">{b.label}</span>
+							<span class="bwb-bar-track" aria-hidden="true">
+								{baseline && baselinePct !== null && (
+									<span class="bwb-bar-baseline" aria-hidden="true"></span>
+								)}
+								{hasValue && (
+									<span
+										class="bwb-bar-fill"
+										style={`width: ${fillPercent}%;`}
+									></span>
+								)}
+							</span>
+							<span class="bwb-bar-value" class:list={{ 'is-zero': !hasValue }}>
+								{formatValue(b.value)}
+							</span>
+						</li>
+					);
+				})}
+			</ol>
+		</div>
+	</div>
+
+	{caption && <figcaption class="bwb-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.bwb {
+		--bwb-sticky-top: 8rem;
+		--bwb-track-bg: color-mix(in srgb, var(--color-border) 70%, transparent);
+		--bwb-baseline-color: var(--color-accent);
+
+		position: relative;
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+	}
+
+	.bwb-title {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+		margin: 0 0 1.25rem;
+	}
+
+	.bwb-subject {
+		color: var(--color-text-secondary);
+	}
+
+	.bwb-body {
+		position: relative;
+	}
+
+	/* Chart */
+	.bwb-chart {
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	/* Header row — holds the baseline label, positioned above the bar track
+	   column at the baseline percentage. Uses the same grid template as the
+	   bar rows so the label aligns correctly. */
+	.bwb-chart-header {
+		display: grid;
+		grid-template-columns: 4.5rem 1fr 3rem;
+		gap: 0.75rem;
+		align-items: center;
+		min-height: 1.2rem;
+	}
+
+	.bwb-baseline-label {
+		grid-column: 2;
+		position: relative;
+		background: transparent;
+		border: none;
+		padding: 0;
+		margin-left: var(--bwb-baseline-pct);
+		transform: translateX(-50%);
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		cursor: pointer;
+		font-family: var(--font-mono);
+		font-size: 0.65rem;
+		letter-spacing: 0.08em;
+		color: var(--color-accent);
+		text-transform: none;
+		white-space: nowrap;
+		transition: color 0.2s var(--ease-standard);
+	}
+
+	.bwb-baseline-label:hover,
+	.bwb-baseline-label:focus-visible {
+		color: var(--color-accent-hover);
+		outline: none;
+	}
+
+	.bwb-baseline-tick {
+		display: inline-block;
+		width: 0.5rem;
+		height: 1px;
+		background: var(--bwb-baseline-color);
+	}
+
+	/* Bars */
+	.bwb-bars {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 0.5rem;
+	}
+
+	.bwb-bar-row {
+		display: grid;
+		grid-template-columns: 4.5rem 1fr 3rem;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.25rem 0.4rem;
+		border-radius: 3px;
+		cursor: pointer;
+		transition: background-color 0.2s var(--ease-standard);
+	}
+
+	.bwb-bar-row:hover,
+	.bwb-bar-row:focus-visible {
+		background: color-mix(in srgb, var(--bwb-bar-color) 10%, transparent);
+		outline: none;
+	}
+
+	.bwb-bar-label {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		letter-spacing: 0.04em;
+		color: var(--color-text-secondary);
+	}
+
+	.bwb-bar-row:hover .bwb-bar-label,
+	.bwb-bar-row:focus-visible .bwb-bar-label {
+		color: var(--color-text-primary);
+	}
+
+	.bwb-bar-track {
+		position: relative;
+		display: block;
+		height: 1rem;
+		background: var(--bwb-track-bg);
+		border-radius: 2px;
+		overflow: hidden;
+	}
+
+	.bwb-bar-baseline {
+		position: absolute;
+		top: -2px;
+		bottom: -2px;
+		left: var(--bwb-baseline-pct);
+		width: 0;
+		border-left: 1px dashed var(--bwb-baseline-color);
+		pointer-events: none;
+	}
+
+	.bwb-bar-fill {
+		display: block;
+		height: 100%;
+		background: var(--bwb-bar-color);
+		border-radius: 2px;
+		transition: filter 0.2s var(--ease-standard);
+	}
+
+	.bwb-bar-row:hover .bwb-bar-fill,
+	.bwb-bar-row:focus-visible .bwb-bar-fill {
+		filter: brightness(1.12);
+	}
+
+	.bwb-bar-value {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		letter-spacing: 0.04em;
+		color: var(--color-text-secondary);
+		text-align: right;
+	}
+
+	.bwb-bar-value.is-zero {
+		color: var(--color-text-tertiary);
+	}
+
+	.bwb-bar-row:hover .bwb-bar-value,
+	.bwb-bar-row:focus-visible .bwb-bar-value {
+		color: var(--color-text-primary);
+	}
+
+	/* Panel — same ephemeral pattern as GroupedBars. Right-gutter at ≥1440px,
+	   inline collapse below. */
+	.bwb-panel {
+		margin: 0;
+		padding: 0;
+		opacity: 0;
+		max-height: 0;
+		overflow: hidden;
+		transition:
+			opacity 0.18s var(--ease-standard),
+			max-height 0.22s var(--ease-standard),
+			margin 0.22s var(--ease-standard);
+		pointer-events: none;
+	}
+
+	.bwb.is-active .bwb-panel {
+		opacity: 1;
+		max-height: 24rem;
+		margin-bottom: 1rem;
+	}
+
+	.bwb-panel-sticky {
+		padding-top: 0.6rem;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.bwb-panel-inner {
+		display: block;
+		font-family: var(--font-body);
+		font-size: 0.875rem;
+		line-height: 1.55;
+		color: var(--color-text-primary);
+	}
+
+	.bwb-panel-kicker {
+		display: block;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin-bottom: 0.5rem;
+		min-height: 0.9rem;
+	}
+
+	.bwb-panel-body {
+		display: block;
+		color: var(--color-text-secondary);
+	}
+
+	@media (min-width: 1440px) {
+		.bwb-panel {
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: calc(100% + 2rem);
+			width: 14rem;
+			max-height: none;
+			margin: 0;
+			overflow: visible;
+		}
+
+		.bwb.is-active .bwb-panel {
+			max-height: none;
+			margin: 0;
+		}
+
+		.bwb-panel-sticky {
+			position: sticky;
+			top: var(--bwb-sticky-top);
+			padding: 0 0 0 1rem;
+			border-top: none;
+			border-left: 1px solid var(--color-border);
+		}
+	}
+
+	.bwb-caption {
+		margin-top: 1.5rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--color-text-tertiary);
+		line-height: 1.55;
+		font-style: normal;
+	}
+
+	@media (max-width: 640px) {
+		.bwb-chart-header,
+		.bwb-bar-row {
+			grid-template-columns: 3.5rem 1fr 2.75rem;
+			gap: 0.5rem;
+		}
+	}
+</style>
+
+<script>
+	(() => {
+		const roots = document.querySelectorAll<HTMLElement>('[data-bwb-root]');
+		roots.forEach((root) => {
+			const kickerEl = root.querySelector<HTMLElement>('[data-bwb-kicker]');
+			const bodyEl = root.querySelector<HTMLElement>('[data-bwb-body]');
+			if (!kickerEl || !bodyEl) return;
+
+			const bars = root.querySelectorAll<HTMLElement>('[data-bwb-bar]');
+			const baselineEl = root.querySelector<HTMLElement>('[data-bwb-baseline]');
+
+			function setPanel(kicker: string, body: string) {
+				kickerEl!.textContent = kicker;
+				bodyEl!.textContent = body;
+				root.classList.add('is-active');
+			}
+
+			function resetPanel() {
+				root.classList.remove('is-active');
+			}
+
+			bars.forEach((bar) => {
+				const show = () => {
+					const label = bar.dataset.label ?? '';
+					const value = bar.dataset.value ?? '';
+					const note = bar.dataset.note ?? '';
+					setPanel(`${label} · ${value}`, note);
+				};
+				bar.addEventListener('mouseenter', show);
+				bar.addEventListener('focus', show);
+				bar.addEventListener('mouseleave', resetPanel);
+				bar.addEventListener('blur', resetPanel);
+			});
+
+			if (baselineEl) {
+				const show = () => {
+					const label = baselineEl.dataset.baselineLabel ?? '';
+					const description = baselineEl.dataset.description ?? '';
+					setPanel(label, description);
+				};
+				baselineEl.addEventListener('mouseenter', show);
+				baselineEl.addEventListener('focus', show);
+				baselineEl.addEventListener('mouseleave', resetPanel);
+				baselineEl.addEventListener('blur', resetPanel);
+			}
+		});
+	})();
+</script>

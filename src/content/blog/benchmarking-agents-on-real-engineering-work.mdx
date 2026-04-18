@@ -8,6 +8,22 @@ pubDate: 2026-03-12
 tags: ["harness-engineering", "agentic-ai", "ai-in-aec", "ai-benchmarks", "agent-evaluation", "hvac-ai", "design-review", "mep-automation"]
 ---
 
+import BarsWithBaseline from '../../components/charts/BarsWithBaseline.astro';
+import BondTypes from '../../components/charts/BondTypes.astro';
+import GroupedBars from '../../components/charts/GroupedBars.astro';
+import OutcomeDistribution from '../../components/charts/OutcomeDistribution.astro';
+import QualityVsCost from '../../components/charts/QualityVsCost.astro';
+import StackedBars from '../../components/charts/StackedBars.astro';
+import {
+	ablationData,
+	auditMixedUseFrontierData,
+	bondTypesData,
+	heroRewardData,
+	outcomeDistributionData,
+	qualityVsCostData,
+	verificationGradientData,
+} from '../../data/benchmarking-charts';
+
 Estimated reading time: 15 minutes
 
 Current frontier model performance is still heavily concentrated in a narrow band of well-covered domains, especially code, math, and adjacent text-heavy tasks.
@@ -38,7 +54,7 @@ What follows is a first look at what current agents are good at, where they stil
 - **Verification behaviour appears to matter a lot.** The strongest model did not just verify when it was in trouble. It verified as part of its default workflow, which looks like part of the mechanism behind its recall advantage.
 - **This is an empirical counterpart to the argument in the previous article, and the beginning of a broader benchmark effort.** It supports the claim that in engineering, capability is not just a model property. It is distributed across the model, the harness, the tools, the verifiers, and the output contract. The longer-term goal is to build high-quality benchmarks with enough coverage to support meaningful progress in agentic engineering.
 
-![*Left: overall reward across the four models. Right: Sonnet 4.6 under budget and guidance ablations. The benchmark ranks models, but it also shows how much capability depends on the environment around the model.*](../../assets/blog/agentic-eval/hero-headline-reward.png)
+<GroupedBars {...heroRewardData} />
 
 That is the core result in compressed form: **the benchmark ranks models, but more importantly, it makes the system dependence visible.**
 
@@ -60,7 +76,7 @@ That result is even more telling once you know the setup. The method was not hid
 
 That is where the real spread appears: **systematic checking, consistency across many rows, and enough discipline to finish with the correct structured output.**
 
-![Performance on the hardest audit task. This is where the benchmark starts to separate strong agents from stronger ones.](../../assets/blog/agentic-eval/audit-mixed-use-frontier.png)
+<StackedBars {...auditMixedUseFrontierData} />
 
 They also give us a useful improvement gradient. When an agent fails, the failure is usually legible. It missed a discrepancy, checked too shallowly, used the tools badly, ran out of turns, or never made it cleanly into the required output format. That is exactly what you want from a benchmark aimed at building better agent environments around real domain tasks.
 
@@ -72,7 +88,7 @@ For agent evaluation people, it is a reminder that task design determines what y
 
 At the headline level, the ranking is straightforward.
 
-![Outcome distributions by model. The important difference is not just average score, but failure shape, especially GPT-4.1-mini's heavy zero-score tail.](../../assets/blog/agentic-eval/outcome-distribution.png)
+<OutcomeDistribution {...outcomeDistributionData} />
 
 Sonnet 4.6 was best overall. It was the only model to clear both near-perfect calculation performance and clearly best-in-class audit recall. It also had zero zero-score trials.
 
@@ -132,15 +148,7 @@ The guidance ladder was a different story.
 
 In the direct no-tool reference run, the current partial results look like this:
 
-| Condition | Mean reward | What happened |
-| --- | ---: | --- |
-| Tool-enabled baseline | 0.966 | Strong performance, many perfect trials |
-| Budget-10 counterfactual | 0.943 | Measurable quality drop, but still viable |
-| `L0` | 0.000 | All zero-score trials |
-| `L1` | 0.000 | All zero-score trials |
-| `L2` | 0.000 | All zero-score trials |
-| `L3` | 0.000 | All zero-score trials |
-| `no-tool` | 0.153 | One perfect trial, one partial trial, eight zeroes |
+<BarsWithBaseline {...ablationData} />
 
 That tells us a few things. The cleanest way to read it is as three different regimes: a workable strong-harness regime, a mildly degraded budget-constrained regime, and a collapse regime once the environment stops carrying enough of the method.
 
@@ -168,7 +176,7 @@ All models increased checking when they were struggling. But Sonnet 4.6 did some
 
 In our behavioural analysis, Sonnet 4.6 spent 23% of its successful traces in verification behaviour. The other strong models were much lower. Haiku showed the steepest verification gradient between success and failure, which makes it interesting for runtime monitoring, but Sonnet 4.6 made verification part of its default operating mode.
 
-![Verification behaviour in success and failure. Sonnet 4.6 verifies as part of its normal workflow, while Haiku shows the steepest verification jump when traces start to struggle.](../../assets/blog/agentic-eval/verification-gradient.png)
+<GroupedBars {...verificationGradientData} />
 
 That appears to be the mechanism behind its recall lead.
 
@@ -184,7 +192,7 @@ For agentic-eval people, it suggests that model quality may show up less in raw 
 
 To get beyond simple success rates, we adapted the Agentic Bonds framework from [Du et al.'s work on the molecular structure of thought](https://arxiv.org/abs/2601.06002).
 
-![The four bond types used in the behavioural analysis: execution, verification, deliberation, and exploration.](../../assets/blog/agentic-eval/four-bond-types.png)
+<BondTypes {...bondTypesData} />
 
 The basic idea is that quality does not come only from individual steps. It comes from the pattern of transitions between types of steps.
 
@@ -260,7 +268,7 @@ That matters for cost too, because these are not always short failures. Some of 
 
 The cheapest model per trial is not automatically the best value.
 
-![Quality versus cost. Sonnet 4.6 buys the highest quality, Haiku offers the strongest quality-per-dollar tradeoff, and GPT-4.1-mini shows why low price alone is misleading.](../../assets/blog/agentic-eval/quality-vs-cost.png)
+<QualityVsCost {...qualityVsCostData} />
 
 GPT-4.1-mini was cheapest in raw dollar terms, but too much of that spend was wasted because the outputs were unusable or incomplete.
 
