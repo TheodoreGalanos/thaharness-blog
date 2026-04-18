@@ -7,6 +7,13 @@ pubDate: 2026-03-10
 tags: ["harness-engineering", "agentic-ai", "ai-in-aec", "engineering-ai", "orchestration", "agent-reliability", "construction-ai"]
 ---
 
+import ConceptGrid from '../../components/charts/ConceptGrid.astro';
+import {
+  harnessLayersData,
+  openQuestionsData,
+  taskProcessData,
+} from '../../data/where-capability-charts';
+
 Estimated reading time: 16 minutes
 
 Engineering is a useful stress test for agentic systems because it exposes a kind of weakness that general demos often hide. The problem is not that the domain is technical in the abstract. **It is that the work is instance-bound, constraint-heavy, and intolerant of plausibly generic answers.** To be useful here, an agent has to do more than sound competent. It has to stay attached to the artifact, preserve the method, survive verification, and finish in a form that another system or person can trust.
@@ -45,6 +52,8 @@ Once engineering is framed as artifact-bound and verification-sensitive work, th
 
 That matters because many of the hardest parts of engineering workflows live in precisely those layers. Tools can carry method that would otherwise need to be reconstructed unreliably from prompt context. **More than that, many tools are artifacts of accumulated domain expertise.** They are places where a field has already embedded procedures, assumptions, checks, tolerances, and accepted ways of doing work. In some cases that expertise is explicit and executable, as in calculations, lookups, and verification routines. In other cases it is more qualitative, showing up as workflows, review habits, and best-practice sequences. Verifiers can enforce habits of checking that a model may not apply consistently on its own. Output contracts can force the system to conclude in a format that is inspectable, comparable, and operationally usable. Turn budgets and control flow can decide whether an agent has enough room to complete a careful review or whether it will collapse into partial work and malformed output.
 
+<ConceptGrid {...harnessLayersData} />
+
 In that sense, the harness is not just infrastructure. It is part of the cognitive system. It allocates where reasoning happens, where discipline comes from, and how failure is surfaced. Recent work from OpenAI on [harness engineering](https://openai.com/index/harness-engineering/) makes the same point from another angle: once agents are doing real work, progress depends heavily on the legibility of the environment, the structure of the feedback loops, and the extent to which knowledge has been made accessible and enforceable inside the system. A calculator tool is not merely a convenience. It is a decision about which parts of the method should be made stable and externalised. A verifier is not just a quality filter. It is a decision to make certain forms of checking structurally available to the agent. Even the shape of the prompt matters less as isolated wording than as one part of a larger control architecture.
 
 This is why questions about orchestration in engineering cannot be reduced to prompt engineering. The meaningful design problem is architectural. What should the agent infer versus look up? What should be encoded in tools versus policy? Which checks should happen during reasoning and which should happen after? When should the system stop and ask for clarification instead of filling gaps with plausible narration? These are not implementation details to be cleaned up after capability arrives. They are part of how capability is built.
@@ -67,6 +76,8 @@ The fourth question is how failure should be described. It is too coarse to talk
 
 The fifth question is how much capability a well-designed environment can supply. This is one of the most important and most delicate unknowns. A good harness can clearly unlock behaviour that would not reliably appear in a weak setup. But that raises a harder interpretive problem. When does scaffolding help a model express real competence, and when does it effectively perform too much of the task on the model's behalf? We need to know that boundary, because it affects how we read both benchmark results and deployment claims.
 
+<ConceptGrid {...openQuestionsData} columns={1} />
+
 Each question changes what we should build, what we should measure, and how we should interpret success. Taken together, they suggest that the real frontier in agentic engineering is not just model improvement. It is experimental clarity about how capability is distributed across the whole system.
 
 ## From Tasks to Processes: Why Engineering Workflows Need More Than Single-Step Agents
@@ -74,6 +85,8 @@ Each question changes what we should build, what we should measure, and how we s
 One reason this design space is easy to misunderstand is that we often talk about work as if it arrives in neatly bounded tasks. Sometimes it does. But many of the workflows that matter most in engineering are not really tasks in that sense. They are processes: longer-horizon structures with multiple artifacts, multiple experts, natural gates of review and control, and repeated moments where uncertainty has to be managed rather than ignored.
 
 That distinction matters because a process creates a different design problem from a task. A task invites a question like: can the system complete this unit of work correctly? A process invites harder questions. How should work be decomposed across time? Where should evidence accumulate? When should one expert intervene directly, and when should the system continue on its own? What kind of intermediate state has to be visible for redirection, challenge, or sign-off to be meaningful? The moment you move from tasks to processes, orchestration stops being a thin implementation layer and becomes part of the substance of the work.
+
+<ConceptGrid {...taskProcessData} />
 
 This is especially visible in workflows that look simple when described at a distance. A due diligence engagement can sound like one task: review the available material and produce a judgment. In practice it is nothing like a single bounded action. It is a process of evidence gathering, interpretation, cross-checking, escalation, synthesis, and review, often with several experts working in parallel and stepping in at different moments for different reasons. The important problem is not just whether an agent can perform one inference. It is whether the overall system can support the sequence of inferences, checks, and interventions that make the result trustworthy.
 

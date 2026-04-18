@@ -8,6 +8,21 @@ pubDate: 2026-03-14
 tags: ["harness-engineering", "autoresearch", "agentic-ai", "ai-in-aec", "ai-benchmarks", "agent-evaluation", "prompt-optimisation", "design-review"]
 ---
 
+import BarsWithBaseline from '../../components/charts/BarsWithBaseline.astro';
+import ConceptGrid from '../../components/charts/ConceptGrid.astro';
+import FlowDiagram from '../../components/charts/FlowDiagram.astro';
+import GroupedBars from '../../components/charts/GroupedBars.astro';
+import {
+  architectureData,
+  bondsComparisonData,
+  crossModelBondsL0Data,
+  crossmodelL0Data,
+  session2TrajectoryData,
+  session3L0TrajectoryData,
+  session4Gpt41miniTrajectoryData,
+  strategyContrastData,
+} from '../../data/autoresearch-charts';
+
 Estimated reading time: 25 minutes
 
 About a week ago, Andrej Karpathy released [autoresearch](https://github.com/karpathy/autoresearch): a system where an LLM agent improves a model training pipeline overnight. The agent edits code, trains for five minutes, checks whether the result improved, and keeps or discards the change. Over roughly 700 experiments, it found around 20 real improvements and cut GPT-2 training time by 11%.
@@ -80,7 +95,7 @@ This is closer to optimising an organisation's operating procedure than to optim
 
 The system has three layers with a strict information flow.
 
-![Architecture of the autoresearch setup. A local autoresearcher agent edits the workflow prompt and reads sanitised feedback, support scripts enforce the information barrier and produce summaries, and the experiment sandbox runs the unchanged evaluation harness behind that boundary.](../../assets/blog/autoresearch/architecture_information_flow.svg)
+<FlowDiagram {...architectureData} />
 
 - **The autoresearcher agent** runs locally, driven by Claude Code following a `program.md` — the same pattern as autoresearch. It edits system prompts, makes git commits, reads sanitised feedback, and decides whether to keep or revert each change. It never sees task content, verifier code, or raw conversation transcripts.
 - **Support scripts** handle the structured mechanics. `run_experiment.py` triggers a Harbor job in a Docker sandbox with the current system prompt. `feedback.py` enforces the information barrier: it reads the raw trial outputs, strips task-specific content, runs the bonds classifier, and returns a sanitised JSON summary. `results.py` manages the TSV audit trail.
@@ -114,7 +129,7 @@ The autoresearcher sees this at three levels: the **bond profile** (distribution
 
 We classified all 30 Claude Sonnet 4.6 traces from these runs — 12 perfect (reward 1.0) and 18 partial (reward 0.9). The classifier should be read as a behavioural lens rather than ground truth about cognition, but even on that basis the headline finding was counterintuitive.
 
-![Behavioural comparison across 30 traces. Perfect traces were more execution-heavy and less verification-heavy than partial traces, with deliberation remaining low in both groups.](../../assets/blog/autoresearch/bonds_comparison.svg)
+<GroupedBars {...bondsComparisonData} />
 
 **Perfect traces are more execution-heavy, not more verification-heavy.**
 
@@ -157,7 +172,7 @@ The autoresearcher reasonably concluded that the fifth error looked like a model
 
 The second Claude Sonnet 4.6 run tested four modifications against five instances simultaneously (Adelaide, Brisbane, Darwin, Melbourne, Perth). The baseline mean reward was 0.94: three instances at 0.9 and two at 1.0.
 
-![Claude full-reference trajectory across five task instances. Most prompt changes only added cost, while the systematic checklist improved mean reward to 0.98 with a modest token increase.](../../assets/blog/autoresearch/session2_trajectory.svg)
+<BarsWithBaseline {...session2TrajectoryData} />
 
 Three approaches failed:
 - **Iteration 1** added a completeness rule: "verify every room, do not skip rooms, a missed error costs more than an extra turn." No reward change. The instruction was redundant.
@@ -201,7 +216,7 @@ The three failed approaches all tried to **add more work**. The successful one *
 
 That pattern — structure matters more than volume — echoes the previous article's result that the strongest models did not simply verify more; they verified as part of a structured workflow.
 
-![Strategy contrast between the full-reference and L0 winners. The full-reference prompt benefits from systematic granular verification, while the L0 prompt benefits from uncertainty management and cross-room consistency.](../../assets/blog/autoresearch/strategy_contrast.svg)
+<ConceptGrid {...strategyContrastData} />
 
 ### Claude at L0
 
@@ -209,7 +224,7 @@ The Claude `L0` run targeted the hardest reference level: `audit-office-building
 
 The baseline reward on the Adelaide `L0` instance was 0.73. The agent found 2 of 3 issues, but it also produced false positives.
 
-![Claude L0 trajectory. Confidence thresholds removed false positives, the five-instance full-reference checklist backfired, and cross-room consistency delivered a perfect score with sharply lower token usage.](../../assets/blog/autoresearch/session3_l0_trajectory.svg)
+<BarsWithBaseline {...session3L0TrajectoryData} />
 
 The first useful change was not a better checking procedure. It was a confidence threshold: **only report an error if the model can identify the specific assumption, parameter, or formula that appears to be wrong**. That lifted reward from 0.73 to 0.83 by eliminating false positives.
 
@@ -233,7 +248,7 @@ What it does show is that prompt optimisation is reference-level-specific. At hi
 
 The GPT-4.1-mini `L0` run repeated the same task on the weakest model from the earlier benchmark. The baseline was much worse than Claude's: reward 0.37, only 1 of 3 planted errors found, and 18 false positives.
 
-![GPT-4.1-mini L0 trajectory. The winning verification-gate iteration eliminates false positives and reaches 0.83, while several later prompt additions degrade or crash performance entirely.](../../assets/blog/autoresearch/session4_gpt41mini_trajectory.svg)
+<BarsWithBaseline {...session4Gpt41miniTrajectoryData} />
 
 What transferred was the strategy, not the exact wording. The soft confidence-threshold language that helped Claude did not work here. But once **the instruction was rewritten as a hard verification gate** — do not report a discrepancy unless the tool confirms it — false positives disappeared and reward jumped to 0.83.
 
@@ -241,7 +256,7 @@ That shows two things at once. First, the underlying prompt idea generalises acr
 
 The ceiling also remained model-specific. GPT-4.1-mini improved dramatically, but it did not reach Claude's `L0` result. The best run found 2 of 3 issues with no false positives.
 
-![Cross-model L0 contrast. The same broad L0 strategy transfers across Claude Sonnet 4.6 and GPT-4.1-mini, but the prompt wording and final ceiling differ substantially.](../../assets/blog/autoresearch/crossmodel_l0_contrast.svg)
+<ConceptGrid {...crossmodelL0Data} />
 
 | Model | Baseline | Best | Winning strategy | Constraint style |
 | --- | --- | --- | --- | --- |
@@ -286,7 +301,7 @@ The GPT-4.1-mini run adds a second qualifier. The high-level idea that worked at
 
 That suggests prompt portability has two layers. Strategy may travel. Surface phrasing may not. It also suggests that prompt optimisation has a ceiling. GPT-4.1-mini improved much more in relative terms than Claude, but it still stopped well short of Claude's absolute result.
 
-![Cross-model behavioural comparison at L0. Claude's better traces remain more execution-heavy, while GPT-4.1-mini's failure cases carry more deliberation and its best run leans heavily on verification.](../../assets/blog/autoresearch/bonds_comparison_crossmodel_l0.svg)
+<GroupedBars {...crossModelBondsL0Data} />
 
 ### Behavioural analysis inverted our assumptions
 

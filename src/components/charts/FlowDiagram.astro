@@ -1,0 +1,269 @@
+<!-- ABOUTME: Editorial layered-flow diagram — stacked tiers split by a labelled barrier rail. -->
+<!-- ABOUTME: Terminal-style kickers + items, warm-dark palette, no interactivity (static). -->
+---
+export interface FlowItem {
+	kind?: 'command' | 'note';
+	text: string;
+}
+
+export interface FlowLayer {
+	key: string;
+	kicker: string;
+	label: string;
+	items: FlowItem[];
+	accent?: string;
+}
+
+export interface FlowBarrier {
+	label: string;
+	downLabel?: string;
+	upLabel?: string;
+}
+
+interface Props {
+	title?: string;
+	topLayer: FlowLayer;
+	barrier: FlowBarrier;
+	bottomLayers: FlowLayer[];
+	caption?: string;
+}
+
+const { title, topLayer, barrier, bottomLayers, caption } = Astro.props;
+
+const DEFAULT_ACCENT = '#e8a84c';
+const DEFAULT_BOTTOM_ACCENTS = ['#7ab5af', '#d87b55'];
+
+function resolveAccent(layer: FlowLayer, fallback: string): string {
+	return layer.accent ?? fallback;
+}
+
+const topAccent = resolveAccent(topLayer, DEFAULT_ACCENT);
+const bottomLayersWithAccent = bottomLayers.map((l, i) => ({
+	...l,
+	accent: resolveAccent(l, DEFAULT_BOTTOM_ACCENTS[i % DEFAULT_BOTTOM_ACCENTS.length]),
+}));
+---
+
+<figure class="fd">
+	{title && <div class="fd-title">{title}</div>}
+
+	<div class="fd-stack">
+		<div class="fd-layer" style={`--fd-accent: ${topAccent};`}>
+			<div class="fd-kicker">{topLayer.kicker}</div>
+			<div class="fd-layer-label">{topLayer.label}</div>
+			<ul class="fd-items">
+				{topLayer.items.map((it) => (
+					<li class:list={['fd-item', `fd-item-${it.kind ?? 'command'}`]}>
+						{(it.kind ?? 'command') === 'command' && <span class="fd-item-prefix" aria-hidden="true">&gt;</span>}
+						<span>{it.text}</span>
+					</li>
+				))}
+			</ul>
+		</div>
+
+		<div class="fd-barrier" aria-label={barrier.label}>
+			{barrier.downLabel && (
+				<div class="fd-flow-line fd-flow-down">
+					<span class="fd-flow-arrow" aria-hidden="true">↓</span>
+					<span class="fd-flow-text">{barrier.downLabel}</span>
+				</div>
+			)}
+			<div class="fd-barrier-rail">
+				<span class="fd-barrier-dash" aria-hidden="true"></span>
+				<span class="fd-barrier-label">{barrier.label}</span>
+				<span class="fd-barrier-dash" aria-hidden="true"></span>
+			</div>
+			{barrier.upLabel && (
+				<div class="fd-flow-line fd-flow-up">
+					<span class="fd-flow-arrow" aria-hidden="true">↑</span>
+					<span class="fd-flow-text">{barrier.upLabel}</span>
+				</div>
+			)}
+		</div>
+
+		<div class={`fd-bottom-row fd-bottom-${bottomLayersWithAccent.length}`}>
+			{bottomLayersWithAccent.map((layer) => (
+				<div class="fd-layer" style={`--fd-accent: ${layer.accent};`}>
+					<div class="fd-kicker">{layer.kicker}</div>
+					<div class="fd-layer-label">{layer.label}</div>
+					<ul class="fd-items">
+						{layer.items.map((it) => (
+							<li class:list={['fd-item', `fd-item-${it.kind ?? 'command'}`]}>
+								{(it.kind ?? 'command') === 'command' && <span class="fd-item-prefix" aria-hidden="true">&gt;</span>}
+								<span>{it.text}</span>
+							</li>
+						))}
+					</ul>
+				</div>
+			))}
+		</div>
+	</div>
+
+	{caption && <figcaption class="fd-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.fd {
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+	}
+
+	.fd-title {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+		margin: 0 0 1.25rem;
+	}
+
+	.fd-stack {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.fd-layer {
+		position: relative;
+		padding: 1.1rem 1.25rem 1rem;
+		border: 1px solid var(--color-border);
+		border-radius: 4px;
+		background: var(--color-surface);
+		overflow: hidden;
+	}
+
+	.fd-layer::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		width: 3px;
+		background: var(--fd-accent);
+	}
+
+	.fd-kicker {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.08em;
+		color: var(--fd-accent);
+		margin-bottom: 0.35rem;
+	}
+
+	.fd-layer-label {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		letter-spacing: 0.08em;
+		text-transform: lowercase;
+		color: var(--color-text-primary);
+		margin-bottom: 0.7rem;
+	}
+
+	.fd-items {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+	}
+
+	.fd-item {
+		display: flex;
+		gap: 0.5rem;
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		line-height: 1.5;
+		color: var(--color-text-primary);
+	}
+
+	.fd-item-note {
+		color: var(--color-text-tertiary);
+		font-size: 0.75rem;
+		padding-left: 0.1rem;
+		margin-top: 0.2rem;
+	}
+
+	.fd-item-prefix {
+		color: var(--fd-accent);
+		flex-shrink: 0;
+	}
+
+	.fd-barrier {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.25rem;
+		padding: 0.6rem 0;
+	}
+
+	.fd-flow-line {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0 1rem;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.08em;
+		color: var(--color-text-tertiary);
+	}
+
+	.fd-flow-arrow {
+		color: var(--color-accent);
+		font-size: 0.875rem;
+		line-height: 1;
+	}
+
+	.fd-flow-up {
+		justify-content: flex-end;
+	}
+
+	.fd-barrier-rail {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.25rem 0;
+	}
+
+	.fd-barrier-dash {
+		flex: 1;
+		height: 1px;
+		background: var(--color-accent);
+	}
+
+	.fd-barrier-label {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		letter-spacing: 0.18em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+		flex-shrink: 0;
+	}
+
+	.fd-bottom-row {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 0.75rem;
+	}
+
+	@media (min-width: 640px) {
+		.fd-bottom-2 {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 1rem;
+		}
+	}
+
+	.fd-caption {
+		margin-top: 1.5rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--color-text-tertiary);
+		line-height: 1.55;
+		font-style: normal;
+	}
+</style>

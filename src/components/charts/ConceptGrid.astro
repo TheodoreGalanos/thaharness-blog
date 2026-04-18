@@ -1,0 +1,149 @@
+<!-- ABOUTME: Editorial concept grid — generic taxonomy cells with symbol, label, definition. -->
+<!-- ABOUTME: Shares visual language with BondTypes (rail accent, mono labels, display symbol). -->
+---
+export interface ConceptItem {
+	key: string;
+	symbol: string;
+	label: string;
+	definition: string;
+	accent?: string;
+}
+
+interface Props {
+	title?: string;
+	items: ConceptItem[];
+	caption?: string;
+	columns?: 1 | 2;
+}
+
+const { title, items, caption, columns = 2 } = Astro.props;
+
+const DEFAULT_ACCENTS = ['#e8a84c', '#7ab5af', '#5a8a84', '#d87b55'];
+
+const itemsWithAccent = items.map((it, i) => ({
+	...it,
+	accent: it.accent ?? DEFAULT_ACCENTS[i % DEFAULT_ACCENTS.length],
+	index: i + 1,
+}));
+---
+
+<figure class="cg">
+	{title && <div class="cg-title">{title}</div>}
+
+	<div class={`cg-grid cg-grid-${columns}`}>
+		{itemsWithAccent.map((it) => (
+			<div class="cg-cell" style={`--cg-accent: ${it.accent};`}>
+				<div class="cg-cell-header">
+					<span class="cg-index">{String(it.index).padStart(2, '0')}</span>
+					<span class="cg-symbol">{it.symbol}</span>
+				</div>
+				<div class="cg-label">{it.label}</div>
+				<p class="cg-definition">{it.definition}</p>
+			</div>
+		))}
+	</div>
+
+	{caption && <figcaption class="cg-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.cg {
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+	}
+
+	.cg-title {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+		margin: 0 0 1.25rem;
+	}
+
+	.cg-grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 0.75rem;
+	}
+
+	@media (min-width: 640px) {
+		.cg-grid-2 {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 1rem;
+		}
+	}
+
+	.cg-cell {
+		position: relative;
+		padding: 1.25rem 1.25rem 1.1rem;
+		border: 1px solid var(--color-border);
+		border-radius: 4px;
+		background: var(--color-surface);
+		overflow: hidden;
+	}
+
+	.cg-cell::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		width: 3px;
+		background: var(--cg-accent);
+	}
+
+	.cg-cell-header {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.cg-index {
+		font-family: var(--font-mono);
+		font-size: 0.65rem;
+		letter-spacing: 0.14em;
+		color: var(--color-text-tertiary);
+	}
+
+	.cg-symbol {
+		font-family: var(--font-display);
+		font-size: 2.25rem;
+		line-height: 1;
+		font-weight: 500;
+		letter-spacing: -0.02em;
+		color: var(--cg-accent);
+	}
+
+	.cg-label {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		letter-spacing: 0.08em;
+		text-transform: lowercase;
+		color: var(--color-text-primary);
+		margin-bottom: 0.55rem;
+	}
+
+	.cg-definition {
+		font-family: var(--font-body);
+		font-size: 0.9375rem;
+		line-height: 1.55;
+		color: var(--color-text-secondary);
+		margin: 0;
+	}
+
+	.cg-caption {
+		margin-top: 1.5rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--color-text-tertiary);
+		line-height: 1.55;
+		font-style: normal;
+	}
+</style>
