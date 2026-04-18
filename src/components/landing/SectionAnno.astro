@@ -1,0 +1,13 @@
+<!-- ABOUTME: Mono dimension-line section annotation: SECTION 01 / NAME with flanking teal rules. -->
+<!-- ABOUTME: Use above section headings to mark editorial chapters in landing-page chrome. -->
+---
+interface Props {
+	number: number;
+	name: string;
+}
+
+const { number, name } = Astro.props;
+const padded = String(number).padStart(2, '0');
+---
+
+<p class="anno">SECTION {padded} / {name.toUpperCase()}</p>

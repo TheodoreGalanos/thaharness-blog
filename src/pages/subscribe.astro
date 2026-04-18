@@ -1,0 +1,328 @@
+<!-- ABOUTME: Dedicated subscribe page — terminal-chromed landing page with inline form. -->
+<!-- ABOUTME: Hero subscribe button targets this page; form posts directly to /api/subscribe (Resend). -->
+---
+import { getCollection } from 'astro:content';
+import Analytics from '@vercel/analytics/astro';
+import SpeedInsights from '@vercel/speed-insights/astro';
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import BlueprintBg from '../components/landing/BlueprintBg.astro';
+import SectionAnno from '../components/landing/SectionAnno.astro';
+import SheetCorners from '../components/landing/SheetCorners.astro';
+import StatusBar from '../components/landing/StatusBar.astro';
+import { SITE_TITLE } from '../consts';
+import { getPublishedBlogPosts } from '../utils/blog';
+
+const posts = getPublishedBlogPosts(await getCollection('blog'));
+const allTags = new Set(posts.flatMap((p) => p.data.tags ?? []));
+const totalPosts = posts.length;
+const totalTopics = allTags.size;
+const lastPostDate = posts[0]?.data.pubDate ?? new Date();
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+	<head>
+		<BaseHead
+			title={`Subscribe | ${SITE_TITLE}`}
+			description="Subscribe to The Harness — a working notebook on harness engineering, agentic AI, and AEC. New posts delivered as they go live."
+		/>
+	</head>
+	<body class="bg-[--color-bg]">
+		<Header />
+		<StatusBar posts={totalPosts} topics={totalTopics} lastPostDate={lastPostDate} />
+		<main>
+			<BlueprintBg class="subscribe-section scanlines">
+				<SheetCorners figNumber={1} figName="SUBSCRIBE" totalSheets={1} />
+				<div class="subscribe-inner">
+					<div class="mx-auto w-full max-w-[--width-wide]">
+						<SectionAnno number={1} name="Subscribe" />
+					</div>
+
+					<div class="subscribe-stack">
+						<h1 class="subscribe-headline">
+							Get new posts in your inbox<span aria-hidden="true" class="headline-cursor"></span>
+						</h1>
+						<p class="subscribe-deck">
+							Long-form essays on harness engineering, agentic AI, and AEC. New writing only — no daily digest, no resharing, no marketing.
+						</p>
+
+						<aside class="subscribe-readout" aria-label="what to expect">
+							<div class="subscribe-readout-line">
+								<span class="terminal-prompt">harness ~ $</span>
+								<span class="terminal-cmd">cat newsletter.toml</span>
+							</div>
+							<div class="terminal-line-muted">› cadence <span class="terminal-amber">when there is something to say</span></div>
+							<div class="terminal-line-muted">› format <span class="terminal-amber">long-form essay</span></div>
+							<div class="terminal-line-muted">› topics <span class="terminal-amber">harness-engineering · agent-evaluation · ai-in-aec</span></div>
+							<div class="terminal-line-muted">› unsubscribe <span class="terminal-amber">one click, any time</span></div>
+						</aside>
+
+						<form
+							class="subscribe-form"
+							data-subscribe-form
+							data-success-message="You are subscribed. New posts will land in your inbox."
+							data-error-message="Subscription failed. Please try again in a moment."
+						>
+							<div class="subscribe-form-row">
+								<label class="subscribe-input-label" for="subscribe-page-email">
+									<span aria-hidden="true" class="subscribe-input-prompt">&gt;</span>
+									<span class="sr-only">Email address</span>
+								</label>
+								<input
+									id="subscribe-page-email"
+									type="email"
+									name="email"
+									required
+									placeholder="you@example.com"
+									autocomplete="email"
+									data-subscribe-email
+									class="subscribe-input"
+								/>
+								<button type="submit" data-subscribe-button class="cmd-btn cmd-btn-primary subscribe-submit">
+									<span aria-hidden="true" class="cmd-btn-sigil">$</span>subscribe
+								</button>
+							</div>
+							<p class="subscribe-status" data-subscribe-status aria-live="polite"></p>
+							<p class="subscribe-meta">
+								Powered by Resend &middot; unsubscribe any time &middot; <a href="/rss.xml">RSS</a> &middot; <a href="/blog/">archive</a>
+							</p>
+						</form>
+					</div>
+				</div>
+			</BlueprintBg>
+		</main>
+		<Footer />
+		<Analytics />
+		<SpeedInsights />
+	</body>
+</html>
+
+<style>
+	.subscribe-section {
+		padding: 0;
+		min-height: calc(100svh - 6.65rem);
+		display: flex;
+	}
+
+	.subscribe-inner {
+		display: flex;
+		flex-direction: column;
+		gap: 1.75rem;
+		width: 100%;
+		padding: 2rem 1.5rem 2.5rem;
+	}
+
+	@media (min-width: 768px) {
+		.subscribe-inner {
+			padding: 2.5rem 1.5rem 3rem;
+			gap: 2rem;
+		}
+	}
+
+	.subscribe-stack {
+		display: flex;
+		flex-direction: column;
+		gap: 1.25rem;
+		max-width: 44rem;
+		margin: 0 auto;
+		width: 100%;
+		flex: 1;
+		justify-content: center;
+	}
+
+	.subscribe-headline {
+		font-family: var(--font-display);
+		font-weight: 500;
+		font-size: clamp(2rem, 4.4vw, 3rem);
+		line-height: 1.1;
+		letter-spacing: -0.015em;
+		color: var(--color-text-primary);
+		margin: 0;
+	}
+
+	.subscribe-deck {
+		font-family: var(--font-body);
+		font-size: 1.0625rem;
+		line-height: 1.55;
+		color: var(--color-text-secondary);
+		margin: 0;
+		max-width: 38rem;
+	}
+
+	@media (min-width: 768px) {
+		.subscribe-deck {
+			font-size: 1.125rem;
+		}
+	}
+
+	/* Inline terminal readout — same language as the hero readout */
+	.subscribe-readout {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		line-height: 1.7;
+		color: var(--color-text-secondary);
+		padding: 0.85rem 1rem;
+		border: 1px solid var(--color-border);
+		background-color: var(--color-terminal-bg);
+		border-radius: 6px;
+	}
+
+	.subscribe-readout-line {
+		margin-bottom: 0.4rem;
+	}
+
+	/* Form — inline, no surface card. Just input + cmd-btn in a single row. */
+	.subscribe-form {
+		display: flex;
+		flex-direction: column;
+		gap: 0.6rem;
+		margin-top: 0.25rem;
+	}
+
+	.subscribe-form-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: stretch;
+		gap: 0.5rem;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		background-color: var(--color-terminal-bg);
+		padding: 0.4rem;
+		transition: border-color 0.25s var(--ease-standard);
+	}
+
+	.subscribe-form-row:focus-within {
+		border-color: var(--color-accent-secondary);
+	}
+
+	.subscribe-input-label {
+		display: inline-flex;
+		align-items: center;
+		padding-left: 0.5rem;
+		font-family: var(--font-mono);
+		color: var(--color-accent-secondary);
+		font-weight: 500;
+		font-size: 0.95rem;
+	}
+
+	.subscribe-input-prompt {
+		display: inline-block;
+	}
+
+	.subscribe-input {
+		flex: 1 1 14rem;
+		min-width: 0;
+		padding: 0.65rem 0.5rem;
+		font-family: var(--font-mono);
+		font-size: 0.875rem;
+		color: var(--color-text-primary);
+		background: transparent;
+		border: 0;
+		outline: none;
+	}
+
+	.subscribe-input::placeholder {
+		color: var(--color-text-tertiary);
+	}
+
+	.subscribe-submit {
+		flex: 0 0 auto;
+		padding: 0.6rem 1rem;
+	}
+
+	.subscribe-status {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		color: var(--color-text-tertiary);
+		min-height: 1.2rem;
+		margin: 0;
+	}
+
+	.subscribe-meta {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.04em;
+		color: var(--color-text-tertiary);
+		margin: 0;
+	}
+
+	.subscribe-meta a {
+		color: var(--color-text-secondary);
+		text-decoration: none;
+		background-image: linear-gradient(
+			var(--color-text-tertiary),
+			var(--color-text-tertiary)
+		);
+		background-size: 100% 1px;
+		background-position: 0 100%;
+		background-repeat: no-repeat;
+		transition:
+			color 0.25s var(--ease-standard),
+			background-image 0.25s var(--ease-standard);
+	}
+
+	.subscribe-meta a:hover {
+		color: var(--color-accent);
+		background-image: linear-gradient(var(--color-accent), var(--color-accent));
+	}
+</style>
+
+<script>
+	const form = document.querySelector('[data-subscribe-form]');
+	if (form instanceof HTMLFormElement) {
+		const emailInput = form.querySelector('[data-subscribe-email]');
+		const submitButton = form.querySelector('[data-subscribe-button]');
+		const status = form.querySelector('[data-subscribe-status]');
+
+		if (
+			emailInput instanceof HTMLInputElement &&
+			submitButton instanceof HTMLButtonElement &&
+			status instanceof HTMLElement
+		) {
+			form.addEventListener('submit', async (event) => {
+				event.preventDefault();
+				status.textContent = 'subscribing…';
+				status.style.color = 'var(--color-text-secondary)';
+				submitButton.disabled = true;
+
+				try {
+					const response = await fetch('/api/subscribe', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ email: emailInput.value.trim() }),
+					});
+
+					const contentType = response.headers.get('content-type') ?? '';
+					const result = contentType.includes('application/json')
+						? await response.json()
+						: null;
+
+					if (!response.ok || !result) {
+						throw new Error(
+							typeof result?.error === 'string'
+								? result.error
+								: 'Newsletter signup is unavailable right now.'
+						);
+					}
+
+					status.textContent =
+						typeof result?.message === 'string'
+							? result.message
+							: form.dataset.successMessage ?? 'You are subscribed.';
+					status.style.color = 'var(--color-accent)';
+					form.reset();
+				} catch (error) {
+					status.textContent =
+						error instanceof Error && error.message
+							? error.message
+							: form.dataset.errorMessage ?? 'Subscription failed. Please try again.';
+					status.style.color = 'var(--color-text-secondary)';
+				} finally {
+					submitButton.disabled = false;
+				}
+			});
+		}
+	}
+</script>

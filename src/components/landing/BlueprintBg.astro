@@ -1,0 +1,16 @@
+<!-- ABOUTME: Section wrapper that paints a faint teal blueprint grid behind its children. -->
+<!-- ABOUTME: Uses radial mask so the grid fades toward the section edges; reduce-motion safe. -->
+---
+interface Props {
+	class?: string;
+}
+
+const { class: className = '' } = Astro.props;
+---
+
+<section class:list={['blueprint-grid', className]}>
+	<div aria-hidden="true" class="blueprint-grid-bg"></div>
+	<div class="blueprint-grid-content">
+		<slot />
+	</div>
+</section>

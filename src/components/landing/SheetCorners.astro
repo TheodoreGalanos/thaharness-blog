@@ -1,0 +1,20 @@
+<!-- ABOUTME: Drafting-sheet corner annotations: FIG. NN / NAME (top-left) and SHEET NN OF NN (bottom-right). -->
+<!-- ABOUTME: Parent must be position:relative for these to anchor correctly. -->
+---
+interface Props {
+	figNumber: number;
+	figName: string;
+	totalSheets?: number;
+}
+
+const { figNumber, figName, totalSheets = 4 } = Astro.props;
+const paddedN = String(figNumber).padStart(2, '0');
+const paddedT = String(totalSheets).padStart(2, '0');
+---
+
+<div aria-hidden="true" class="sheet-corner sheet-corner-tl">
+	FIG. {paddedN} / {figName}
+</div>
+<div aria-hidden="true" class="sheet-corner sheet-corner-br">
+	SHEET {paddedN} OF {paddedT}
+</div>

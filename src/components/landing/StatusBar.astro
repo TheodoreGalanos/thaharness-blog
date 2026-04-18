@@ -1,0 +1,40 @@
+<!-- ABOUTME: Mono status strip mounted below the site header on landing pages. -->
+<!-- ABOUTME: Pulls real data: post count, topic count, latest-post relative date. -->
+---
+interface Props {
+	posts: number;
+	topics: number;
+	lastPostDate: Date;
+}
+
+const { posts, topics, lastPostDate } = Astro.props;
+
+function relativeFrom(date: Date): string {
+	const now = new Date();
+	const diffMs = now.getTime() - date.getTime();
+	const day = 1000 * 60 * 60 * 24;
+	const days = Math.floor(diffMs / day);
+	if (days < 1) return 'today';
+	if (days < 7) return `${days}d ago`;
+	if (days < 30) return `${Math.floor(days / 7)}w ago`;
+	if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+	return `${Math.floor(days / 365)}y ago`;
+}
+
+const yyyymm =
+	lastPostDate.getFullYear().toString() +
+	String(lastPostDate.getMonth() + 1).padStart(2, '0');
+---
+
+<div class="status-bar" role="status" aria-label="The Harness build status">
+	<div class="status-bar-inner">
+		<span class="status-bar-live">
+			<span aria-hidden="true" class="status-bar-dot"></span>
+			<span>LIVE</span>
+		</span>
+		<span><span class="status-bar-key">build</span><span class="status-bar-val">{yyyymm}</span></span>
+		<span><span class="status-bar-key">posts</span><span class="status-bar-val">{posts}</span></span>
+		<span class="status-bar-disciplines"><span class="status-bar-key">topics</span><span class="status-bar-val">{topics}</span></span>
+		<span class="status-bar-trail">last_post {relativeFrom(lastPostDate)}</span>
+	</div>
+</div>

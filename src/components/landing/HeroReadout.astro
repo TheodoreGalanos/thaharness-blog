@@ -1,0 +1,43 @@
+<!-- ABOUTME: Decorative terminal readout anchored top-right of the hero. -->
+<!-- ABOUTME: Static copy reflects the editorial premise — harness, capability, AEC. -->
+---
+interface Props {
+	postCount: number;
+}
+
+const { postCount } = Astro.props;
+const padded = String(postCount).padStart(2, '0');
+---
+
+<aside class="terminal-window hero-readout" aria-label="harness ~ working notebook">
+	<div aria-hidden="true" class="terminal-dots">
+		<span class="terminal-dot"></span>
+		<span class="terminal-dot"></span>
+		<span class="terminal-dot"></span>
+	</div>
+	<div>
+		<span class="terminal-prompt">harness ~ $</span>
+		<span class="terminal-cmd">cat manifest.toml</span>
+	</div>
+	<div class="terminal-line-muted">› posts <span class="terminal-amber">{padded}</span></div>
+	<div class="terminal-line-muted">› topic <span class="terminal-amber">harness-engineering</span></div>
+	<div class="terminal-line-muted">› topic <span class="terminal-amber">agent-evaluation</span></div>
+	<div class="terminal-line-muted">› topic <span class="terminal-amber">ai-in-aec</span></div>
+	<div class="terminal-line-muted">› stream → /writing_</div>
+</aside>
+
+<style>
+	.hero-readout {
+		display: none;
+	}
+	@media (min-width: 1280px) {
+		.hero-readout {
+			display: block;
+			position: absolute;
+			right: 1.5rem;
+			top: 3rem;
+			width: 260px;
+			z-index: 2;
+		}
+	}
+</style>

@@ -13,8 +13,9 @@ const isActive = href === pathname || href === '/' + (subpath?.[0] || '');
 
 <a
 	href={href}
+	aria-current={isActive ? 'page' : undefined}
 	class:list={[
-		'font-heading text-[0.75rem] sm:text-[0.8125rem] font-normal px-1.5 sm:px-2 py-2 transition-colors duration-250',
+		'header-link inline-flex items-center font-heading text-[0.75rem] sm:text-[0.8125rem] font-normal px-1.5 sm:px-2 py-2 transition-colors duration-250',
 		isActive
 			? 'text-[--color-accent]'
 			: 'text-[--color-text-secondary] hover:text-[--color-text-primary]',
@@ -22,5 +23,13 @@ const isActive = href === pathname || href === '/' + (subpath?.[0] || '');
 	]}
 	{...props}
 >
-	<slot />
+	{isActive && <span aria-hidden="true" class="header-link-cursor">&gt;</span>}<slot />
 </a>
+
+<style>
+	.header-link-cursor {
+		color: var(--color-accent-secondary);
+		margin-right: 0.3em;
+		font-weight: 500;
+	}
+</style>
