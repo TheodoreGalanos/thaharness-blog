@@ -35,3 +35,15 @@ journal/
 
 # local planning notes
 docs/
+
+# spec / planning markdown at repo root
+/spec*.md
+
+# unused logo variants — only logo-icon-trimmed.png is in use
+src/assets/logo-icon-only.png
+src/assets/logo-icon.png
+src/assets/logo-icon.svg
+src/assets/logo-transparent.png
+
+# binary archives
+*.zip
