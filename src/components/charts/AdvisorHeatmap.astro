@@ -1,0 +1,472 @@
+<!-- ABOUTME: Editorial heatmap grid — arm rows × seed columns, cell values with reward subscript. -->
+<!-- ABOUTME: Pure CSS grid, same right-gutter hover panel as sibling charts. -->
+---
+export interface AdvisorHeatmapColumn {
+	key: string;
+	label: string;
+}
+
+export interface AdvisorHeatmapCell {
+	column: string;
+	calls: number;
+	finalReward: number;
+}
+
+export interface AdvisorHeatmapRow {
+	key: string;
+	label: string;
+	group?: string;
+	cells: AdvisorHeatmapCell[];
+	note?: string;
+}
+
+interface Props {
+	title?: string;
+	subtitle?: string;
+	columns: AdvisorHeatmapColumn[];
+	rows: AdvisorHeatmapRow[];
+	caption?: string;
+	maxCalls?: number;
+}
+
+const {
+	title,
+	subtitle,
+	columns,
+	rows,
+	caption,
+	maxCalls = 5,
+} = Astro.props;
+
+function cellFor(row: AdvisorHeatmapRow, columnKey: string): AdvisorHeatmapCell {
+	return (
+		row.cells.find((c) => c.column === columnKey) ?? {
+			column: columnKey,
+			calls: 0,
+			finalReward: 0,
+		}
+	);
+}
+
+function cellTone(calls: number): string {
+	if (calls === 0) return 'zero';
+	if (calls === 1) return 'one';
+	return 'many';
+}
+
+// Divider between groups when the row's group key changes.
+const rowsWithDivider = rows.map((r, i) => ({
+	row: r,
+	dividerBefore: i > 0 && rows[i - 1].group !== r.group,
+}));
+---
+
+<figure class="ah" data-ah-root>
+	{title && (
+		<div class="ah-title">
+			{title}
+			{subtitle && <span class="ah-subtitle"> · {subtitle}</span>}
+		</div>
+	)}
+
+	<div class="ah-body">
+		<aside class="ah-panel" aria-live="polite">
+			<div class="ah-panel-sticky">
+				<div class="ah-panel-inner">
+					<span class="ah-panel-kicker" data-ah-kicker></span>
+					<span class="ah-panel-body" data-ah-body></span>
+				</div>
+			</div>
+		</aside>
+
+		<div
+			class="ah-grid"
+			style={`grid-template-columns: minmax(10rem, 16rem) repeat(${columns.length}, minmax(4.5rem, 1fr));`}
+		>
+			<div class="ah-header-label" aria-hidden="true"></div>
+			{columns.map((col) => (
+				<div class="ah-col-label">{col.label}</div>
+			))}
+
+			{rowsWithDivider.map(({ row, dividerBefore }) => (
+				<Fragment>
+					{dividerBefore && <div class="ah-row-divider" aria-hidden="true"></div>}
+					<button
+						type="button"
+						class="ah-row-label"
+						data-ah-row-label
+						data-row={row.key}
+						data-row-label={row.label}
+						data-description={row.note ?? ''}
+					>
+						{row.label}
+					</button>
+					{columns.map((col) => {
+						const cell = cellFor(row, col.key);
+						const tone = cellTone(cell.calls);
+						const intensity = Math.min(cell.calls / maxCalls, 1);
+						return (
+							<div
+								class={`ah-cell ah-cell-${tone}`}
+								data-ah-cell
+								data-row={row.key}
+								data-row-label={row.label}
+								data-column={col.key}
+								data-column-label={col.label}
+								data-calls={cell.calls}
+								data-final-reward={cell.finalReward.toFixed(2)}
+								style={`--ah-intensity: ${intensity.toFixed(2)};`}
+								tabindex="0"
+								role="button"
+								aria-label={`${row.label}, ${col.label}: ${cell.calls} advisor calls, final reward ${cell.finalReward.toFixed(2)}`}
+							>
+								<span class="ah-cell-calls">{cell.calls}</span>
+								<span class="ah-cell-reward">R&nbsp;{cell.finalReward.toFixed(2)}</span>
+							</div>
+						);
+					})}
+				</Fragment>
+			))}
+		</div>
+	</div>
+
+	{caption && <figcaption class="ah-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.ah {
+		--ah-sticky-top: 8rem;
+		--ah-zero-bg: color-mix(in srgb, var(--color-border) 35%, transparent);
+		--ah-accent-haiku: #7ab5af;
+		--ah-accent-one: color-mix(in srgb, var(--ah-accent-haiku) 55%, transparent);
+		--ah-accent-many: var(--ah-accent-haiku);
+		position: relative;
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+	}
+
+	.ah-title {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+		margin: 0 0 1.25rem;
+	}
+
+	.ah-subtitle {
+		color: var(--color-text-tertiary);
+		font-weight: 400;
+	}
+
+	.ah-body {
+		position: relative;
+	}
+
+	.ah-grid {
+		display: grid;
+		row-gap: 0.4rem;
+		column-gap: 0.6rem;
+		align-items: center;
+	}
+
+	.ah-header-label,
+	.ah-col-label {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+		text-align: center;
+		padding: 0 0 0.25rem;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.ah-header-label {
+		border-bottom-color: transparent;
+	}
+
+	.ah-row-divider {
+		grid-column: 1 / -1;
+		height: 1px;
+		background: var(--color-border);
+		opacity: 0.8;
+		margin: 0.4rem 0 0.4rem;
+	}
+
+	.ah-row-label {
+		background: transparent;
+		border: none;
+		padding: 0;
+		margin: 0;
+		text-align: left;
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		letter-spacing: 0.02em;
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		transition: color 0.2s var(--ease-standard);
+	}
+
+	.ah-row-label:hover,
+	.ah-row-label:focus-visible {
+		color: var(--color-text-primary);
+		outline: none;
+	}
+
+	.ah-cell {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		min-height: 4rem;
+		padding: 0.6rem 0.4rem 0.5rem;
+		border: 1px solid var(--color-border);
+		background: var(--ah-zero-bg);
+		cursor: pointer;
+		transition:
+			filter 0.18s var(--ease-standard),
+			opacity 0.18s var(--ease-standard),
+			border-color 0.18s var(--ease-standard);
+	}
+
+	.ah-cell-zero {
+		background: var(--ah-zero-bg);
+	}
+
+	.ah-cell-one {
+		background: var(--ah-accent-one);
+		border-color: color-mix(in srgb, var(--ah-accent-haiku) 40%, var(--color-border));
+	}
+
+	.ah-cell-many {
+		background: var(--ah-accent-many);
+		border-color: var(--ah-accent-haiku);
+	}
+
+	.ah-cell:hover,
+	.ah-cell:focus-visible {
+		filter: brightness(1.1);
+		outline: none;
+		border-color: var(--color-accent);
+	}
+
+	.ah[data-hover-row] .ah-cell:not(.is-row-active) {
+		opacity: 0.4;
+	}
+
+	.ah-cell-calls {
+		font-family: var(--font-mono);
+		font-size: 1.3rem;
+		font-weight: 500;
+		line-height: 1;
+		letter-spacing: 0.02em;
+	}
+
+	.ah-cell-zero .ah-cell-calls {
+		color: var(--color-text-tertiary);
+	}
+
+	.ah-cell-one .ah-cell-calls,
+	.ah-cell-many .ah-cell-calls {
+		color: var(--color-bg);
+	}
+
+	.ah-cell-reward {
+		margin-top: 0.3rem;
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.ah-cell-zero .ah-cell-reward {
+		color: var(--color-text-tertiary);
+	}
+
+	.ah-cell-one .ah-cell-reward,
+	.ah-cell-many .ah-cell-reward {
+		color: color-mix(in srgb, var(--color-bg) 70%, transparent);
+	}
+
+	/* Panel — same right-gutter pattern as sibling charts. */
+	.ah-panel {
+		margin: 0;
+		padding: 0;
+		opacity: 0;
+		max-height: 0;
+		overflow: hidden;
+		transition:
+			opacity 0.18s var(--ease-standard),
+			max-height 0.22s var(--ease-standard),
+			margin 0.22s var(--ease-standard);
+		pointer-events: none;
+	}
+
+	.ah.is-active .ah-panel {
+		opacity: 1;
+		max-height: 24rem;
+		margin-bottom: 1rem;
+	}
+
+	.ah-panel-sticky {
+		padding-top: 0.6rem;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.ah-panel-inner {
+		display: block;
+		font-family: var(--font-body);
+		font-size: 0.875rem;
+		line-height: 1.55;
+		color: var(--color-text-primary);
+	}
+
+	.ah-panel-kicker {
+		display: block;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin-bottom: 0.5rem;
+		min-height: 0.9rem;
+	}
+
+	.ah-panel-body {
+		display: block;
+		color: var(--color-text-secondary);
+	}
+
+	@media (min-width: 1440px) {
+		.ah-panel {
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: calc(100% + 2rem);
+			width: 14rem;
+			max-height: none;
+			margin: 0;
+			overflow: visible;
+		}
+
+		.ah.is-active .ah-panel {
+			max-height: none;
+			margin: 0;
+		}
+
+		.ah-panel-sticky {
+			position: sticky;
+			top: var(--ah-sticky-top);
+			padding: 0 0 0 1rem;
+			border-top: none;
+			border-left: 1px solid var(--color-border);
+		}
+	}
+
+	.ah-caption {
+		margin-top: 1.5rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--color-text-tertiary);
+		line-height: 1.55;
+		font-style: normal;
+	}
+
+	@media (max-width: 640px) {
+		.ah-cell {
+			min-height: 3rem;
+			padding: 0.4rem 0.2rem 0.3rem;
+		}
+		.ah-cell-calls {
+			font-size: 1rem;
+		}
+		.ah-cell-reward {
+			font-size: 0.68rem;
+		}
+		.ah-row-label {
+			font-size: 0.68rem;
+		}
+	}
+</style>
+
+<script>
+	(() => {
+		const roots = document.querySelectorAll<HTMLElement>('[data-ah-root]');
+		roots.forEach((root) => {
+			const kickerEl = root.querySelector<HTMLElement>('[data-ah-kicker]');
+			const bodyEl = root.querySelector<HTMLElement>('[data-ah-body]');
+			if (!kickerEl || !bodyEl) return;
+
+			const cells = root.querySelectorAll<HTMLElement>('[data-ah-cell]');
+			const rowLabels = root.querySelectorAll<HTMLElement>('[data-ah-row-label]');
+
+			function setPanel(kicker: string, body: string) {
+				kickerEl!.textContent = kicker;
+				bodyEl!.textContent = body;
+				root.classList.add('is-active');
+			}
+
+			function resetPanel() {
+				root.classList.remove('is-active');
+			}
+
+			function activateRow(key: string | null) {
+				if (!key) {
+					root.removeAttribute('data-hover-row');
+					cells.forEach((c) => c.classList.remove('is-row-active'));
+					return;
+				}
+				root.setAttribute('data-hover-row', key);
+				cells.forEach((c) => {
+					c.classList.toggle('is-row-active', c.dataset.row === key);
+				});
+			}
+
+			cells.forEach((cell) => {
+				const show = () => {
+					const rowLabel = cell.dataset.rowLabel ?? '';
+					const colLabel = cell.dataset.columnLabel ?? '';
+					const calls = cell.dataset.calls ?? '0';
+					const finalReward = cell.dataset.finalReward ?? '';
+					const callWord = calls === '1' ? 'call' : 'calls';
+					setPanel(
+						`${rowLabel} · ${colLabel}`,
+						`${calls} advisor ${callWord} · final reward ${finalReward}`,
+					);
+					activateRow(cell.dataset.row ?? null);
+				};
+				const hide = () => {
+					resetPanel();
+					activateRow(null);
+				};
+				cell.addEventListener('mouseenter', show);
+				cell.addEventListener('focus', show);
+				cell.addEventListener('mouseleave', hide);
+				cell.addEventListener('blur', hide);
+			});
+
+			rowLabels.forEach((labelEl) => {
+				const show = () => {
+					const rowLabel = labelEl.dataset.rowLabel ?? '';
+					const desc = labelEl.dataset.description ?? '';
+					setPanel(rowLabel, desc);
+					activateRow(labelEl.dataset.row ?? null);
+				};
+				const hide = () => {
+					resetPanel();
+					activateRow(null);
+				};
+				labelEl.addEventListener('mouseenter', show);
+				labelEl.addEventListener('focus', show);
+				labelEl.addEventListener('mouseleave', hide);
+				labelEl.addEventListener('blur', hide);
+			});
+		});
+	})();
+</script>

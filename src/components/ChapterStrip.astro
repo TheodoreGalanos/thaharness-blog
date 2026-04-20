@@ -13,7 +13,9 @@ interface Props {
 }
 
 const { headings, minSections = 3 } = Astro.props;
-const sections = headings.filter((h) => h.depth === 2);
+const sections = headings.filter(
+	(h) => h.depth === 2 && h.slug !== 'footnote-label',
+);
 const show = sections.length >= minSections;
 ---
 

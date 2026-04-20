@@ -1,0 +1,704 @@
+<!-- ABOUTME: Editorial multi-line trajectory chart with optional min-max bands, baseline + markers. -->
+<!-- ABOUTME: SSR via Observable Plot + JSDOM; hover panel reuses the right-gutter pattern. -->
+---
+import { Plot, renderPlot } from '../../lib/plot-ssr';
+
+export interface LineTrajectoryPoint {
+	cycle: number;
+	value: number;
+	min?: number;
+	max?: number;
+}
+
+export interface LineTrajectorySeries {
+	key: string;
+	label: string;
+	accent?: string;
+	dashed?: boolean;
+	note?: string;
+	points: LineTrajectoryPoint[];
+}
+
+export interface LineTrajectoryBaseline {
+	value: number;
+	label: string;
+	note?: string;
+}
+
+export interface LineTrajectoryMarker {
+	cycle: number;
+	value: number;
+	label: string;
+	accent?: string;
+	note?: string;
+}
+
+interface Props {
+	title?: string;
+	subtitle?: string;
+	series: LineTrajectorySeries[];
+	baseline?: LineTrajectoryBaseline;
+	markers?: LineTrajectoryMarker[];
+	yDomain?: [number, number];
+	yLabel?: string;
+	xLabel?: string;
+	caption?: string;
+}
+
+const {
+	title,
+	subtitle,
+	series,
+	baseline,
+	markers = [],
+	yDomain = [0, 1],
+	yLabel = '↑ mean reward',
+	xLabel = 'evolution cycle →',
+	caption,
+} = Astro.props;
+
+const DEFAULT_ACCENTS = ['#e8a84c', '#7ab5af', '#d87b55', '#b8d4d0', '#bf4d43', '#605850'];
+
+const seriesResolved = series.map((s, i) => ({
+	...s,
+	accent: s.accent ?? DEFAULT_ACCENTS[i % DEFAULT_ACCENTS.length],
+}));
+
+// Flatten all cycles for x-domain.
+const allCycles = seriesResolved.flatMap((s) => s.points.map((p) => p.cycle));
+const xMin = Math.min(...allCycles);
+const xMax = Math.max(...allCycles);
+
+// Build band data (only for series with min/max defined on every point).
+const bandRows = seriesResolved.flatMap((s) => {
+	const hasBand = s.points.every((p) => typeof p.min === 'number' && typeof p.max === 'number');
+	if (!hasBand) return [];
+	return s.points.map((p) => ({
+		seriesKey: s.key,
+		cycle: p.cycle,
+		low: p.min ?? p.value,
+		high: p.max ?? p.value,
+		accent: s.accent,
+	}));
+});
+
+const lineRows = seriesResolved.flatMap((s) =>
+	s.points.map((p) => ({
+		seriesKey: s.key,
+		cycle: p.cycle,
+		value: p.value,
+		accent: s.accent,
+		dashed: s.dashed ?? false,
+	})),
+);
+
+const dotRows = seriesResolved.flatMap((s) =>
+	s.points.map((p) => ({
+		seriesKey: s.key,
+		cycle: p.cycle,
+		value: p.value,
+		accent: s.accent,
+	})),
+);
+
+const markerRows = markers.map((m) => ({
+	...m,
+	accent: m.accent ?? '#e8a84c',
+}));
+
+const bandMarks = bandRows.length
+	? [
+			Plot.areaY(bandRows, {
+				x: 'cycle',
+				y1: 'low',
+				y2: 'high',
+				fill: 'accent',
+				fillOpacity: 0.14,
+				z: 'seriesKey',
+				curve: 'monotone-x',
+			}),
+		]
+	: [];
+
+const baselineMarks = baseline
+	? [
+			Plot.ruleY([baseline.value], {
+				stroke: '#9a9087',
+				strokeDasharray: '4 4',
+				strokeOpacity: 0.7,
+			}),
+		]
+	: [];
+
+// Separate dashed/solid line rows so we can give each its own mark.
+const solidLineRows = lineRows.filter((r) => !r.dashed);
+const dashedLineRows = lineRows.filter((r) => r.dashed);
+
+const svg = renderPlot({
+	width: 720,
+	height: 440,
+	marginTop: 28,
+	marginRight: 20,
+	marginBottom: 52,
+	marginLeft: 58,
+	style: {
+		background: 'transparent',
+		color: '#9a9087',
+		fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+		fontSize: '11px',
+		overflow: 'visible',
+	},
+	x: {
+		label: xLabel,
+		labelOffset: 40,
+		labelAnchor: 'center',
+		domain: [xMin, xMax],
+		ticks: xMax - xMin + 1 > 12 ? Math.min(10, xMax - xMin + 1) : xMax - xMin + 1,
+		tickFormat: (d: number) => `${d}`,
+		grid: true,
+	},
+	y: {
+		label: yLabel,
+		labelOffset: 42,
+		labelAnchor: 'center',
+		domain: yDomain,
+		tickFormat: (d: number) => d.toFixed(2),
+		grid: true,
+	},
+	marks: [
+		Plot.frame({ stroke: '#332c24', strokeWidth: 1 }),
+		...bandMarks,
+		...baselineMarks,
+		Plot.line(solidLineRows, {
+			x: 'cycle',
+			y: 'value',
+			stroke: 'accent',
+			strokeWidth: 2,
+			z: 'seriesKey',
+			curve: 'monotone-x',
+		}),
+		...(dashedLineRows.length
+			? [
+					Plot.line(dashedLineRows, {
+						x: 'cycle',
+						y: 'value',
+						stroke: 'accent',
+						strokeWidth: 1.75,
+						strokeDasharray: '4 3',
+						strokeOpacity: 0.75,
+						z: 'seriesKey',
+						curve: 'monotone-x',
+					}),
+				]
+			: []),
+		Plot.dot(dotRows, {
+			x: 'cycle',
+			y: 'value',
+			fill: 'accent',
+			stroke: '#18130e',
+			strokeWidth: 1.5,
+			r: 3.5,
+			className: 'lt-dot',
+		}),
+		...(markerRows.length
+			? [
+					Plot.dot(markerRows, {
+						x: 'cycle',
+						y: 'value',
+						fill: 'accent',
+						stroke: '#18130e',
+						strokeWidth: 2,
+						r: 7,
+						className: 'lt-marker',
+					}),
+					Plot.text(markerRows, {
+						x: 'cycle',
+						y: 'value',
+						text: 'label',
+						dy: -14,
+						textAnchor: 'middle',
+						fontSize: 11,
+						fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+						fill: '#faf9f6',
+					}),
+				]
+			: []),
+	],
+});
+
+const panelPointCount = dotRows.length + markerRows.length;
+const hoverPoints = [
+	...dotRows.map((d) => ({
+		kind: 'dot' as const,
+		seriesKey: d.seriesKey,
+		cycle: d.cycle,
+		value: d.value,
+	})),
+	...markerRows.map((m) => ({
+		kind: 'marker' as const,
+		seriesKey: `__marker-${m.label}`,
+		cycle: m.cycle,
+		value: m.value,
+		label: m.label,
+		note: m.note ?? '',
+	})),
+];
+void panelPointCount;
+---
+
+<figure class="lt" data-lt-root>
+	{title && (
+		<div class="lt-title">
+			{title}
+			{subtitle && <span class="lt-subtitle"> · {subtitle}</span>}
+		</div>
+	)}
+
+	<div class="lt-legend" role="list">
+		{seriesResolved.map((s) => (
+			<button
+				type="button"
+				class="lt-legend-pill"
+				data-lt-legend
+				data-series={s.key}
+				data-series-label={s.label}
+				data-description={s.note ?? ''}
+				style={`--lt-series-color: ${s.accent}`}
+				role="listitem"
+			>
+				<span class={`lt-swatch ${s.dashed ? 'is-dashed' : ''}`} aria-hidden="true"></span>
+				<span class="lt-legend-label">{s.label}</span>
+			</button>
+		))}
+		{baseline && (
+			<span class="lt-legend-pill is-static" aria-hidden="true">
+				<span class="lt-swatch is-baseline"></span>
+				<span class="lt-legend-label">{baseline.label}</span>
+			</span>
+		)}
+	</div>
+
+	<div class="lt-body">
+		<aside class="lt-panel" aria-live="polite">
+			<div class="lt-panel-sticky">
+				<div class="lt-panel-inner">
+					<span class="lt-panel-kicker" data-lt-kicker></span>
+					<span class="lt-panel-body" data-lt-body></span>
+				</div>
+			</div>
+		</aside>
+
+		<div class="lt-chart" set:html={svg}></div>
+	</div>
+
+	{caption && <figcaption class="lt-caption">{caption}</figcaption>}
+
+	<script
+		type="application/json"
+		data-lt-series
+		set:html={JSON.stringify(
+			seriesResolved.map((s) => ({
+				key: s.key,
+				label: s.label,
+				note: s.note ?? '',
+				accent: s.accent,
+			})),
+		)}
+	/>
+	<script
+		type="application/json"
+		data-lt-points
+		set:html={JSON.stringify(hoverPoints)}
+	/>
+	<script
+		type="application/json"
+		data-lt-baseline
+		set:html={JSON.stringify(baseline ?? null)}
+	/>
+</figure>
+
+<style>
+	.lt {
+		--lt-sticky-top: 8rem;
+		position: relative;
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+	}
+
+	.lt-title {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+		margin: 0 0 0.75rem;
+	}
+
+	.lt-subtitle {
+		color: var(--color-text-tertiary);
+		font-weight: 400;
+	}
+
+	.lt-legend {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem 0.6rem;
+		margin-bottom: 1.25rem;
+	}
+
+	.lt-legend-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.3rem 0.6rem 0.3rem 0.4rem;
+		background: transparent;
+		border: 1px solid var(--color-border);
+		border-radius: 999px;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.04em;
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		transition:
+			color 0.2s var(--ease-standard),
+			border-color 0.2s var(--ease-standard),
+			background-color 0.2s var(--ease-standard);
+	}
+
+	.lt-legend-pill:hover,
+	.lt-legend-pill:focus-visible {
+		color: var(--color-text-primary);
+		border-color: var(--lt-series-color, var(--color-accent));
+		background: color-mix(in srgb, var(--lt-series-color, var(--color-accent)) 8%, transparent);
+		outline: none;
+	}
+
+	.lt-legend-pill.is-static {
+		cursor: default;
+		color: var(--color-text-tertiary);
+	}
+
+	.lt-swatch {
+		display: inline-block;
+		width: 0.9rem;
+		height: 0.2rem;
+		border-radius: 2px;
+		background: var(--lt-series-color);
+	}
+
+	.lt-swatch.is-dashed {
+		background: repeating-linear-gradient(
+			to right,
+			var(--lt-series-color) 0 4px,
+			transparent 4px 7px
+		);
+	}
+
+	.lt-swatch.is-baseline {
+		background: repeating-linear-gradient(
+			to right,
+			var(--color-text-secondary) 0 4px,
+			transparent 4px 7px
+		);
+	}
+
+	.lt-body {
+		position: relative;
+	}
+
+	.lt-chart {
+		width: 100%;
+		overflow: visible;
+	}
+
+	.lt-chart :global(svg) {
+		width: 100%;
+		height: auto;
+		max-width: 100%;
+	}
+
+	.lt-chart :global(svg text) {
+		fill: var(--color-text-secondary);
+		font-family: var(--font-mono);
+		font-size: 11px;
+	}
+
+	.lt-chart :global(svg [aria-label="y-axis tick"] line),
+	.lt-chart :global(svg [aria-label="x-axis tick"] line) {
+		stroke: var(--color-text-tertiary);
+	}
+
+	.lt-chart :global(svg [aria-label="y-grid"] line),
+	.lt-chart :global(svg [aria-label="x-grid"] line) {
+		stroke: var(--color-border);
+		stroke-opacity: 0.5;
+	}
+
+	.lt-chart :global(.lt-dot) {
+		cursor: pointer;
+		transition: filter 0.18s var(--ease-standard);
+	}
+
+	.lt-chart :global(.lt-dot:hover),
+	.lt-chart :global(.lt-dot.is-active) {
+		filter: brightness(1.25);
+	}
+
+	.lt-chart :global(.lt-marker) {
+		cursor: pointer;
+		transition: filter 0.18s var(--ease-standard);
+	}
+
+	.lt-chart :global(.lt-marker:hover),
+	.lt-chart :global(.lt-marker.is-active) {
+		filter: brightness(1.2);
+	}
+
+	/* Legend-driven series highlight: dim non-matching lines, bands, and dots. */
+	.lt-chart :global(.is-series-dim) {
+		opacity: 0.14;
+		transition: opacity 0.18s var(--ease-standard);
+	}
+
+	.lt-chart :global(.is-series-highlight) {
+		transition: opacity 0.18s var(--ease-standard);
+	}
+
+	/* Bump stroke-width on the highlighted line for extra pop. */
+	.lt-chart :global(path.is-series-highlight) {
+		stroke-width: 3;
+	}
+
+	/* Panel — right-gutter at ≥1440px, inline collapse below. */
+	.lt-panel {
+		margin: 0;
+		padding: 0;
+		opacity: 0;
+		max-height: 0;
+		overflow: hidden;
+		transition:
+			opacity 0.18s var(--ease-standard),
+			max-height 0.22s var(--ease-standard),
+			margin 0.22s var(--ease-standard);
+		pointer-events: none;
+	}
+
+	.lt.is-active .lt-panel {
+		opacity: 1;
+		max-height: 28rem;
+		margin-bottom: 1rem;
+	}
+
+	.lt-panel-sticky {
+		padding-top: 0.6rem;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.lt-panel-inner {
+		display: block;
+		font-family: var(--font-body);
+		font-size: 0.875rem;
+		line-height: 1.55;
+		color: var(--color-text-primary);
+	}
+
+	.lt-panel-kicker {
+		display: block;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin-bottom: 0.5rem;
+		min-height: 0.9rem;
+	}
+
+	.lt-panel-body {
+		display: block;
+		color: var(--color-text-secondary);
+	}
+
+	@media (min-width: 1440px) {
+		.lt-panel {
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: calc(100% + 2rem);
+			width: 14rem;
+			max-height: none;
+			margin: 0;
+			overflow: visible;
+		}
+
+		.lt.is-active .lt-panel {
+			max-height: none;
+			margin: 0;
+		}
+
+		.lt-panel-sticky {
+			position: sticky;
+			top: var(--lt-sticky-top);
+			padding: 0 0 0 1rem;
+			border-top: none;
+			border-left: 1px solid var(--color-border);
+		}
+	}
+
+	.lt-caption {
+		margin-top: 1.5rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--color-text-tertiary);
+		line-height: 1.55;
+		font-style: normal;
+	}
+</style>
+
+<script>
+	(() => {
+		const roots = document.querySelectorAll<HTMLElement>('[data-lt-root]');
+		roots.forEach((root) => {
+			const kickerEl = root.querySelector<HTMLElement>('[data-lt-kicker]');
+			const bodyEl = root.querySelector<HTMLElement>('[data-lt-body]');
+			const seriesDataEl = root.querySelector<HTMLScriptElement>('[data-lt-series]');
+			const pointsDataEl = root.querySelector<HTMLScriptElement>('[data-lt-points]');
+			if (!kickerEl || !bodyEl || !seriesDataEl || !pointsDataEl) return;
+
+			type SeriesMeta = { key: string; label: string; note: string; accent: string };
+			type PointData =
+				| { kind: 'dot'; seriesKey: string; cycle: number; value: number }
+				| { kind: 'marker'; seriesKey: string; cycle: number; value: number; label: string; note: string };
+
+			let seriesList: SeriesMeta[] = [];
+			let pointList: PointData[] = [];
+			try {
+				seriesList = JSON.parse(seriesDataEl.textContent ?? '[]') as SeriesMeta[];
+				pointList = JSON.parse(pointsDataEl.textContent ?? '[]') as PointData[];
+			} catch {
+				return;
+			}
+
+			const seriesMap = new Map(seriesList.map((s) => [s.key, s]));
+			const dots = root.querySelectorAll<SVGElement>('.lt-dot');
+			const dotPoints = pointList.filter((p): p is Extract<PointData, { kind: 'dot' }> => p.kind === 'dot');
+			const markers = root.querySelectorAll<SVGElement>('.lt-marker');
+			const markerPoints = pointList.filter((p): p is Extract<PointData, { kind: 'marker' }> => p.kind === 'marker');
+			const legendPills = root.querySelectorAll<HTMLElement>('[data-lt-legend]');
+
+			// Tag every series-bearing SVG element with its series key, by accent-colour match.
+			// Plot renders one <path> per series for lines and bands, and per-point <circle>s for dots.
+			function normaliseColor(c: string | null): string {
+				return (c ?? '').trim().toLowerCase();
+			}
+			const accentToKey = new Map<string, string>();
+			seriesList.forEach((s) => accentToKey.set(normaliseColor(s.accent), s.key));
+
+			const svg = root.querySelector<SVGSVGElement>('.lt-chart svg');
+			const tagged: SVGElement[] = [];
+			if (svg) {
+				// Lines: stroke colour match.
+				svg.querySelectorAll<SVGPathElement>('path').forEach((path) => {
+					const stroke = normaliseColor(path.getAttribute('stroke'));
+					const fill = normaliseColor(path.getAttribute('fill'));
+					const key = accentToKey.get(stroke) ?? accentToKey.get(fill);
+					if (key) {
+						path.setAttribute('data-lt-series-path', key);
+						tagged.push(path);
+					}
+				});
+				// Dots (series data points, not event markers): fill colour match.
+				dots.forEach((dot) => {
+					const fill = normaliseColor(dot.getAttribute('fill'));
+					const key = accentToKey.get(fill);
+					if (key) {
+						dot.setAttribute('data-lt-series-path', key);
+						tagged.push(dot);
+					}
+				});
+			}
+
+			function setPanel(kicker: string, body: string) {
+				kickerEl!.textContent = kicker;
+				bodyEl!.textContent = body;
+				root.classList.add('is-active');
+			}
+
+			function highlightSeries(key: string | null) {
+				if (!key) {
+					tagged.forEach((el) => {
+						el.classList.remove('is-series-highlight', 'is-series-dim');
+					});
+					root.removeAttribute('data-hover-series');
+					return;
+				}
+				root.setAttribute('data-hover-series', key);
+				tagged.forEach((el) => {
+					const elKey = el.getAttribute('data-lt-series-path');
+					el.classList.toggle('is-series-highlight', elKey === key);
+					el.classList.toggle('is-series-dim', elKey !== key);
+				});
+			}
+
+			function reset() {
+				root.classList.remove('is-active');
+				dots.forEach((d) => d.classList.remove('is-active'));
+				markers.forEach((m) => m.classList.remove('is-active'));
+				highlightSeries(null);
+			}
+
+			dots.forEach((dot, i) => {
+				const show = () => {
+					const p = dotPoints[i];
+					if (!p) return;
+					const meta = seriesMap.get(p.seriesKey);
+					dots.forEach((d, j) => d.classList.toggle('is-active', j === i));
+					setPanel(
+						`${meta?.label ?? p.seriesKey} · cycle ${p.cycle} · ${p.value.toFixed(2)}`,
+						meta?.note ?? '',
+					);
+				};
+				dot.addEventListener('mouseenter', show);
+				dot.addEventListener('focus', show);
+				dot.addEventListener('mouseleave', reset);
+				dot.addEventListener('blur', reset);
+				dot.setAttribute('tabindex', '0');
+				dot.setAttribute('role', 'button');
+			});
+
+			markers.forEach((mark, i) => {
+				const show = () => {
+					const p = markerPoints[i];
+					if (!p) return;
+					markers.forEach((m, j) => m.classList.toggle('is-active', j === i));
+					setPanel(
+						`${p.label} · cycle ${p.cycle} · ${p.value.toFixed(2)}`,
+						p.note,
+					);
+				};
+				mark.addEventListener('mouseenter', show);
+				mark.addEventListener('focus', show);
+				mark.addEventListener('mouseleave', reset);
+				mark.addEventListener('blur', reset);
+				mark.setAttribute('tabindex', '0');
+				mark.setAttribute('role', 'button');
+			});
+
+			legendPills.forEach((pill) => {
+				const show = () => {
+					const label = pill.dataset.seriesLabel ?? '';
+					const desc = pill.dataset.description ?? '';
+					setPanel(label, desc);
+					highlightSeries(pill.dataset.series ?? null);
+				};
+				pill.addEventListener('mouseenter', show);
+				pill.addEventListener('focus', show);
+				pill.addEventListener('mouseleave', reset);
+				pill.addEventListener('blur', reset);
+			});
+		});
+	})();
+</script>

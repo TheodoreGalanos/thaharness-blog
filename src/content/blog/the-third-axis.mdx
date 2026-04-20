@@ -1,0 +1,272 @@
+---
+title: "The Third Axis"
+description: "What happens when you let the harness improve itself — two experiments in feedback-driven harness evolution, and an honest look at how rough the trajectory actually is."
+author: "Theodoros Galanos"
+category: "Engineering"
+draft: false
+pubDate: 2026-04-18
+tags:
+  [
+    "harness-engineering",
+    "agentic-ai",
+    "self-improvement",
+    "autoresearch",
+    "harness-design",
+    "ai-agents",
+  ]
+---
+
+import AdvisorHeatmap from '../../components/charts/AdvisorHeatmap.astro';
+import BarsWithBaseline from '../../components/charts/BarsWithBaseline.astro';
+import HorizontalStackedBars from '../../components/charts/HorizontalStackedBars.astro';
+import LineTrajectory from '../../components/charts/LineTrajectory.astro';
+import Pullquote from '../../components/Pullquote.astro';
+import {
+  advisorGridData,
+  bondDistributionData,
+  experiment1TrajectoryData,
+  experiment2TrajectoryData,
+  frontierDotData,
+} from '../../data/third-axis-charts';
+
+Estimated reading time: 14 minutes
+
+## Three Ways to Make an Agent Better
+
+There are two scaling stories the industry tells.
+
+The first is **training-time compute**: make the model bigger, feed it more data, let the next generation carry you further. The second is **inference-time compute**: give the model more room to think — reasoning traces, tool loops, longer context.
+
+Anthropic's own engineering posts have been quietly building out a third. [Effective harnesses for long-running agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) argues that *"model capability alone is insufficient"* — capability emerges from harness maturity. [Managed agents](https://www.anthropic.com/engineering/managed-agents) describes harnesses as **disposable infrastructure**, OS-like abstractions that outlast the models they host. [Harness design for long-running apps](https://www.anthropic.com/engineering/harness-design-long-running-apps) puts it plainly:
+
+<Pullquote attribution="Anthropic, Harness design for long-running apps">
+Every component in a harness encodes an assumption about what the model can't do on its own.
+</Pullquote>
+
+As models improve, those assumptions decay, and the harness needs pruning.
+
+The logical next step is to let the model improve its own harness. Not prompt engineering by hand — automated, with real task feedback, a diagnosis agent that reads its own failures and proposes mutations. In [Recursive by Design](/blog/recursive-by-design/) I laid out the architecture the rest of this work sits on top of — Recursive Language Models and Lambda-RLM as building blocks for harnesses that can carry long-running engineering tasks. This post is about what happens when you point the same pattern at the harness itself.
+
+These are a handful of early experiments, on a small collection of tasks. But they still tell us something.
+
+<Pullquote>
+The third axis is real, but the trajectory is rougher than the tidy story suggests.
+</Pullquote>
+
+---
+
+## The Loop
+
+A harness improvement loop sounds obvious in the abstract. Run the harness. See what it got wrong. Change something. Run it again. The detail hiding inside "change something" is where every wrong turn lives.
+
+Three questions have to be answered before the loop produces anything other than noise.
+
+**How does the agent know what the run actually did?**
+
+A failing reward score tells you the answer was wrong. It doesn't tell you *why*. Was the model missing a fact? Did it call the wrong tool? Did it spin on the problem without committing? Did it charge forward without checking its own work?
+
+Every assistant turn in a trajectory is labelled with one of four behaviours — what I call [*bonds*](https://arxiv.org/abs/2601.06002), following the agent-behaviour taxonomies literature. **Execution**: the obvious forward motion — tool calls, code runs, formatting an answer. **Verification**: looking backward at your own work, comparing output to expectations, catching errors. **Deliberation**: committed multi-step reasoning along a single path. e**X**ploration: branching, considering alternatives, hedging, forming hypotheses. The classifier is itself an LLM, prompted with definitions, indicators, and tie-break rules — verification wins over exploration wins over deliberation wins over execution, because the quieter behaviours are the easier ones to under-count.
+
+From the labelled sequence I build a transition matrix: the probability of going from Exploration to Deliberation, from Execution to Verification, and so on. Aggregate the matrices across many high-reward trials and you get an *ideal pattern* — the shape of thinking that tends to succeed. Compare a new run's matrix to the ideal and you get a structural score: not "did this answer land" but "did this agent think in a shape that usually lands."
+
+Bonds describe the *shape* of the reasoning. Separately, a **field-score** enrichment carries the per-output diagnosis straight from the verifier — not "wrong" but "vc was within 3%, Vd was 18% off, compliance flipped because Vd crossed the threshold." The evolver reads both. Bonds tell it how the agent thought. Field scores tell it where the answer fell short.
+
+**How does it decide what to change?**
+
+The first version of the evolver did everything in one LLM call: "here's the trajectory, propose a mutation." It generated confident nonsense. Beautiful prose, arbitrary edits, no grounding.
+
+I had to split it in two. Phase one is an **investigator** — an agent with tools that can query the trace, read the current skills, inspect the graveyard of past mutations, and write a report. [^aggagent] It's not asked to propose anything; it's asked to look. Phase two is a **proposer** — a constrained call that takes the investigation report plus the field scores and returns a structured mutation object. Add a skill, edit the system prompt, change a worked example. One thing at a time. Separating the two kept the proposer grounded: it had to cite the investigation, not vibe-propose.
+
+The **graveyard** feeds the proposer's prompt. Every mutation that regressed or failed is kept, with its reason. You don't relearn the same lessons across cycles.
+
+[^aggagent]: A couple of weeks after I'd built the investigator, a [paper on the same pattern](https://arxiv.org/abs/2604.11753) landed. Independent convergence, not influence.
+
+**How do you know it's not overfitting?**
+
+This is the question that makes harness evolution different from gradient descent. You can't just crank down the loss.
+
+Three guardrails. **Masked feedback**: the evolver sees "vc was 18% too high" but never the correct value. This keeps it from memorising test answers into the system prompt. **Graduated scope**: early mutations are quiet (small prompt tweaks); later ones can be structural (new skills, tool changes). You earn the right to larger edits. **Structural scoring**: rewards are computed per-field against an engine, not LLM-judged. The verifier is deterministic code, not a model you could flatter. [^catch]
+
+Is it bulletproof? No. A sufficiently clever evolver can still triangulate the masked signal. I haven't caught it doing so. I'm watching.
+
+[^catch]: Of course, this is only possible in verifiable domains where explicit verification happens numerically. Rubric design, and in some cases evolution, replaces this approach in more qualitative tasks.
+
+**The whole loop, in one file.** One of the pleasant surprises of building this was how terse the runner ended up. Once the bonds classifier, the two-phase evolver, the graveyard, and the guardrails are their own modules, starting a full harness-evolution experiment compresses to a config plus a three-line workspace scaffold. The launcher for Experiment 2 was this: [^aec-bench]
+
+```yaml
+# evolution.yaml
+workspace_path: ./my-harness
+models:
+  classifier: env:AWS_HAIKU_MODEL_ID
+  evolver:    env:AWS_SONNET_MODEL_ID
+solver:
+  name: first-evolution
+  adapter: tool_loop
+  model: env:AWS_HAIKU_MODEL_ID
+  client: {kind: bedrock}
+generate:
+  template: voltage-drop
+  count: 10
+  seed: 42
+  difficulties: [easy, medium]
+tasks:
+  domains: [electrical]
+backend: local
+batch_size: 5
+max_cycles: 10
+```
+
+```bash
+# One-time workspace scaffold
+mkdir -p my-harness/prompts my-harness/skills
+echo "You are an expert electrical engineer." > my-harness/prompts/system.md
+printf 'agent_adapter: tool_loop\nevolvable_layers: [prompts, skills]\nname: first-evolution\n' > my-harness/manifest.yaml
+
+# Run the evolution loop
+aec-bench evolve run -c evolution.yaml
+```
+
+[^aec-bench]: aec-bench is an open-source library for benchmarking agents on engineering tasks. Link when it ships.
+
+Thirty minutes later you have `trials/cycle_*.jsonl` with the same bond-sequence data analysed below. aec-bench isn't open yet — but the configuration surface is fixed, so this is a fair preview of the ergonomics when it ships.
+
+---
+
+## Experiment 1 — Proof of Life
+
+The question was narrow on purpose: can the loop, starting from nothing, improve a harness that I already know how to write by hand?
+
+**Setup.** A voltage-drop task with ten instances — the kind of AS/NZS 3008 cable-sizing problem an electrical engineer would solve in their sleep. Haiku 4.5 as the agent. The starting system prompt was one line: *"You are an expert electrical engineer."* No skills. No worked examples. Just the task instruction and a calculator tool.
+
+**Baseline: 0.85.**
+
+That surprised me. A 1-line prompt shouldn't solve 85% of a benchmark — but the task instruction carried most of the signal. It spells out the procedure (look up voltage-drop coefficient, adjust for single-phase, multiply by power factor, compute drop) and ships with a Python calc tool wrapping the exact engine the verifier uses. Haiku read the instruction, used the tool, and got four of five tasks right. The fifth — a 35mm² three-phase copper run at power factor 0.81 — was failing on the numerical fields by a small margin.
+
+So: evolution had to close a 15-point gap, on one stubborn task, without the benefit of seeing correct answers.
+
+**Cycles 1 through 5: plateau.** The evolver kept proposing the obvious thing — inject a voltage-drop coefficient skill. It did that. The skill grew over five cycles into a serious piece of reference material: AS/NZS Table 30 lookup values for both 75°C PVC and 90°C XLPE insulation, cable sizes from 1.5mm² to 300mm², worked examples for single-phase and three-phase. The score didn't move. Task 3 kept failing.
+
+**Cycle 6: 1.00.**
+
+The breakthrough mutation did something different. It **removed** content. The 90°C XLPE table got dropped — the tasks weren't using it. Cable sizes above 150mm² got trimmed. The worked examples shrank. And one line was added: *"Single-phase: Vc accounts for both conductors."*
+
+Task 3 passed. All five tasks passed.
+
+**Cycle 7: 0.70.**
+
+The evolver tried one more mutation on top of the peak. It broke two previously-working tasks. Cycles 8–10 returned to the 0.85 plateau. The run never re-hit 1.00.
+
+<LineTrajectory {...experiment1TrajectoryData} />
+
+Hill-climb search does not owe you monotonicity. Every search that can find a peak can walk off one. What saves you is that the peak is tagged in git — `evo-20260412-0317-6` in this case — and you can roll back. The loop's job is to *find* good harnesses; preserving them is a separate concern, and one aec-bench got right mostly because I borrowed the convention from deployment, not from ML.
+
+The unexpected lesson is the breakthrough itself. **Less + clearer > more + exhaustive.** The five-cycle plateau was spent building bigger reference material. The peak was reached by cutting half of it and adding one clarifying sentence. If a human harness engineer had proposed the cycle-6 mutation over coffee, it would have looked obvious. Evolution had to earn it.
+
+That's a +15 point autonomous gain, a 30-point swing within a two-cycle window, and a +15 net if you preserve the peak.
+
+---
+
+## Experiment 2 — The Habit Ceiling
+
+If prompts-and-skills evolution can close a 15-point gap on Haiku, the next question is whether it can unstick a weaker executor given a stronger lever: a sub-inference tool the agent can call when it hits a wall. Anthropic's playbook for their [advisor tool](https://platform.claude.com/docs/en/agents-and-tools/tool-use/advisor-tool) is clean — call at the start, call before declaring done, call when stuck. Does evolution discover that pattern on its own? And does advisor access let GPT-4.1-mini close the gap to Haiku?
+
+**Setup.** Six arms, crossing executor (Haiku 4.5 via Bedrock / GPT-4.1-mini via Azure) with prompt strength (a one-line system prompt, a 400-character "call when stuck" hint, and Anthropic's verbatim 2,300-character recommended advisor-timing block). Three seeds per arm on the main four; two N=1 anchors on the stock-prompt arms. Same ten voltage-drop instances per seed. Advisor backed by Sonnet 4.6, max five calls per trial. Evolution runs for up to ten cycles, stopping early on stagnation.
+
+**Baselines.** Before any evolution, on cycle 1:
+
+| Executor     | Prompt             | Cycle-1 mean |
+| ------------ | ------------------ | ------------ |
+| Haiku        | hint               | 0.88         |
+| Haiku        | Anthropic verbatim | 0.93         |
+| GPT-4.1-mini | hint               | 0.47         |
+| GPT-4.1-mini | Anthropic verbatim | 0.70         |
+
+Haiku is already roughly where evolution took it in Experiment 1. GPT-4.1-mini is the genuine stuck executor — the arm where a strategic-reasoning escalation tool should matter most. If evolution-plus-advisor works for anyone, it should work here.
+
+Ten cycles later, the by-arm trajectory is the cleanest summary of the run:
+
+<LineTrajectory {...experiment2TrajectoryData} />
+
+**The bond distributions tell the first story.** Aggregated across every trial in the experiment, the four 4.1-mini arms and the two Haiku arms form two disjoint clusters.
+
+<HorizontalStackedBars {...bondDistributionData} />
+
+GPT-4.1-mini does approximately zero exploration. It does not check the environment, run `--help`, or inspect the tool before committing to a calculation. It spends roughly a fifth of its turns deliberating — reasoning internally about tables it doesn't have, "recalling" `Vc = 14.6 mV/A/m` from AS/NZS 3008 and running the calc on that, even when the Python tool wrapping the actual engine is sitting in the workspace. The D bonds correlate directly with hallucinated-table failures in the trace.
+
+Haiku does the opposite. X runs consistently at 12–13% — the first turn is almost always an orientation step, typically `--help`. D runs under 1.5% — the model almost never reasons about values it hasn't looked up. Reward follows the bond shape: Haiku between 0.85 and 1.00, 4.1-mini between 0.40 and 0.60.
+
+These aren't intermediate findings that evolution closes over ten cycles. **These are the per-arm distributions after ten cycles of evolution trying to nudge them.** The evolver correctly diagnosed the 4.1-mini runs as *no_exploration* (X = 0% triggers the anti-pattern), rewrote the system prompt with read-tables-first instructions, added a cable-sizing skill with worked examples, and in arm 8 started the run with Anthropic's 2,300-character call-when-stuck block already installed. The distributions barely moved.
+
+**The advisor story is sharper.** Five calls, across 585 trials. All on Haiku.
+
+<AdvisorHeatmap {...advisorGridData} />
+
+Every Haiku seed that called the advisor ended *below* the arm mean. The seeds that cruised at 1.00 never pulled it. The seeds that landed at 0.85 pulled it once or twice. That is Anthropic's own "call when stuck" clause firing exactly on its preconditions — used correctly, used sparingly, used by the model that barely needed it.
+
+GPT-4.1-mini called the advisor zero times across nine seeds and three prompt variants. Three hundred trials. Zero escalations. One trial's log from arm 8 puts the refusal starkly. The assistant's internal calc and the tool output disagree by roughly three-fold on the voltage-drop coefficient:
+
+```
+Assistant: "From AS/NZS 3008 tables, Vc = 14.6 mV/A/m for 6mm² Cu
+             → Vd = 4.44 V → 1.93%, compliant"
+Tool:      vc_mv_per_a_m: 5.77, voltage_drop_v: 1.97, voltage_drop_percent: 0.86
+```
+
+Anthropic's verbatim prompt — the system prompt for this exact trial — says: *"if you've already retrieved data pointing one way and the advisor points another, don't silently switch. Surface the conflict in one more advisor call."* The assistant didn't. It silently reconciled, sometimes taking the tool value, sometimes keeping its own.
+
+One negative control makes this feel structural rather than stochastic. **Arm 6 and arm 7 are the same Haiku executor, on the same task, under the same evolver. The only variable is advisor-guidance prompt length** — 400 characters vs Anthropic's 2,300. The final reward: 0.93 ± 0.06 vs 0.93 ± 0.06. Neither better nor worse. The strongest available prompt is not a lever on this task for this model.
+
+**Evolution did try.** In arm 4 cycle 8 the evolver proposed rewriting the prompt and adding a `read-before-act` skill plus a `cable-sizing` skill — the score jumped from 0.20 to 0.60, then regressed over the following cycles. In arm 5 seed 42 cycle 2, a proposed mutation went the other direction: batch reward 0.00. An independent instance of the peak-walkoff I saw at cycle 7 of Experiment 1, on a different executor, a different seed, a different mutation target. The search behaves the same.
+
+One small positive signal at the other end of the distribution. On cycle 10 of arm 6, advisor calls jumped to 0.20 per trial — the evolver had finally surfaced the advisor tool through a prompt mutation, on a Haiku run that was already near-perfect. Evolution *can* teach advisor-calling. Just not reliably, and not to the executor that needed it.
+
+The frame I'd pre-registered — does evolution rediscover Anthropic's early-call-and-final-call pattern — turned out to be the wrong question. The cleaner finding, which the full matrix makes unavoidable:
+
+**Prompt evolution can tune what the agent says. It can't rewire what the agent habitually does.** 4.1-mini has a deliberation habit — about 21% of its turns — that produces hallucinated table lookups. Haiku has an exploration habit — about 13% — that prevents them. Both habits survive ten cycles of evolver mutation. Both survive Anthropic's verbatim directive. The advisor tool, which was the exact antidote to 4.1-mini's problem, was reached for by the model that didn't need it and refused by the model that did.
+
+<Pullquote>
+You don't fix a habit with a hint.
+</Pullquote>
+
+---
+
+## The Economic Case, In One Paragraph
+
+A third experiment was planned — a full cost/quality frontier across Sonnet, evolved Haiku, and evolved Haiku + advisor. Experiment 2 made the curve unnecessary. Stock Haiku on the voltage-drop task lands at 0.88 before any evolution. Evolved Haiku lands at 0.93 ± 0.06, with some seeds spiking to 1.00. Stock GPT-4.1-mini runs around 0.60. Evolved GPT-4.1-mini, with the strongest available prompt-and-advisor scaffold, lands at 0.53 ± 0.09. **On this task, model choice swamps the gains from prompt evolution — stock Haiku beats evolved GPT-4.1-mini by roughly 35 points on the mean.** On the frontier that matters — cost per *correct* answer, not cost per token — the cheaper-per-token executor stops being the cheaper option. The frontier is a dot, not a curve.
+
+<BarsWithBaseline {...frontierDotData} />
+
+I'll return to the full cost comparison when I have a task set where the match is actually close.
+
+---
+
+## What I Learned
+
+Seven things, ranked by how much they changed how I build.
+
+**Evolution quality-audits the benchmark.** The first three runs stagnated at 0.80 on a different task set — same score, every cycle, different configurations. I assumed the evolver was hitting a reasoning ceiling. It wasn't. Evolution was achieving 100% on every solvable task and correctly failing on a single unsolvable one — a task whose "hard" difficulty hid a parameter (conductor material) that couldn't be inferred from the remaining context. A coin flip dressed up as engineering inference. The 0.80 wall wasn't evolution's limit; it was the benchmark's flaw. I audited all 82 templates. Twelve had the same issue. All twelve are now fixed. An evolver that can't cheat is a more honest auditor than any human review would have been.
+
+**Hill-climb is not monotonic.** Cycle 7 broke what cycle 6 had won. I knew this in principle — every stochastic search has this property — but knowing it and watching your 1.00 collapse to 0.70 are different experiences. Experiment 2 gave me a second, independent instance: arm 5 seed 42 cycle 2 regressed to 0.00 on a batch that cycle 1 had handled at 0.40. Different executor, different seed, same shape. The right instinct isn't "add safeguards to prevent regression"; it's "preserve peaks cheaply, let the search breathe." Git tags cost nothing. Use them.
+
+**There is a habit ceiling, and prompt evolution sits under it.** Haiku has a 13% exploration habit; GPT-4.1-mini has a 21% deliberation habit. Both survive ten cycles of mutation and Anthropic's verbatim 2,300-character advisor-timing block. Evolution of prompts and skills can lift a model that's close to the answer; it can't lift one that systematically misreads the situation. The lever that changes habits lives in the model weights (training, fine-tune) or in the architectural scaffolding (structural harnesses that force tool orderings before the model has a chance to deliberate). Prompts ride on top of those, not against them.
+
+**A 95%-right skill can override correct instinct.** One of the runs had a skill with worked examples that omitted the power-factor multiplication step. Haiku, left to its own devices, applied power factor correctly from training knowledge. Given the skill, it followed the skill — worked examples and all — and got the answer wrong on 20% of tasks. A skill doesn't just add knowledge; it *displaces* the model's own. Small omissions in the skill become systematic bugs in the agent. [Harness is all you need](/blog/the-harness-is-all-you-need/) — and all it takes to lead the model astray.
+
+**Infrastructure constraints compound.** The turn limit (15) and the skill compaction budget (2000 chars) were both defensible defaults. Together they produced a failure mode — skills truncated mid-example, agents running out of turns on the truncated skills — that looked like a reasoning problem. It wasn't. It was arithmetic. Two reference tables at AS/NZS precision are ~2000 characters of pure data before any prose. The budget must respect the irreducible size of the domain.
+
+**Trust the model's judgement on content.** My first compaction strategy had a hard truncation fallback: if the LLM's compacted skill exceeded budget, chop the excess. That fallback produced more bugs than the thing it was guarding against. The replacement trusts the model: if it says the skill needs to be this large, the skill is that large. No ceiling. Zero regressions.
+
+**The "third axis" is real, but rougher than the tidy story.** Evolution did improve the harness. It did so autonomously, with real signal, against a task set where the gap wasn't closable by prompting alone. It also regressed, plateaued, and mis-diagnosed. None of those are failure modes of the idea; they're failure modes of any search. The question isn't whether the axis works. It's how much of your engineering effort moves into designing the *search* — the bonds, the guardrails, the graveyard — versus the harness itself.
+
+---
+
+## One Strategy Isn't Enough
+
+Hill-climb finds the best single strategy for a task. That's the shape of the bet in this post: one harness gets better.
+
+But a benchmark isn't one task, and a benchmark isn't one executor. An electrical voltage-drop problem and a structural seismic check reward different behaviours, different skills, different scaffolds. And — the Experiment 2 lesson — a harness that cannot unstick GPT-4.1-mini is not a failed harness in general; it may be exactly the scaffolding that unlocks a different class of executor altogether. Habits don't bend to prompts, but different habits find home in different harnesses. Hill-climb, by construction, forgets the alternatives it passed on the way up.
+
+The next post is about what happens when you stop climbing and start archiving — keeping diverse harnesses indexed by behaviour, so the right one can be recalled when the task, and the executor, call for it. Quality over one axis becomes quality across many.
+
+<Pullquote>
+One strategy isn't enough.
+</Pullquote>

@@ -20,8 +20,8 @@
   --color-bg: #18130e;
   --color-surface: #221c15;
   --color-text-primary: #faf9f6;
-  --color-text-secondary: #9a9087;
-  --color-text-tertiary: #605850;
+  --color-text-secondary: #b8aea4;
+  --color-text-tertiary: #8a7e72;
   --color-accent: #e8a84c;
   --color-accent-hover: #f0b84c;
   --color-accent-secondary: #7ab5af;
@@ -49,8 +49,8 @@
   --color-bg: #18130e;
   --color-surface: #221c15;
   --color-text-primary: #faf9f6;
-  --color-text-secondary: #9a9087;
-  --color-text-tertiary: #605850;
+  --color-text-secondary: #b8aea4;
+  --color-text-tertiary: #8a7e72;
   --color-accent: #e8a84c;
   --color-accent-hover: #f0b84c;
   --color-accent-secondary: #7ab5af;
@@ -640,7 +640,7 @@ html {
 
 body {
   font-family: var(--font-body);
-  font-size: 18px;
+  font-size: 1.1875rem;
   line-height: 1.75;
   color: var(--color-text-primary);
   background-color: var(--color-bg);
@@ -1027,7 +1027,7 @@ img {
   }
 
   body {
-    font-size: 17px;
+    font-size: 1.0625rem;
   }
 
   .page-shell {

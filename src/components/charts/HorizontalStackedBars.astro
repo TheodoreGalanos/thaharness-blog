@@ -1,0 +1,524 @@
+<!-- ABOUTME: Editorial horizontal stacked-bar chart — one row per subject, segments per category. -->
+<!-- ABOUTME: Pure CSS grid rendering, same right-gutter hover panel as sibling charts. -->
+---
+export interface HorizontalStackedBarsGroup {
+	key: string;
+	label: string;
+	note?: string;
+}
+
+export interface HorizontalStackedBarsSegment {
+	key: string;
+	label: string;
+	accent: string;
+	description?: string;
+}
+
+export interface HorizontalStackedBarsRow {
+	key: string;
+	label: string;
+	group?: string;
+	values: Record<string, number>;
+	note?: string;
+}
+
+interface Props {
+	title?: string;
+	subtitle?: string;
+	groups?: HorizontalStackedBarsGroup[];
+	segments: HorizontalStackedBarsSegment[];
+	rows: HorizontalStackedBarsRow[];
+	caption?: string;
+	valueFormat?: 'percent-1' | 'percent-0';
+}
+
+const {
+	title,
+	subtitle,
+	groups = [],
+	segments,
+	rows,
+	caption,
+	valueFormat = 'percent-1',
+} = Astro.props;
+
+function formatValue(v: number): string {
+	return valueFormat === 'percent-0' ? `${Math.round(v * 100)}%` : `${(v * 100).toFixed(1)}%`;
+}
+
+const rowTotals = rows.map((r) => ({
+	key: r.key,
+	total: segments.reduce((sum, s) => sum + (r.values[s.key] ?? 0), 0),
+}));
+
+function totalFor(rowKey: string): number {
+	return rowTotals.find((t) => t.key === rowKey)?.total ?? 1;
+}
+
+function groupFor(groupKey: string | undefined): HorizontalStackedBarsGroup | undefined {
+	return groups.find((g) => g.key === groupKey);
+}
+
+// Render ordering: group by the optional `group` key, preserving the order of the groups prop.
+const orderedRows = groups.length
+	? groups.flatMap((g) => rows.filter((r) => r.group === g.key))
+	: rows;
+---
+
+<figure class="hsb" data-hsb-root>
+	{title && (
+		<div class="hsb-title">
+			{title}
+			{subtitle && <span class="hsb-subtitle"> · {subtitle}</span>}
+		</div>
+	)}
+
+	<div class="hsb-legend" role="list">
+		{segments.map((s) => (
+			<button
+				type="button"
+				class="hsb-legend-pill"
+				data-hsb-legend
+				data-segment={s.key}
+				data-segment-label={s.label}
+				data-description={s.description ?? ''}
+				style={`--hsb-segment-color: ${s.accent}`}
+				role="listitem"
+			>
+				<span class="hsb-swatch" aria-hidden="true"></span>
+				<span class="hsb-legend-label">{s.label}</span>
+			</button>
+		))}
+	</div>
+
+	<div class="hsb-body">
+		<aside class="hsb-panel" aria-live="polite">
+			<div class="hsb-panel-sticky">
+				<div class="hsb-panel-inner">
+					<span class="hsb-panel-kicker" data-hsb-kicker></span>
+					<span class="hsb-panel-body" data-hsb-body></span>
+				</div>
+			</div>
+		</aside>
+
+		<div class="hsb-chart">
+			{orderedRows.map((row, idx) => {
+				const prev = idx > 0 ? orderedRows[idx - 1] : null;
+				const needsDivider = groups.length > 0 && prev && prev.group !== row.group;
+				const group = groupFor(row.group);
+				return (
+					<Fragment>
+						{needsDivider && <div class="hsb-group-divider" aria-hidden="true"></div>}
+						<button
+							type="button"
+							class="hsb-row-label"
+							data-hsb-row-label
+							data-row={row.key}
+							data-row-label={row.label}
+							data-description={row.note ?? group?.note ?? ''}
+						>
+							{row.label}
+						</button>
+						<div class="hsb-row-bar" data-hsb-row={row.key}>
+							{segments
+								.map((seg) => {
+									const value = row.values[seg.key] ?? 0;
+									const total = totalFor(row.key);
+									const share = total > 0 ? value / total : 0;
+									return { seg, value, share, widthPct: share * 100 };
+								})
+								.filter((s) => s.widthPct > 0)
+								.map(({ seg, value, widthPct }) => (
+									<div
+										class="hsb-segment"
+										data-hsb-segment
+										data-row={row.key}
+										data-row-label={row.label}
+										data-segment={seg.key}
+										data-segment-label={seg.label}
+										data-value={value}
+										data-formatted={formatValue(value)}
+										data-note={row.note ?? ''}
+										data-description={seg.description ?? ''}
+										style={`width: ${widthPct.toFixed(2)}%; --hsb-segment-color: ${seg.accent};`}
+										tabindex="0"
+										role="button"
+										aria-label={`${row.label}, ${seg.label}: ${formatValue(value)}`}
+									>
+										<span class="hsb-segment-value">{formatValue(value)}</span>
+									</div>
+								))}
+						</div>
+					</Fragment>
+				);
+			})}
+		</div>
+	</div>
+
+	{caption && <figcaption class="hsb-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.hsb {
+		--hsb-sticky-top: 8rem;
+		position: relative;
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+	}
+
+	.hsb-title {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+		margin: 0 0 0.75rem;
+	}
+
+	.hsb-subtitle {
+		color: var(--color-text-tertiary);
+		font-weight: 400;
+	}
+
+	.hsb-legend {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem 0.6rem;
+		margin-bottom: 1.25rem;
+	}
+
+	.hsb-legend-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.3rem 0.6rem 0.3rem 0.4rem;
+		background: transparent;
+		border: 1px solid var(--color-border);
+		border-radius: 999px;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.04em;
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		transition:
+			color 0.2s var(--ease-standard),
+			border-color 0.2s var(--ease-standard),
+			background-color 0.2s var(--ease-standard);
+	}
+
+	.hsb-legend-pill:hover,
+	.hsb-legend-pill:focus-visible {
+		color: var(--color-text-primary);
+		border-color: var(--hsb-segment-color, var(--color-accent));
+		background: color-mix(in srgb, var(--hsb-segment-color, var(--color-accent)) 8%, transparent);
+		outline: none;
+	}
+
+	.hsb-swatch {
+		display: inline-block;
+		width: 0.55rem;
+		height: 0.55rem;
+		border-radius: 2px;
+		background: var(--hsb-segment-color);
+	}
+
+	.hsb-body {
+		position: relative;
+	}
+
+	.hsb-chart {
+		display: grid;
+		grid-template-columns: minmax(12rem, 17rem) 1fr;
+		row-gap: 0.45rem;
+		column-gap: 1.25rem;
+		align-items: center;
+	}
+
+	.hsb-group-divider {
+		grid-column: 1 / -1;
+		height: 1px;
+		background: var(--color-border);
+		opacity: 0.7;
+		margin: 0.6rem 0 0.5rem;
+	}
+
+	.hsb-row-label {
+		background: transparent;
+		border: none;
+		padding: 0;
+		margin: 0;
+		text-align: left;
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		letter-spacing: 0.02em;
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		transition: color 0.2s var(--ease-standard);
+	}
+
+	.hsb-row-label:hover,
+	.hsb-row-label:focus-visible {
+		color: var(--color-text-primary);
+		outline: none;
+	}
+
+	.hsb-row-bar {
+		display: flex;
+		align-items: stretch;
+		height: 2rem;
+		border: 1px solid var(--color-border);
+		background: color-mix(in srgb, var(--color-border) 30%, transparent);
+		overflow: hidden;
+	}
+
+	.hsb-segment {
+		position: relative;
+		background: var(--hsb-segment-color);
+		border: none;
+		padding: 0;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: flex-start;
+		padding-left: 0.5rem;
+		transition:
+			filter 0.18s var(--ease-standard),
+			opacity 0.18s var(--ease-standard);
+		min-width: 0;
+	}
+
+	.hsb-segment:hover,
+	.hsb-segment:focus-visible {
+		filter: brightness(1.15);
+		outline: none;
+	}
+
+	.hsb[data-hover-segment] .hsb-segment:not(.is-segment-active) {
+		opacity: 0.35;
+	}
+
+	.hsb[data-hover-row] .hsb-segment:not(.is-row-active) {
+		opacity: 0.35;
+	}
+
+	.hsb-segment-value {
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		font-weight: 500;
+		color: var(--color-bg);
+		letter-spacing: 0.02em;
+		pointer-events: none;
+		white-space: nowrap;
+	}
+
+	/* Hide labels in very narrow segments. */
+	.hsb-segment[style*='width: 0.'] .hsb-segment-value,
+	.hsb-segment[style*='width: 1.'] .hsb-segment-value,
+	.hsb-segment[style*='width: 2.'] .hsb-segment-value,
+	.hsb-segment[style*='width: 3.'] .hsb-segment-value {
+		display: none;
+	}
+
+	/* Panel — same right-gutter pattern as sibling charts. */
+	.hsb-panel {
+		margin: 0;
+		padding: 0;
+		opacity: 0;
+		max-height: 0;
+		overflow: hidden;
+		transition:
+			opacity 0.18s var(--ease-standard),
+			max-height 0.22s var(--ease-standard),
+			margin 0.22s var(--ease-standard);
+		pointer-events: none;
+	}
+
+	.hsb.is-active .hsb-panel {
+		opacity: 1;
+		max-height: 24rem;
+		margin-bottom: 1rem;
+	}
+
+	.hsb-panel-sticky {
+		padding-top: 0.6rem;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.hsb-panel-inner {
+		display: block;
+		font-family: var(--font-body);
+		font-size: 0.875rem;
+		line-height: 1.55;
+		color: var(--color-text-primary);
+	}
+
+	.hsb-panel-kicker {
+		display: block;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin-bottom: 0.5rem;
+		min-height: 0.9rem;
+	}
+
+	.hsb-panel-body {
+		display: block;
+		color: var(--color-text-secondary);
+	}
+
+	@media (min-width: 1440px) {
+		.hsb-panel {
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: calc(100% + 2rem);
+			width: 14rem;
+			max-height: none;
+			margin: 0;
+			overflow: visible;
+		}
+
+		.hsb.is-active .hsb-panel {
+			max-height: none;
+			margin: 0;
+		}
+
+		.hsb-panel-sticky {
+			position: sticky;
+			top: var(--hsb-sticky-top);
+			padding: 0 0 0 1rem;
+			border-top: none;
+			border-left: 1px solid var(--color-border);
+		}
+	}
+
+	.hsb-caption {
+		margin-top: 1.5rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--color-text-tertiary);
+		line-height: 1.55;
+		font-style: normal;
+	}
+
+	@media (max-width: 640px) {
+		.hsb-chart {
+			grid-template-columns: minmax(8rem, 10rem) 1fr;
+			column-gap: 0.75rem;
+		}
+		.hsb-row-label {
+			font-size: 0.7rem;
+		}
+		.hsb-segment-value {
+			font-size: 0.68rem;
+		}
+	}
+</style>
+
+<script>
+	(() => {
+		const roots = document.querySelectorAll<HTMLElement>('[data-hsb-root]');
+		roots.forEach((root) => {
+			const kickerEl = root.querySelector<HTMLElement>('[data-hsb-kicker]');
+			const bodyEl = root.querySelector<HTMLElement>('[data-hsb-body]');
+			if (!kickerEl || !bodyEl) return;
+
+			const segments = root.querySelectorAll<HTMLElement>('[data-hsb-segment]');
+			const legendPills = root.querySelectorAll<HTMLElement>('[data-hsb-legend]');
+			const rowLabels = root.querySelectorAll<HTMLElement>('[data-hsb-row-label]');
+
+			function setPanel(kicker: string, body: string) {
+				kickerEl!.textContent = kicker;
+				bodyEl!.textContent = body;
+				root.classList.add('is-active');
+			}
+
+			function resetPanel() {
+				root.classList.remove('is-active');
+			}
+
+			function activateSegment(key: string | null) {
+				if (!key) {
+					root.removeAttribute('data-hover-segment');
+					segments.forEach((s) => s.classList.remove('is-segment-active'));
+					return;
+				}
+				root.setAttribute('data-hover-segment', key);
+				segments.forEach((s) => {
+					s.classList.toggle('is-segment-active', s.dataset.segment === key);
+				});
+			}
+
+			function activateRow(key: string | null) {
+				if (!key) {
+					root.removeAttribute('data-hover-row');
+					segments.forEach((s) => s.classList.remove('is-row-active'));
+					return;
+				}
+				root.setAttribute('data-hover-row', key);
+				segments.forEach((s) => {
+					s.classList.toggle('is-row-active', s.dataset.row === key);
+				});
+			}
+
+			segments.forEach((seg) => {
+				const show = () => {
+					const rowLabel = seg.dataset.rowLabel ?? '';
+					const segLabel = seg.dataset.segmentLabel ?? '';
+					const formatted = seg.dataset.formatted ?? '';
+					const note = seg.dataset.note ?? seg.dataset.description ?? '';
+					setPanel(`${rowLabel} · ${segLabel} ${formatted}`, note);
+					activateSegment(seg.dataset.segment ?? null);
+				};
+				const hide = () => {
+					resetPanel();
+					activateSegment(null);
+				};
+				seg.addEventListener('mouseenter', show);
+				seg.addEventListener('focus', show);
+				seg.addEventListener('mouseleave', hide);
+				seg.addEventListener('blur', hide);
+			});
+
+			legendPills.forEach((pill) => {
+				const show = () => {
+					const label = pill.dataset.segmentLabel ?? '';
+					const desc = pill.dataset.description ?? '';
+					setPanel(label, desc);
+					activateSegment(pill.dataset.segment ?? null);
+				};
+				const hide = () => {
+					resetPanel();
+					activateSegment(null);
+				};
+				pill.addEventListener('mouseenter', show);
+				pill.addEventListener('focus', show);
+				pill.addEventListener('mouseleave', hide);
+				pill.addEventListener('blur', hide);
+			});
+
+			rowLabels.forEach((labelEl) => {
+				const show = () => {
+					const rowLabel = labelEl.dataset.rowLabel ?? '';
+					const desc = labelEl.dataset.description ?? '';
+					setPanel(rowLabel, desc);
+					activateRow(labelEl.dataset.row ?? null);
+				};
+				const hide = () => {
+					resetPanel();
+					activateRow(null);
+				};
+				labelEl.addEventListener('mouseenter', show);
+				labelEl.addEventListener('focus', show);
+				labelEl.addEventListener('mouseleave', hide);
+				labelEl.addEventListener('blur', hide);
+			});
+		});
+	})();
+</script>
