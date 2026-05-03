@@ -1,0 +1,776 @@
+<!-- ABOUTME: Editorial predicate-corpus explorer — file-tree on the left, tabbed artefact panel on the right. -->
+<!-- ABOUTME: Click a predicate to inspect, switch tabs, toggle standard amendment to reveal supersession edges. -->
+---
+import { Code } from 'astro:components';
+
+export interface CorpusVersion {
+	key: string;
+	label: string;
+	default?: boolean;
+}
+
+export interface CorpusTreeNode {
+	key: string;
+	label: string;
+	children?: CorpusTreeNode[];
+	isLeaf?: boolean;
+	featured?: boolean;
+}
+
+export interface CorpusPredicateVersion {
+	status: 'released' | 'draft' | 'audited' | 'deprecated' | 'rejected';
+	supersedes?: string | null;
+	tabs: Record<string, string>;
+}
+
+export interface CorpusPredicate {
+	label: string;
+	status: string;
+	versions: Record<string, CorpusPredicateVersion>;
+}
+
+interface Props {
+	title?: string;
+	subtitle?: string;
+	versions: CorpusVersion[];
+	tree: CorpusTreeNode[];
+	predicates: Record<string, CorpusPredicate>;
+	defaultPredicate: string;
+	caption?: string;
+}
+
+const {
+	title,
+	subtitle,
+	versions,
+	tree,
+	predicates,
+	defaultPredicate,
+	caption,
+} = Astro.props;
+
+const TAB_ORDER = ['predicate.py', 'tests.py', 'manifest.json', 'provenance.json'] as const;
+
+function langFor(tab: string): 'python' | 'json' | 'text' {
+	if (tab.endsWith('.py')) return 'python';
+	if (tab.endsWith('.json')) return 'json';
+	return 'text';
+}
+
+function flattenTree(nodes: CorpusTreeNode[], depth = 0): Array<CorpusTreeNode & { depth: number }> {
+	const out: Array<CorpusTreeNode & { depth: number }> = [];
+	for (const n of nodes) {
+		out.push({ ...n, depth });
+		if (n.children) out.push(...flattenTree(n.children, depth + 1));
+	}
+	return out;
+}
+const flatNodes = flattenTree(tree);
+const defaultVersion = versions.find((v) => v.default)?.key ?? versions[0].key;
+
+// Pre-render every predicate × version × tab combination as hidden panels.
+type Pane = {
+	predicateKey: string;
+	versionKey: string;
+	tabKey: string;
+	status: string;
+	supersedes: string | null;
+	code: string;
+};
+const panes: Pane[] = [];
+for (const [predKey, pred] of Object.entries(predicates)) {
+	for (const [verKey, ver] of Object.entries(pred.versions)) {
+		for (const tabKey of TAB_ORDER) {
+			if (!(tabKey in ver.tabs)) continue;
+			panes.push({
+				predicateKey: predKey,
+				versionKey: verKey,
+				tabKey,
+				status: ver.status,
+				supersedes: ver.supersedes ?? null,
+				code: ver.tabs[tabKey],
+			});
+		}
+	}
+}
+
+---
+
+<figure class="pe" data-pe-root data-default-version={defaultVersion} data-default-predicate={defaultPredicate}>
+	{title && (
+		<div class="pe-title">
+			{title}
+			{subtitle && <span class="pe-subtitle"> · {subtitle}</span>}
+		</div>
+	)}
+
+	<div class="pe-toolbar">
+		<div class="pe-toolbar-label">Standard version</div>
+		<div class="pe-version-toggle" role="tablist">
+			{versions.map((v) => (
+				<button
+					type="button"
+					class={`pe-version${v.key === defaultVersion ? ' is-active' : ''}`}
+					data-pe-version={v.key}
+					role="tab"
+					aria-selected={v.key === defaultVersion ? 'true' : 'false'}
+				>
+					{v.label}
+				</button>
+			))}
+		</div>
+	</div>
+
+	<div class="pe-body">
+		<aside class="pe-tree" aria-label="Corpus tree">
+			<div class="pe-tree-head">specs/</div>
+			<ul class="pe-tree-list">
+				{flatNodes.map((node) => (
+					<li
+						class={[
+							'pe-tree-node',
+							node.isLeaf ? 'is-leaf' : 'is-branch',
+						].join(' ')}
+						style={`--pe-depth: ${node.depth};`}
+					>
+						{node.isLeaf ? (
+							<button
+								type="button"
+								class={`pe-tree-leaf${node.key === defaultPredicate ? ' is-active' : ''}`}
+								data-pe-predicate={node.key}
+								data-pe-available-versions={Object.keys(predicates[node.key]?.versions ?? {}).join(',')}
+							>
+								<span class="pe-tree-icon" aria-hidden="true">›</span>
+								<span class="pe-tree-label">{node.label}</span>
+								{node.featured && <span class="pe-tree-pin" aria-hidden="true">★</span>}
+							</button>
+						) : (
+							<div class="pe-tree-branch">
+								<span class="pe-tree-icon" aria-hidden="true">▾</span>
+								<span class="pe-tree-label">{node.label}/</span>
+							</div>
+						)}
+					</li>
+				))}
+			</ul>
+		</aside>
+
+		<section class="pe-panel">
+			<header class="pe-panel-head">
+				<div class="pe-panel-title">
+					<span class="pe-panel-name" data-pe-predicate-name>{predicates[defaultPredicate]?.label ?? ''}</span>
+					<span class="pe-panel-status" data-pe-status>released</span>
+				</div>
+				<div class="pe-panel-supersedes" data-pe-supersedes hidden>
+					<span class="pe-panel-supersedes-kicker">supersedes</span>
+					<span class="pe-panel-supersedes-value" data-pe-supersedes-value></span>
+				</div>
+			</header>
+
+			<div class="pe-tabs" role="tablist">
+				{TAB_ORDER.map((tab) => (
+					<button
+						type="button"
+						class="pe-tab"
+						data-pe-tab={tab}
+						role="tab"
+					>
+						{tab}
+					</button>
+				))}
+			</div>
+
+			<div class="pe-panes">
+				{panes.map((p, idx) => (
+					<div
+						class="pe-pane"
+						data-pe-pane
+						data-predicate={p.predicateKey}
+						data-version={p.versionKey}
+						data-tab={p.tabKey}
+						data-status={p.status}
+						data-supersedes={p.supersedes ?? ''}
+						hidden={idx !== 0}
+					>
+						<Code code={p.code} lang={langFor(p.tabKey)} />
+					</div>
+				))}
+				<div class="pe-empty" data-pe-empty hidden>
+					Not available in this amendment.
+				</div>
+			</div>
+
+			<div class="pe-validate">
+				<button type="button" class="pe-validate-button" data-pe-validate>
+					<span class="pe-validate-prompt" aria-hidden="true">$</span>
+					<span class="pe-validate-label">corpus validate</span>
+				</button>
+				<pre class="pe-validate-output" data-pe-validate-output hidden><code>{`✓ required files present
+✓ predicate tests pass
+✓ hashes fresh
+✓ released hash unique
+✓ indexes match manifests
+✓ no unresolved supersession conflicts`}</code></pre>
+			</div>
+		</section>
+	</div>
+
+	{caption && <figcaption class="pe-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.pe {
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+	}
+
+	.pe-title {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+		margin: 0 0 1rem;
+	}
+
+	.pe-subtitle {
+		color: var(--color-text-tertiary);
+		text-transform: none;
+		letter-spacing: 0.04em;
+	}
+
+	.pe-toolbar {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+		margin-bottom: 0.85rem;
+	}
+
+	.pe-toolbar-label {
+		font-family: var(--font-mono);
+		font-size: 0.625rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.pe-version-toggle {
+		display: inline-flex;
+		gap: 0;
+		border: 1px solid var(--color-border);
+		border-radius: 3px;
+		overflow: hidden;
+	}
+
+	.pe-version {
+		padding: 0.4rem 0.75rem;
+		border: none;
+		background: var(--color-surface);
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		letter-spacing: 0.02em;
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		transition: background 0.18s var(--ease-standard), color 0.18s var(--ease-standard);
+	}
+
+	.pe-version + .pe-version {
+		border-left: 1px solid var(--color-border);
+	}
+
+	.pe-version.is-active {
+		background: color-mix(in srgb, var(--color-accent) 18%, var(--color-surface));
+		color: var(--color-text-primary);
+	}
+
+	.pe-body {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 0.75rem;
+		border: 1px solid var(--color-border);
+		border-radius: 4px;
+		background: var(--color-surface);
+		overflow: hidden;
+	}
+
+	@media (min-width: 760px) {
+		.pe-body {
+			grid-template-columns: minmax(14rem, 17rem) minmax(0, 1fr);
+			gap: 0;
+		}
+	}
+
+	.pe-tree {
+		padding: 0.85rem 0.6rem 1rem;
+		border-bottom: 1px solid var(--color-border);
+		background: color-mix(in srgb, var(--color-bg) 35%, var(--color-surface));
+	}
+
+	@media (min-width: 760px) {
+		.pe-tree {
+			border-bottom: none;
+			border-right: 1px solid var(--color-border);
+		}
+	}
+
+	.pe-tree-head {
+		font-family: var(--font-mono);
+		font-size: 0.625rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+		padding: 0 0.4rem 0.55rem;
+		border-bottom: 1px dashed var(--color-border);
+		margin-bottom: 0.5rem;
+	}
+
+	.pe-tree-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.05rem;
+	}
+
+	.pe-tree-node {
+		padding-left: calc(var(--pe-depth, 0) * 0.85rem);
+	}
+
+	.pe-tree-branch,
+	.pe-tree-leaf {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		width: 100%;
+		padding: 0.25rem 0.45rem;
+		font-family: var(--font-mono);
+		font-size: 0.78rem;
+		color: var(--color-text-secondary);
+		background: transparent;
+		border: none;
+		border-radius: 3px;
+		text-align: left;
+		cursor: default;
+	}
+
+	.pe-tree-leaf {
+		cursor: pointer;
+		color: var(--color-text-primary);
+		transition: background 0.18s var(--ease-standard), color 0.18s var(--ease-standard);
+	}
+
+	.pe-tree-leaf:hover,
+	.pe-tree-leaf:focus-visible {
+		background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+		outline: none;
+	}
+
+	.pe-tree-leaf.is-active {
+		background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+		color: var(--color-text-primary);
+	}
+
+	.pe-tree-icon {
+		font-family: var(--font-mono);
+		color: var(--color-text-tertiary);
+		width: 0.8rem;
+		display: inline-block;
+	}
+
+	.pe-tree-leaf.is-active .pe-tree-icon {
+		color: var(--color-accent);
+	}
+
+	.pe-tree-pin {
+		margin-left: auto;
+		font-size: 0.7rem;
+		color: var(--color-accent);
+	}
+
+	.pe-panel {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
+
+	.pe-panel-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		flex-wrap: wrap;
+		padding: 0.85rem 1rem;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.pe-panel-title {
+		display: inline-flex;
+		gap: 0.6rem;
+		align-items: center;
+	}
+
+	.pe-panel-name {
+		font-family: var(--font-mono);
+		font-size: 0.875rem;
+		letter-spacing: 0.02em;
+		color: var(--color-text-primary);
+	}
+
+	.pe-panel-status {
+		font-family: var(--font-mono);
+		font-size: 0.65rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		padding: 0.15rem 0.5rem;
+		border-radius: 3px;
+		border: 1px solid var(--color-border);
+		color: var(--color-text-secondary);
+		background: var(--color-surface);
+	}
+
+	.pe-panel-status[data-status='released'] {
+		color: #7a9e6e;
+		border-color: color-mix(in srgb, #7a9e6e 50%, var(--color-border));
+		background: color-mix(in srgb, #7a9e6e 10%, var(--color-surface));
+	}
+
+	.pe-panel-status[data-status='draft'] {
+		color: #e8a84c;
+		border-color: color-mix(in srgb, #e8a84c 50%, var(--color-border));
+		background: color-mix(in srgb, #e8a84c 10%, var(--color-surface));
+	}
+
+	.pe-panel-status[data-status='deprecated'],
+	.pe-panel-status[data-status='rejected'] {
+		color: #bf4d43;
+		border-color: color-mix(in srgb, #bf4d43 50%, var(--color-border));
+		background: color-mix(in srgb, #bf4d43 10%, var(--color-surface));
+	}
+
+	.pe-panel-supersedes {
+		display: inline-flex;
+		gap: 0.4rem;
+		align-items: baseline;
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+		color: var(--color-text-tertiary);
+	}
+
+	.pe-panel-supersedes-kicker {
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+	}
+
+	.pe-panel-supersedes-value {
+		color: var(--color-text-secondary);
+	}
+
+	.pe-tabs {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0;
+		padding: 0 1rem;
+		border-bottom: 1px solid var(--color-border);
+		background: color-mix(in srgb, var(--color-bg) 30%, var(--color-surface));
+	}
+
+	.pe-tab {
+		padding: 0.55rem 0.85rem;
+		border: none;
+		background: transparent;
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+		letter-spacing: 0.04em;
+		color: var(--color-text-tertiary);
+		cursor: pointer;
+		border-bottom: 2px solid transparent;
+		margin-bottom: -1px;
+		transition: color 0.18s var(--ease-standard), border-color 0.18s var(--ease-standard);
+	}
+
+	.pe-tab:hover,
+	.pe-tab:focus-visible {
+		color: var(--color-text-primary);
+		outline: none;
+	}
+
+	.pe-tab.is-active {
+		color: var(--color-text-primary);
+		border-bottom-color: var(--color-accent);
+	}
+
+	.pe-panes {
+		position: relative;
+		min-height: 11rem;
+	}
+
+	.pe-pane {
+		margin: 0;
+		padding: 0;
+		font-family: var(--font-mono);
+		font-size: 0.78rem;
+		line-height: 1.55;
+		color: var(--color-text-primary);
+		background: transparent;
+		overflow-x: auto;
+	}
+
+	/* Let Shiki's generated <pre> inherit our panel styling rather than its
+	   own (often white-on-#0d1117) defaults. */
+	.pe-pane :global(pre.astro-code) {
+		margin: 0;
+		padding: 1rem 1rem 1.1rem;
+		background: transparent !important;
+		font-family: inherit;
+		font-size: inherit;
+		line-height: inherit;
+		white-space: pre;
+		overflow-x: auto;
+	}
+
+	.pe-pane :global(pre.astro-code code) {
+		font-family: inherit;
+		font-size: inherit;
+		line-height: inherit;
+		background: transparent;
+		padding: 0;
+	}
+
+	.pe-empty {
+		padding: 1.5rem 1rem;
+		font-family: var(--font-mono);
+		font-size: 0.8rem;
+		color: var(--color-text-tertiary);
+	}
+
+	.pe-validate {
+		border-top: 1px solid var(--color-border);
+		padding: 0.65rem 1rem 0.85rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.6rem;
+		background: color-mix(in srgb, var(--color-bg) 30%, var(--color-surface));
+	}
+
+	.pe-validate-button {
+		align-self: flex-start;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.4rem 0.7rem;
+		border: 1px solid var(--color-border);
+		border-radius: 3px;
+		background: var(--color-surface);
+		color: var(--color-text-primary);
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		letter-spacing: 0.04em;
+		cursor: pointer;
+		transition:
+			background 0.18s var(--ease-standard),
+			border-color 0.18s var(--ease-standard);
+	}
+
+	.pe-validate-button:hover,
+	.pe-validate-button:focus-visible {
+		border-color: var(--color-accent);
+		outline: none;
+	}
+
+	.pe-validate-button.is-running .pe-validate-label::after {
+		content: ' …running';
+		color: var(--color-text-tertiary);
+	}
+
+	.pe-validate-prompt {
+		color: var(--color-accent);
+	}
+
+	.pe-validate-output {
+		margin: 0;
+		padding: 0.75rem 0.85rem;
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		line-height: 1.6;
+		color: var(--color-text-primary);
+		background: var(--color-bg);
+		border: 1px solid var(--color-border);
+		border-radius: 3px;
+		white-space: pre;
+		overflow-x: auto;
+	}
+
+	.pe-validate-output code {
+		color: inherit;
+	}
+
+	.pe-caption {
+		margin-top: 1.25rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--color-text-tertiary);
+		line-height: 1.55;
+		font-style: normal;
+	}
+</style>
+
+<script>
+	(() => {
+		const roots = document.querySelectorAll<HTMLElement>('[data-pe-root]');
+		roots.forEach((root) => {
+			const versionButtons = root.querySelectorAll<HTMLButtonElement>('[data-pe-version]');
+			const predicateButtons = root.querySelectorAll<HTMLButtonElement>('[data-pe-predicate]');
+			const tabButtons = root.querySelectorAll<HTMLButtonElement>('[data-pe-tab]');
+			const panes = root.querySelectorAll<HTMLElement>('[data-pe-pane]');
+			const empty = root.querySelector<HTMLElement>('[data-pe-empty]');
+			const nameEl = root.querySelector<HTMLElement>('[data-pe-predicate-name]');
+			const statusEl = root.querySelector<HTMLElement>('[data-pe-status]');
+			const supersedesEl = root.querySelector<HTMLElement>('[data-pe-supersedes]');
+			const supersedesValEl = root.querySelector<HTMLElement>('[data-pe-supersedes-value]');
+
+			const state = {
+				version: root.dataset.defaultVersion ?? '',
+				predicate: root.dataset.defaultPredicate ?? '',
+				tab: 'predicate.py',
+			};
+
+			function findPaneFor(predicate: string, version: string, tab: string) {
+				for (const pane of Array.from(panes)) {
+					if (
+						pane.dataset.predicate === predicate &&
+						pane.dataset.version === version &&
+						pane.dataset.tab === tab
+					) {
+						return pane;
+					}
+				}
+				return null;
+			}
+
+			function availableTabs(predicate: string, version: string) {
+				const tabs: string[] = [];
+				panes.forEach((p) => {
+					if (
+						p.dataset.predicate === predicate &&
+						p.dataset.version === version &&
+						p.dataset.tab
+					) {
+						tabs.push(p.dataset.tab);
+					}
+				});
+				return tabs;
+			}
+
+			function render() {
+				// Panes
+				panes.forEach((p) => p.setAttribute('hidden', ''));
+				const target = findPaneFor(state.predicate, state.version, state.tab);
+				if (target) {
+					target.removeAttribute('hidden');
+					empty?.setAttribute('hidden', '');
+					if (statusEl) {
+						const st = target.dataset.status ?? 'released';
+						statusEl.textContent = st;
+						statusEl.dataset.status = st;
+					}
+					const sup = target.dataset.supersedes ?? '';
+					if (supersedesEl && supersedesValEl) {
+						if (sup) {
+							supersedesValEl.textContent = sup;
+							supersedesEl.removeAttribute('hidden');
+						} else {
+							supersedesEl.setAttribute('hidden', '');
+						}
+					}
+				} else {
+					empty?.removeAttribute('hidden');
+					supersedesEl?.setAttribute('hidden', '');
+				}
+
+				// Predicate buttons
+				predicateButtons.forEach((b) => {
+					b.classList.toggle('is-active', b.dataset.pePredicate === state.predicate);
+				});
+				if (nameEl) {
+					const active = Array.from(predicateButtons).find(
+						(b) => b.dataset.pePredicate === state.predicate,
+					);
+					nameEl.textContent =
+						active?.querySelector('.pe-tree-label')?.textContent ?? state.predicate;
+				}
+
+				// Tabs availability + active state
+				const tabs = availableTabs(state.predicate, state.version);
+				tabButtons.forEach((b) => {
+					const tab = b.dataset.peTab ?? '';
+					const enabled = tabs.includes(tab);
+					b.toggleAttribute('disabled', !enabled);
+					b.style.opacity = enabled ? '' : '0.35';
+					b.style.cursor = enabled ? '' : 'not-allowed';
+					b.classList.toggle('is-active', tab === state.tab && enabled);
+				});
+
+				// Version buttons
+				versionButtons.forEach((b) => {
+					const active = b.dataset.peVersion === state.version;
+					b.classList.toggle('is-active', active);
+					b.setAttribute('aria-selected', active ? 'true' : 'false');
+				});
+			}
+
+			versionButtons.forEach((b) => {
+				b.addEventListener('click', () => {
+					if (!b.dataset.peVersion) return;
+					state.version = b.dataset.peVersion;
+					// If predicate not in this version, fall back to first tab; render handles empty.
+					render();
+				});
+			});
+
+			predicateButtons.forEach((b) => {
+				b.addEventListener('click', () => {
+					if (!b.dataset.pePredicate) return;
+					state.predicate = b.dataset.pePredicate;
+					// Reset to predicate.py if available, otherwise first.
+					const tabs = availableTabs(state.predicate, state.version);
+					if (tabs.length && !tabs.includes(state.tab)) state.tab = tabs[0];
+					render();
+				});
+			});
+
+			tabButtons.forEach((b) => {
+				b.addEventListener('click', () => {
+					if (b.hasAttribute('disabled')) return;
+					if (!b.dataset.peTab) return;
+					state.tab = b.dataset.peTab;
+					render();
+				});
+			});
+
+			const validateButton = root.querySelector<HTMLButtonElement>('[data-pe-validate]');
+			const validateOutput = root.querySelector<HTMLElement>('[data-pe-validate-output]');
+			validateButton?.addEventListener('click', () => {
+				if (!validateOutput) return;
+				const isOpen = !validateOutput.hasAttribute('hidden');
+				if (isOpen) {
+					validateOutput.setAttribute('hidden', '');
+					validateButton.classList.remove('is-running');
+					return;
+				}
+				validateButton.classList.add('is-running');
+				window.setTimeout(() => {
+					validateOutput.removeAttribute('hidden');
+					validateButton.classList.remove('is-running');
+				}, 320);
+			});
+
+			render();
+		});
+	})();
+</script>

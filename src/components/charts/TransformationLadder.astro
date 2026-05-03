@@ -1,0 +1,396 @@
+<!-- ABOUTME: Editorial transformation-ladder figure — six stages of obligation hardening. -->
+<!-- ABOUTME: Click a stage to inspect its artefact, what changed, what is checkable, what can fail. -->
+---
+export interface LadderStagePreview {
+	language: 'text' | 'json' | 'python';
+	code: string;
+}
+
+export interface LadderStageIdentity {
+	kind: string;
+	value: string;
+}
+
+export interface LadderStage {
+	key: string;
+	number: string;
+	label: string;
+	kicker: string;
+	accent?: string;
+	preview: LadderStagePreview;
+	whatChanged: string;
+	whatBecameCheckable: string;
+	whatCanFail: string;
+	identity: LadderStageIdentity | null;
+}
+
+interface Props {
+	title?: string;
+	subtitle?: string;
+	stages: LadderStage[];
+	caption?: string;
+}
+
+const { title, subtitle, stages, caption } = Astro.props;
+const DEFAULT_ACCENT = '#e8a84c';
+---
+
+<figure class="tl" data-tl-root>
+	{title && (
+		<div class="tl-title">
+			{title}
+			{subtitle && <span class="tl-subtitle"> · {subtitle}</span>}
+		</div>
+	)}
+
+	<ol class="tl-stages" role="tablist">
+		{stages.map((stage, i) => (
+			<li class="tl-stage-item">
+				<button
+					type="button"
+					class={`tl-stage${i === 0 ? ' is-active' : ''}`}
+					role="tab"
+					aria-selected={i === 0 ? 'true' : 'false'}
+					data-tl-stage={stage.key}
+					style={`--tl-accent: ${stage.accent ?? DEFAULT_ACCENT};`}
+				>
+					<span class="tl-stage-number">{stage.number}</span>
+					<span class="tl-stage-label">{stage.label}</span>
+					<span class="tl-stage-kicker">{stage.kicker}</span>
+				</button>
+				{i < stages.length - 1 && <span class="tl-arrow" aria-hidden="true">→</span>}
+			</li>
+		))}
+	</ol>
+
+	<div class="tl-body">
+		{stages.map((stage, i) => (
+			<div
+				class={`tl-panel${i === 0 ? ' is-active' : ''}`}
+				data-tl-panel={stage.key}
+				style={`--tl-accent: ${stage.accent ?? DEFAULT_ACCENT};`}
+				role="tabpanel"
+				hidden={i !== 0}
+			>
+				<div class="tl-preview">
+					<div class="tl-preview-head">
+						<span class="tl-preview-kicker">{stage.kicker}</span>
+						{stage.identity && (
+							<span class="tl-preview-identity">
+								<span class="tl-preview-identity-kind">{stage.identity.kind}</span>
+								<span class="tl-preview-identity-value">{stage.identity.value}</span>
+							</span>
+						)}
+					</div>
+					<pre class={`tl-code language-${stage.preview.language}`}><code>{stage.preview.code}</code></pre>
+				</div>
+
+				<div class="tl-meta">
+					<div class="tl-meta-cell">
+						<span class="tl-meta-label">What changed</span>
+						<span class="tl-meta-value">{stage.whatChanged}</span>
+					</div>
+					<div class="tl-meta-cell">
+						<span class="tl-meta-label">What became checkable</span>
+						<span class="tl-meta-value">{stage.whatBecameCheckable}</span>
+					</div>
+					<div class="tl-meta-cell">
+						<span class="tl-meta-label">What can fail</span>
+						<span class="tl-meta-value">{stage.whatCanFail}</span>
+					</div>
+				</div>
+			</div>
+		))}
+	</div>
+
+	{caption && <figcaption class="tl-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.tl {
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+	}
+
+	.tl-title {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+		margin: 0 0 1.25rem;
+	}
+
+	.tl-subtitle {
+		color: var(--color-text-tertiary);
+		text-transform: none;
+		letter-spacing: 0.04em;
+	}
+
+	.tl-stages {
+		list-style: none;
+		margin: 0 0 1.25rem;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem 0.25rem;
+		align-items: stretch;
+	}
+
+	.tl-stage-item {
+		display: contents;
+	}
+
+	.tl-stage {
+		--tl-accent: #e8a84c;
+		flex: 1 1 9rem;
+		min-width: 9rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+		padding: 0.7rem 0.9rem 0.75rem;
+		border: 1px solid var(--color-border);
+		border-left: 3px solid var(--color-border);
+		border-radius: 4px;
+		background: var(--color-surface);
+		cursor: pointer;
+		text-align: left;
+		font: inherit;
+		color: inherit;
+		transition: border-color 0.18s var(--ease-standard), background 0.18s var(--ease-standard);
+	}
+
+	.tl-stage:hover,
+	.tl-stage:focus-visible {
+		border-color: color-mix(in srgb, var(--tl-accent) 60%, var(--color-border));
+		outline: none;
+	}
+
+	.tl-stage.is-active {
+		border-color: var(--tl-accent);
+		border-left-color: var(--tl-accent);
+		background: color-mix(in srgb, var(--tl-accent) 6%, var(--color-surface));
+	}
+
+	.tl-stage-number {
+		font-family: var(--font-mono);
+		font-size: 0.625rem;
+		letter-spacing: 0.18em;
+		color: var(--color-text-tertiary);
+	}
+
+	.tl-stage.is-active .tl-stage-number {
+		color: var(--tl-accent);
+	}
+
+	.tl-stage-label {
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		font-weight: 500;
+		letter-spacing: 0.02em;
+		color: var(--color-text-primary);
+	}
+
+	.tl-stage-kicker {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.04em;
+		color: var(--color-text-secondary);
+	}
+
+	.tl-arrow {
+		display: none;
+		align-self: center;
+		font-family: var(--font-mono);
+		font-size: 0.875rem;
+		color: var(--color-text-tertiary);
+		padding: 0 0.1rem;
+	}
+
+	@media (min-width: 880px) {
+		.tl-stages {
+			flex-wrap: nowrap;
+			gap: 0;
+			align-items: stretch;
+		}
+
+		.tl-stage {
+			flex: 1 1 0;
+			min-width: 0;
+		}
+
+		.tl-arrow {
+			display: inline-flex;
+			padding: 0 0.4rem;
+		}
+	}
+
+	.tl-body {
+		position: relative;
+	}
+
+	.tl-panel {
+		--tl-accent: #e8a84c;
+		display: none;
+		grid-template-columns: 1fr;
+		gap: 1rem;
+		padding: 1.1rem 1.2rem 1.2rem;
+		border: 1px solid var(--color-border);
+		border-left: 3px solid var(--tl-accent);
+		border-radius: 4px;
+		background: var(--color-surface);
+	}
+
+	.tl-panel.is-active {
+		display: grid;
+	}
+
+	@media (min-width: 880px) {
+		.tl-panel {
+			grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+			gap: 1.25rem;
+		}
+	}
+
+	.tl-preview {
+		display: flex;
+		flex-direction: column;
+		gap: 0.6rem;
+		min-width: 0;
+	}
+
+	.tl-preview-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+	}
+
+	.tl-preview-kicker {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--tl-accent);
+	}
+
+	.tl-preview-identity {
+		display: inline-flex;
+		gap: 0.4rem;
+		align-items: baseline;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		color: var(--color-text-tertiary);
+	}
+
+	.tl-preview-identity-kind {
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+	}
+
+	.tl-preview-identity-value {
+		color: var(--color-text-secondary);
+	}
+
+	.tl-code {
+		margin: 0;
+		padding: 0.85rem 0.9rem;
+		border: 1px solid var(--color-border);
+		border-radius: 3px;
+		background: color-mix(in srgb, var(--color-bg) 70%, transparent);
+		font-family: var(--font-mono);
+		font-size: 0.78rem;
+		line-height: 1.55;
+		color: var(--color-text-primary);
+		white-space: pre;
+		overflow-x: auto;
+	}
+
+	.tl-meta {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 0.55rem;
+		align-content: start;
+	}
+
+	.tl-meta-cell {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		padding: 0.6rem 0.75rem;
+		border: 1px solid var(--color-border);
+		border-left: 2px solid var(--tl-accent);
+		border-radius: 3px;
+		background: color-mix(in srgb, var(--color-bg) 50%, transparent);
+	}
+
+	.tl-meta-label {
+		font-family: var(--font-mono);
+		font-size: 0.625rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.tl-meta-value {
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		letter-spacing: 0.02em;
+		color: var(--color-text-primary);
+	}
+
+	.tl-caption {
+		margin-top: 1.25rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--color-text-tertiary);
+		line-height: 1.55;
+		font-style: normal;
+	}
+</style>
+
+<script>
+	(() => {
+		const roots = document.querySelectorAll<HTMLElement>('[data-tl-root]');
+		roots.forEach((root) => {
+			const stages = root.querySelectorAll<HTMLButtonElement>('[data-tl-stage]');
+			const panels = root.querySelectorAll<HTMLElement>('[data-tl-panel]');
+
+			function activate(key: string) {
+				stages.forEach((s) => {
+					const active = s.dataset.tlStage === key;
+					s.classList.toggle('is-active', active);
+					s.setAttribute('aria-selected', active ? 'true' : 'false');
+				});
+				panels.forEach((p) => {
+					const active = p.dataset.tlPanel === key;
+					p.classList.toggle('is-active', active);
+					if (active) p.removeAttribute('hidden');
+					else p.setAttribute('hidden', '');
+				});
+			}
+
+			stages.forEach((s) => {
+				s.addEventListener('click', () => {
+					if (s.dataset.tlStage) activate(s.dataset.tlStage);
+				});
+				s.addEventListener('keydown', (e) => {
+					if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+					const arr = Array.from(stages);
+					const idx = arr.indexOf(s);
+					const next =
+						e.key === 'ArrowRight'
+							? arr[(idx + 1) % arr.length]
+							: arr[(idx - 1 + arr.length) % arr.length];
+					next.focus();
+					if (next.dataset.tlStage) activate(next.dataset.tlStage);
+				});
+			});
+		});
+	})();
+</script>

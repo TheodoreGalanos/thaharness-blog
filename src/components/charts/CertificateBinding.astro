@@ -1,0 +1,639 @@
+<!-- ABOUTME: Editorial certificate-binding diagram — central certificate JSON, hoverable bindings, failure-mode toggle. -->
+<!-- ABOUTME: Each binding highlights the matching JSON field and explains what it prevents. -->
+---
+export interface CertificateBinding {
+	key: string;
+	label: string;
+	jsonField: string;
+	accent?: string;
+	prevents: string;
+	failureCandidate?: boolean;
+}
+
+export interface CertificatePayload {
+	[key: string]: unknown;
+}
+
+interface Props {
+	title?: string;
+	subtitle?: string;
+	certificate: {
+		valid: CertificatePayload;
+		rejected: CertificatePayload;
+	};
+	bindings: CertificateBinding[];
+	failureMode: {
+		toggleLabel: string;
+		bindingKey: string;
+		note: string;
+	};
+	caption?: string;
+}
+
+const { title, subtitle, certificate, bindings, failureMode, caption } = Astro.props;
+const DEFAULT_ACCENT = '#e8a84c';
+
+// Render a JSON payload as a list of {field, text} lines so we can highlight
+// a whole line by binding field. Each line is then tokenised at render time
+// for syntax colouring.
+type JsonLine = { field: string | null; text: string };
+function renderJson(obj: CertificatePayload, indent = 2): JsonLine[] {
+	const lines: JsonLine[] = [{ field: null, text: '{' }];
+	const entries = Object.entries(obj);
+	entries.forEach(([key, value], i) => {
+		const trail = i < entries.length - 1 ? ',' : '';
+		const pad = ' '.repeat(indent);
+		if (value === null) {
+			lines.push({ field: key, text: `${pad}"${key}": null${trail}` });
+			return;
+		}
+		if (Array.isArray(value)) {
+			const inner = value
+				.map((v) => (typeof v === 'string' ? `"${v}"` : JSON.stringify(v)))
+				.join(', ');
+			lines.push({ field: key, text: `${pad}"${key}": [${inner}]${trail}` });
+			return;
+		}
+		if (typeof value === 'object') {
+			lines.push({ field: key, text: `${pad}"${key}": {` });
+			const subEntries = Object.entries(value as Record<string, unknown>);
+			subEntries.forEach(([sk, sv], j) => {
+				const subTrail = j < subEntries.length - 1 ? ',' : '';
+				const svText = typeof sv === 'string' ? `"${sv}"` : JSON.stringify(sv);
+				lines.push({ field: key, text: `${pad}${pad}"${sk}": ${svText}${subTrail}` });
+			});
+			lines.push({ field: key, text: `${pad}}${trail}` });
+			return;
+		}
+		const valText = typeof value === 'string' ? `"${value}"` : JSON.stringify(value);
+		lines.push({ field: key, text: `${pad}"${key}": ${valText}${trail}` });
+	});
+	lines.push({ field: null, text: '}' });
+	return lines;
+}
+
+// Split a JSON line into tokens for syntax colouring. The keys are matched
+// first (string immediately followed by a colon); other strings are values.
+function tokeniseJsonLine(text) {
+	const out = [];
+	const pattern = [
+		'("(?:\\\\.|[^"\\\\])*"\\s*:)',
+		'("(?:\\\\.|[^"\\\\])*")',
+		'(\\b(?:true|false|null)\\b)',
+		'(-?\\d+(?:\\.\\d+)?)',
+		'(\\s+)',
+		'([^\\s])',
+	].join('|');
+	const re = new RegExp(pattern, 'g');
+	let m = re.exec(text);
+	while (m !== null) {
+		if (m[1] !== undefined) {
+			const colonIdx = m[1].lastIndexOf(':');
+			out.push({ kind: 'key', text: m[1].slice(0, colonIdx) });
+			out.push({ kind: 'punct', text: m[1].slice(colonIdx) });
+		} else if (m[2] !== undefined) {
+			out.push({ kind: 'string', text: m[2] });
+		} else if (m[3] !== undefined) {
+			out.push({ kind: 'literal', text: m[3] });
+		} else if (m[4] !== undefined) {
+			out.push({ kind: 'number', text: m[4] });
+		} else if (m[5] !== undefined) {
+			out.push({ kind: 'plain', text: m[5] });
+		} else if (m[6] !== undefined) {
+			out.push({ kind: 'punct', text: m[6] });
+		}
+		m = re.exec(text);
+	}
+	return out;
+}
+
+const validLines = renderJson(certificate.valid);
+const rejectedLines = renderJson(certificate.rejected);
+
+function escapeHtml(s) {
+	return s
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;');
+}
+
+function lineToHtml(line) {
+	const tokens = tokeniseJsonLine(line.text);
+	const inner = tokens
+		.map((t) => `<span class="cb-tok cb-tok-${t.kind}">${escapeHtml(t.text)}</span>`)
+		.join('');
+	const field = line.field ?? '';
+	return `<span class="cb-line" data-cb-field="${escapeHtml(field)}">${inner}\n</span>`;
+}
+
+const validHtml = validLines.map(lineToHtml).join('');
+const rejectedHtml = rejectedLines.map(lineToHtml).join('');
+---
+
+<figure class="cb" data-cb-root>
+	{title && (
+		<div class="cb-title">
+			{title}
+			{subtitle && <span class="cb-subtitle"> · {subtitle}</span>}
+		</div>
+	)}
+
+	<div class="cb-toolbar">
+		<button type="button" class="cb-toggle" data-cb-toggle aria-pressed="false">
+			<span class="cb-toggle-dot" aria-hidden="true"></span>
+			<span class="cb-toggle-label">{failureMode.toggleLabel}</span>
+		</button>
+		<div class="cb-overall" data-cb-overall data-state="valid">
+			<span class="cb-overall-kicker">overall</span>
+			<span class="cb-overall-value" data-cb-overall-value>valid</span>
+		</div>
+	</div>
+
+	<div class="cb-body">
+		<aside class="cb-bindings" aria-label="Certificate bindings">
+			<div class="cb-bindings-head">bindings</div>
+			<ul class="cb-bindings-list">
+				{bindings.map((b) => (
+					<li>
+						<button
+							type="button"
+							class="cb-binding"
+							data-cb-binding={b.key}
+							data-cb-field={b.jsonField}
+							data-failure-candidate={b.failureCandidate ? 'true' : 'false'}
+							style={`--cb-accent: ${b.accent ?? DEFAULT_ACCENT};`}
+						>
+							<span class="cb-binding-rail" aria-hidden="true"></span>
+							<span class="cb-binding-label">{b.label}</span>
+						</button>
+					</li>
+				))}
+			</ul>
+		</aside>
+
+		<div class="cb-center">
+			<div class="cb-cert-card" data-cb-cert>
+				<div class="cb-cert-head">
+					<span class="cb-cert-kicker">certificate</span>
+					<span class="cb-cert-id" data-cb-cert-id>{(certificate.valid as { certificate_id?: string }).certificate_id ?? ''}</span>
+				</div>
+				<pre class="cb-cert-json"><code set:html={validHtml} /></pre>
+				<pre class="cb-cert-json" data-cb-rejected hidden><code set:html={rejectedHtml} /></pre>
+			</div>
+		</div>
+
+		<aside class="cb-explainer" aria-live="polite">
+			<div class="cb-explainer-head">prevents</div>
+			<div class="cb-explainer-body" data-cb-explainer>
+				<span class="cb-explainer-placeholder">Hover or click a binding to see what it prevents.</span>
+			</div>
+		</aside>
+	</div>
+
+	<div class="cb-failure-note" data-cb-failure-note hidden>
+		{failureMode.note}
+	</div>
+
+	{caption && <figcaption class="cb-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.cb {
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+	}
+
+	.cb-title {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+		margin: 0 0 1rem;
+	}
+
+	.cb-subtitle {
+		color: var(--color-text-tertiary);
+		text-transform: none;
+		letter-spacing: 0.04em;
+	}
+
+	.cb-toolbar {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		margin-bottom: 0.85rem;
+	}
+
+	.cb-toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.55rem;
+		padding: 0.45rem 0.8rem;
+		border: 1px solid var(--color-border);
+		border-radius: 3px;
+		background: var(--color-surface);
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		letter-spacing: 0.02em;
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		transition: border-color 0.18s var(--ease-standard), color 0.18s var(--ease-standard);
+	}
+
+	.cb-toggle:hover,
+	.cb-toggle:focus-visible {
+		border-color: var(--color-accent);
+		color: var(--color-text-primary);
+		outline: none;
+	}
+
+	.cb-toggle-dot {
+		width: 0.55rem;
+		height: 0.55rem;
+		border-radius: 50%;
+		background: var(--color-text-tertiary);
+		transition: background 0.18s var(--ease-standard);
+	}
+
+	.cb-toggle[aria-pressed='true'] {
+		border-color: #bf4d43;
+		color: var(--color-text-primary);
+	}
+
+	.cb-toggle[aria-pressed='true'] .cb-toggle-dot {
+		background: #bf4d43;
+	}
+
+	.cb-overall {
+		display: inline-flex;
+		gap: 0.5rem;
+		align-items: baseline;
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+	}
+
+	.cb-overall-kicker {
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-text-tertiary);
+	}
+
+	.cb-overall-value {
+		font-size: 0.875rem;
+		letter-spacing: 0.02em;
+		color: #7a9e6e;
+	}
+
+	.cb-overall[data-state='rejected'] .cb-overall-value {
+		color: #bf4d43;
+	}
+
+	.cb-body {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 0.75rem;
+		border: 1px solid var(--color-border);
+		border-radius: 4px;
+		background: var(--color-surface);
+		overflow: hidden;
+	}
+
+	@media (min-width: 880px) {
+		.cb-body {
+			grid-template-columns: minmax(11rem, 13rem) minmax(0, 1.4fr) minmax(11rem, 14rem);
+			gap: 0;
+		}
+	}
+
+	.cb-bindings,
+	.cb-explainer {
+		padding: 0.85rem 0.85rem 1rem;
+		background: color-mix(in srgb, var(--color-bg) 35%, var(--color-surface));
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	@media (min-width: 880px) {
+		.cb-bindings {
+			border-bottom: none;
+			border-right: 1px solid var(--color-border);
+		}
+
+		.cb-explainer {
+			border-bottom: none;
+			border-left: 1px solid var(--color-border);
+		}
+	}
+
+	.cb-bindings-head,
+	.cb-explainer-head {
+		font-family: var(--font-mono);
+		font-size: 0.625rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+		padding: 0 0.2rem 0.55rem;
+		border-bottom: 1px dashed var(--color-border);
+		margin-bottom: 0.5rem;
+	}
+
+	.cb-bindings-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+	}
+
+	.cb-binding {
+		--cb-accent: #e8a84c;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		width: 100%;
+		padding: 0.4rem 0.5rem;
+		border: 1px solid transparent;
+		border-radius: 3px;
+		background: transparent;
+		font-family: var(--font-mono);
+		font-size: 0.78rem;
+		letter-spacing: 0.02em;
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		text-align: left;
+		transition: background 0.18s var(--ease-standard), color 0.18s var(--ease-standard), border-color 0.18s var(--ease-standard);
+	}
+
+	.cb-binding-rail {
+		width: 3px;
+		align-self: stretch;
+		background: var(--cb-accent);
+		border-radius: 2px;
+		opacity: 0.45;
+		transition: opacity 0.18s var(--ease-standard);
+	}
+
+	.cb-binding:hover,
+	.cb-binding:focus-visible {
+		background: color-mix(in srgb, var(--cb-accent) 12%, transparent);
+		color: var(--color-text-primary);
+		outline: none;
+	}
+
+	.cb-binding.is-active {
+		background: color-mix(in srgb, var(--cb-accent) 18%, transparent);
+		border-color: color-mix(in srgb, var(--cb-accent) 60%, var(--color-border));
+		color: var(--color-text-primary);
+	}
+
+	.cb-binding.is-active .cb-binding-rail,
+	.cb-binding:hover .cb-binding-rail {
+		opacity: 1;
+	}
+
+	.cb-binding.is-missing {
+		opacity: 0.4;
+		text-decoration: line-through;
+	}
+
+	.cb-center {
+		padding: 1rem;
+		min-width: 0;
+	}
+
+	.cb-cert-card {
+		border: 1px solid var(--color-border);
+		border-radius: 3px;
+		background: color-mix(in srgb, var(--color-bg) 60%, transparent);
+		overflow: hidden;
+	}
+
+	.cb-cert-head {
+		display: flex;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.55rem 0.85rem;
+		border-bottom: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+	}
+
+	.cb-cert-kicker {
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-text-tertiary);
+	}
+
+	.cb-cert-id {
+		color: var(--color-text-secondary);
+	}
+
+	.cb-cert-json {
+		margin: 0;
+		padding: 0.85rem 1rem;
+		font-family: var(--font-mono);
+		font-size: 0.78rem;
+		line-height: 1.55;
+		color: var(--color-text-primary);
+		background: transparent;
+		white-space: pre;
+		overflow-x: auto;
+	}
+
+	.cb-line {
+		display: block;
+		padding: 0 0.35rem;
+		margin: 0 -0.35rem;
+		border-radius: 2px;
+		transition: background 0.18s var(--ease-standard);
+	}
+
+	.cb-line.is-highlight {
+		background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+	}
+
+	/* JSON token colours — picked to read against the dark surface and match
+	   the palette of the surrounding charts (teal, amber, coral). */
+	.cb-tok-key {
+		color: #7ab5af;
+	}
+
+	.cb-tok-string {
+		color: #d8a06f;
+	}
+
+	.cb-tok-number {
+		color: #a9c47f;
+	}
+
+	.cb-tok-boolean,
+	.cb-tok-null {
+		color: #c79bd1;
+		font-style: italic;
+	}
+
+	.cb-tok-literal {
+		color: #c79bd1;
+		font-style: italic;
+	}
+
+	.cb-tok-punct {
+		color: var(--color-text-tertiary);
+	}
+
+	:root[data-theme='light'] .cb-tok-key {
+		color: #2f6f6a;
+	}
+
+	:root[data-theme='light'] .cb-tok-string {
+		color: #a8551f;
+	}
+
+	:root[data-theme='light'] .cb-tok-number {
+		color: #4d6b2f;
+	}
+
+	:root[data-theme='light'] .cb-tok-boolean,
+	:root[data-theme='light'] .cb-tok-null {
+		color: #6a3d8a;
+	}
+
+	.cb-explainer-body {
+		font-family: var(--font-body);
+		font-size: 0.85rem;
+		line-height: 1.55;
+		color: var(--color-text-primary);
+	}
+
+	.cb-explainer-placeholder {
+		color: var(--color-text-tertiary);
+		font-style: italic;
+		font-size: 0.8rem;
+	}
+
+	.cb-failure-note {
+		margin-top: 0.85rem;
+		padding: 0.85rem 1rem;
+		border: 1px dashed color-mix(in srgb, #bf4d43 50%, var(--color-border));
+		border-radius: 3px;
+		background: color-mix(in srgb, #bf4d43 6%, var(--color-surface));
+		font-family: var(--font-mono);
+		font-size: 0.8rem;
+		line-height: 1.55;
+		color: var(--color-text-primary);
+	}
+
+	.cb-caption {
+		margin-top: 1.25rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--color-text-tertiary);
+		line-height: 1.55;
+		font-style: normal;
+	}
+</style>
+
+<script define:vars={{ failureBindingKey: failureMode.bindingKey, prevents: bindings.reduce((acc, b) => { acc[b.key] = b.prevents; return acc; }, {} as Record<string, string>) }}>
+	(() => {
+		const roots = document.querySelectorAll('[data-cb-root]');
+		roots.forEach((root) => {
+			const bindingButtons = root.querySelectorAll('[data-cb-binding]');
+			const validJson = root.querySelector('.cb-cert-json:not([data-cb-rejected])');
+			const rejectedJson = root.querySelector('[data-cb-rejected]');
+			const explainerEl = root.querySelector('[data-cb-explainer]');
+			const overallEl = root.querySelector('[data-cb-overall]');
+			const overallValueEl = root.querySelector('[data-cb-overall-value]');
+			const failureNote = root.querySelector('[data-cb-failure-note]');
+			const toggle = root.querySelector('[data-cb-toggle]');
+
+			let failureMode = false;
+
+			function activeJson() {
+				return failureMode ? rejectedJson : validJson;
+			}
+
+			function highlight(key) {
+				bindingButtons.forEach((b) => {
+					b.classList.toggle('is-active', b.dataset.cbBinding === key);
+				});
+
+				const target = activeJson();
+				if (!target) return;
+				const lines = target.querySelectorAll('.cb-line');
+				const button = Array.from(bindingButtons).find((b) => b.dataset.cbBinding === key);
+				const field = button?.dataset.cbField ?? '';
+				lines.forEach((line) => {
+					line.classList.toggle('is-highlight', line.dataset.cbField === field);
+				});
+
+				if (explainerEl) {
+					explainerEl.textContent = key && prevents[key] ? prevents[key] : '';
+					if (!key || !prevents[key]) {
+						const placeholder = document.createElement('span');
+						placeholder.className = 'cb-explainer-placeholder';
+						placeholder.textContent = 'Hover or click a binding to see what it prevents.';
+						explainerEl.replaceChildren(placeholder);
+					}
+				}
+			}
+
+			function clearHighlight() {
+				if (failureMode) return; // keep highlighted in failure mode
+				bindingButtons.forEach((b) => b.classList.remove('is-active'));
+				const target = activeJson();
+				target?.querySelectorAll('.cb-line').forEach((l) => l.classList.remove('is-highlight'));
+				if (explainerEl) {
+					const placeholder = document.createElement('span');
+					placeholder.className = 'cb-explainer-placeholder';
+					placeholder.textContent = 'Hover or click a binding to see what it prevents.';
+					explainerEl.replaceChildren(placeholder);
+				}
+			}
+
+			function setFailureMode(on) {
+				failureMode = on;
+				toggle?.setAttribute('aria-pressed', on ? 'true' : 'false');
+				if (validJson && rejectedJson) {
+					if (on) {
+						validJson.setAttribute('hidden', '');
+						rejectedJson.removeAttribute('hidden');
+					} else {
+						rejectedJson.setAttribute('hidden', '');
+						validJson.removeAttribute('hidden');
+					}
+				}
+				if (overallEl && overallValueEl) {
+					overallEl.dataset.state = on ? 'rejected' : 'valid';
+					overallValueEl.textContent = on ? 'rejected' : 'valid';
+				}
+				if (failureNote) {
+					if (on) failureNote.removeAttribute('hidden');
+					else failureNote.setAttribute('hidden', '');
+				}
+				bindingButtons.forEach((b) => {
+					const isFailure = b.dataset.cbBinding === failureBindingKey;
+					b.classList.toggle('is-missing', on && isFailure);
+				});
+				if (on) highlight(failureBindingKey);
+				else clearHighlight();
+			}
+
+			bindingButtons.forEach((b) => {
+				b.addEventListener('mouseenter', () => b.dataset.cbBinding && highlight(b.dataset.cbBinding));
+				b.addEventListener('focus', () => b.dataset.cbBinding && highlight(b.dataset.cbBinding));
+				b.addEventListener('mouseleave', clearHighlight);
+				b.addEventListener('blur', clearHighlight);
+				b.addEventListener('click', () => b.dataset.cbBinding && highlight(b.dataset.cbBinding));
+			});
+
+			toggle?.addEventListener('click', () => setFailureMode(!failureMode));
+		});
+	})();
+</script>

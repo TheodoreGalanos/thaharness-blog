@@ -1,0 +1,234 @@
+---
+title: "Executable Standards"
+description: "Better tools and verifiers are not enough. The next harness boundary is the clause itself — turning standards, briefs, and codes into versioned predicates and replayable certificates."
+author: "Theodoros Galanos"
+category: "Engineering"
+draft: false
+pubDate: 2026-05-03
+tags: ["harness-engineering", "autoformalisation", "ai-in-aec", "formal-methods", "compliance", "agentic-ai", "quality-assurance"]
+featured: false
+---
+
+import TransformationLadder from '../../components/charts/TransformationLadder.astro';
+import PredicateCorpusExplorer from '../../components/charts/PredicateCorpusExplorer.astro';
+import CertificateBinding from '../../components/charts/CertificateBinding.astro';
+import DocumentPipeline from '../../components/charts/DocumentPipeline.astro';
+import Pullquote from '../../components/Pullquote.astro';
+import {
+  transformationLadderData,
+  predicateCorpusData,
+  certificateBindingData,
+  documentsToRequirementsData,
+  autoformPipelinePreviewData,
+} from '../../data/executable-standards-charts';
+
+Estimated reading time: 11 minutes
+
+## The Failures We Keep Seeing
+
+The recurring failure in agentic engineering is not that the model cannot write a convincing answer.
+
+It can.
+
+That is often the problem.
+
+Across the previous Harness posts, the same pattern keeps appearing under different names. The model retrieves the wrong table but writes as if it has found the right one. It performs the calculation but does not notice the unit mismatch. It gives a plausible compliance statement without pinning the standard version. It explains the reasoning path, but the reasoning path is not the artefact we can audit.
+
+In [The Third Axis](/blog/the-third-axis/), the visible failure was a tool habit. One executor would inspect the environment before calculating; another would deliberate from memory about tables it did not have. In [Where Capability Actually Lives](/blog/where-capability-actually-lives-in-agentic-engineering/), the larger point was that model capability is only one part of the system. The harness — tools, interfaces, constraints, verifiers, task design — carries a large part of what we call capability. In [The Harness Is All You Need](/blog/the-harness-is-all-you-need/), the claim was even sharper: as agentic systems get longer-running, the surrounding structure matters more, not less.
+
+This post is about the next boundary.
+
+At some point, a better tool loop is not enough. A better retrieval system is not enough. A better verifier around the final answer is not enough. The obligation itself has to stop living only as prose.
+
+<Pullquote>
+The next harness boundary is not another tool call. It is the clause itself.
+</Pullquote>
+
+## From Documents To Requirements
+
+This is also a quality-assurance story.
+
+Traditional QA asks whether the review process has evidence: requirements traced, checks performed, assumptions recorded, comments closed, approvals captured. AI does not remove that need. It makes the evidence problem sharper. If an agent says *"the design complies"*, what did it actually check? Which clause? Which amendment? Which jurisdictional override? Which source span? Which interpretation of an ambiguous *"shall"*? Which assumptions? Which calculation witness? Which verifier?
+
+Engineering already has a mature instinct for the first move.
+
+No one who has worked with specifications, codes, project briefs, employer's requirements, design criteria, or contract schedules believes that the source document is naturally shaped for computation. The source document is written for humans: committees, clients, reviewers, engineers of record, contractors, auditors. It carries context, authority, convention, exceptions, and the scar tissue of previous projects.
+
+So the first transformation is familiar:
+
+<DocumentPipeline {...documentsToRequirementsData} />
+
+It is requirements engineering. [EARS, the Easy Approach to Requirements Syntax](https://research.manchester.ac.uk/en/publications/easy-approach-to-requirements-syntax-ears), is a way to constrain natural-language requirements so they become less ambiguous, less vague, and easier to test. [Dwyer, Avrunin, and Corbett's specification patterns](https://people.cs.ksu.edu/~dwyer/spec-patterns.ORIGINAL) gave software and systems engineers a catalogue of common temporal property shapes.[^patterns] [SysML](https://www.omg.org/spec/SysML/1.7/About-SysML) and INCOSE-style requirements practice gave engineering teams a way to type and trace requirements through complex systems.
+
+The exact framework matters less than the shared instinct: free-form prose has to be decomposed before it can be managed.
+
+We have already been building this kind of pipeline for ordinary engineering AI work. In our requirement segmentation workflows, large specification documents are split into atomic, traceable, classified records. Each record preserves source spans, section references, related standards, applicable equipment or areas, verification methods, priorities, confidence scores, and quality signals.
+
+The same shift is visible in geometry: drawings became models, and [ISO 19650](https://www.iso.org/cms/%20render/live/en/sites/isoorg/contents/data/standard/06/80/68078.html) and [IFC](https://www.buildingsmart.org/standards/bsi-standards/industry-foundation-classes/) exist precisely because building information needs to be exchanged in a machine-interpretable form. Documents become requirements; drawings become models; tacit coordination becomes structured data. Autoformalisation extends the pattern to obligations.
+
+A requirements register helps. It gives the agent smaller, named obligations instead of one large textual fog. But a register still leaves the most important step unresolved: the agent can still read a structured requirement and interpret it incorrectly at runtime. That is where autoformalisation starts.
+
+## From Requirements To Predicates
+
+Autoformalisation is a heavy word for a simple ambition: turn human-authored requirements into machine-checkable obligations.
+
+In the version we are building for AEC, the pipeline looks like this:
+
+<DocumentPipeline {...autoformPipelinePreviewData} dense />
+
+The goal is not to prove every engineering judgement in [Lean](https://lean-lang.org/).[^lean] That would be a lovely way to never ship anything.
+
+The pragmatic target is narrower. Take requirements that can be made checkable, lift them into typed predicates over design state, preserve provenance, attach discharge tests and witnesses, and store the result in a versioned corpus that can be queried by a verifier.
+
+Four pieces of vocabulary, in plain terms. A **predicate** is a small function that takes a design and returns pass or fail along with the numbers it used to decide. **Discharge tests** are canonical examples that should pass and others that should fail — the sanity check that the predicate actually encodes the clause. A **witness** is the evidence a predicate emits when it answers, so a reviewer can see what the check looked at. A **verifier** is the program that runs predicates against a design and emits the certificate.
+
+For a fabricated cable-sizing example, the source might begin as natural-language prose:
+
+```text
+The voltage drop for a final subcircuit shall not exceed 5 percent of the
+nominal voltage under the stated design load.
+```
+
+That clause becomes a typed predicate over design state:
+
+```python
+@requirement("AS3000-3.4.3")
+def voltage_drop_within_limit(design: CableDesign) -> PredicateResult:
+    percent = 100 * design.voltage_drop_v / design.nominal_voltage_v
+    return PredicateResult.bounded(
+        percent <= 5.0,
+        witness={"actual_percent": percent, "limit_percent": 5.0},
+    )
+```
+
+The atomic-requirement record and the corpus entry that wrap this predicate — `requirement_id`, `scope_tags`, `standard_version`, `source_hash`, `predicate_hash`, `status` — are shown in Figure 1.
+
+The source clause is still authoritative. The human-readable requirement still exists. But the thing the verifier consumes is no longer a paragraph. It is an executable predicate with identity, provenance, tests, metadata, and a lifecycle.
+
+This is where the formal-methods literature becomes useful, but not as theatre.
+
+The [Guaranteed Safe AI](https://arxiv.org/abs/2405.06624) and [Safeguarded AI](https://www.aria.org.uk/programme-safeguarded-ai/) framing describes a triple: world model, specification, verifier. The world model says what can happen — the regime of physical situations the predicates were validated against. The specification says what is acceptable. The verifier produces an auditable certificate that the design satisfies the specification within the validated regime.[^gsa] In our setting, AEC standards and project requirements are the specification source. Autoformalisation is the machinery that turns that source into something a verifier can use.
+
+It is *AI4FV* before *FV4AI*: use AI to help perform formal verification of engineering outputs before attempting the harder problem of formally verifying the internals of the AI system itself.[^ai4fv]
+
+The engineer still matters. In fact, the engineer matters more visibly. The human task moves from repeatedly interpreting prose at runtime to auditing the lifted predicate, reviewing its tests, checking its provenance, and deciding when a requirement is too ambiguous to sharpen safely.
+
+<Pullquote>
+Auditing is cheaper than authoring. It is also a better place to put scarce expert attention.
+</Pullquote>
+
+<TransformationLadder {...transformationLadderData} />
+
+Autoformalisation should feel like a sequence of increasingly constrained artefacts, not a mystical leap.
+
+## The Corpus Is Infrastructure
+
+Once predicates exist, the hard problem becomes governance.
+
+Where do they live? Who can change them? What does a patch look like? How do we know which standard version a certificate used? What happens when a code amendment changes a clause? How do jurisdictions override each other — say, an AS/NZS clause overridden by a state-level Service & Installation Rule? How do we prevent a verifier from accidentally consuming half-built work?
+
+Our current answer is deliberately boring: a git-tracked filesystem. Predicate source is code. Tests are code. Metadata and provenance are JSON. Indexes are generated and checked in. Review happens through ordinary code review.
+
+Databases are not the issue. The review surface matters — and the filesystem is also the operating surface of AI agents. Agents read, write, diff, and review files. They open pull requests, not rows. A corpus that lives as files is a corpus the harness, the auditor, and the agent can all reason about with the same tools.
+
+If a standard changes, I want a patch that shows: the old predicate and the new predicate; the discharge tests that changed; the source requirement hashes; the provenance record; the generated index diff; the explicit supersession edge.
+
+I do not want *"the compliance database was updated"*.
+
+The corpus design also draws a hard lifecycle boundary. Public queries return released predicates by default. Draft, staged, audited, deprecated, and rejected material remains visible for review and traceability, but it is not consumed by certification unless a caller deliberately asks for development mode.
+
+That default is small but important. In compliance settings, *"latest wins"* is too magical. A verifier should not infer authority from file modification time, semantic version number, or whichever predicate happened to appear first in a search result. Released obligations need explicit status. Replacements need explicit `supersedes` and `replaces` edges. Jurisdictions need caller-supplied precedence, not a hidden ontology pretending to know every legal override.
+
+The corpus is the specification layer of the harness.
+
+<PredicateCorpusExplorer {...predicateCorpusData} />
+
+## Certificates, Not Explanations
+
+The final artefact is not the agent's explanation.
+
+The distinction matters because a design agent may be useful, eloquent, and wrong. It may produce a chain of thought that sounds like engineering reasoning. It may cite a standard, calculate a margin, and conclude compliance. None of that is the trusted artefact.
+
+<Pullquote>
+The trusted artefact is a certificate accepted by a small checker.
+</Pullquote>
+
+That makes the certificate a QA object as much as a technical one. It is the thing a reviewer, auditor, or engineer of record can inspect without trusting the agent's narration. The question changes from *"do I believe this answer?"* to *"does this certificate bind the right design, predicates, witnesses, assumptions, and policy?"*
+
+For the same fabricated cable run, the design input might be:
+
+```json
+{
+  "design_id": "cable-run-A17",
+  "load_current_a": 63,
+  "route_length_m": 42,
+  "nominal_voltage_v": 230,
+  "voltage_drop_v": 8.7
+}
+```
+
+The verifier result binds that design to a released predicate, and the certificate then records the design hash, predicate hashes, standard versions, the **assumption ledger** (a frozen record of the inputs, exclusions, and conservative choices the design was made under), the world-model reference, the witness bundle, the verifier policy, and the per-layer results. Figure 3 makes the binding explicit.
+
+That is a very different object from *"the model says it complies"*.
+
+It can be replayed and re-checked. A predicate change invalidates it. A bounded layer downgrades it. Open items travel with it. The certificate says: *valid under these assumptions, against these predicates, with these witnesses, under this policy*.
+
+The verifier portfolio is the piece that keeps this honest. We do not need one giant verifier that does everything. We need complementary layers with explicit failure semantics:
+
+- algebraic checks for calculation correctness;
+- physical invariant checks for impossible design states;
+- clause compliance against released predicates;
+- cross-discipline checks where one discipline's conclusion becomes another's premise;
+- assumption-ledger checks for source and scope discipline;
+- out-of-distribution checks against the world-model envelope.
+
+Some layers pass. Some produce bounded results. Some are deferred by policy. Some create open items. Failures and verifier errors block the certificate.
+
+The important thing is that the status is explicit.
+
+The harness should not need to trust the model's confidence. It should inspect the certificate.
+
+<CertificateBinding {...certificateBindingData} />
+
+## What We Have Built So Far
+
+Harness engineering is the discipline of deciding what the model should not be trusted to do unaided. First it meant tools, then evaluation, now specification. Calculation went that way. Retrieval went that way. Standards are next.
+
+This is not a production assurance system yet. But it is past sketch.
+
+Inside `aec-bench`, we have started splitting the work into `aec-autoform`: a package for the autoformalisation pipeline rather than another benchmark module. That boundary matters. `aec-bench` is a measurement instrument. `aec-autoform` is infrastructure that produces predicates and certificates. The benchmark can consume it, but should not own it.
+
+Where each stage stands today:
+
+| Stage | Status |
+|---|---|
+| Document → atomic requirements | existing data-pipeline work |
+| Atomic requirements → typed predicates | cookbook implemented: triage, decomposition, type binding, predicate authoring, discharge tests, self-check, audit, tier-up |
+| Predicate corpus | scaffold with predicate directories, manifest and provenance contracts, deterministic hashes, generated indexes, released-only queries, validation |
+| Certificates | contracts taking shape: frozen records for design references, corpus references, world-model references, assumption ledgers, policies, layer results, witnesses, signatures, identifiers |
+
+The first serious forcing example is cable sizing.
+
+It is concrete enough to keep us honest and general enough to expose the real architecture. Cable sizing has standards, clauses, tables, calculations, assumptions, jurisdictions, amendments, and verifier-friendly outputs. It is not the whole of engineering. Good. The first version should not pretend to be.
+
+The project can fail in useful ways. A requirement may be too ambiguous to lift. A predicate may encode the clause too narrowly. A test may fail. A jurisdiction conflict may require explicit human judgement. A source document may not be licensable for inclusion. A world-model envelope may be too weak. A certificate may be invalid.
+
+Those are not embarrassments. Those are the point. The harness should make the failure explicit before the design gets trusted.
+
+If this path works, the shift that matters is not better AI answers. It is that an engineering obligation becomes something the harness can inspect.
+
+Benchmarks tell us where agents fail. Harnesses give agents tools and structure. Autoformalisation turns the standard itself into part of the harness, and turns quality assurance from a retrospective document review into a replayable check over explicit artefacts.
+
+The standard has to become executable because the alternative is asking the model to keep re-reading the law of the task from scratch.
+
+And we have seen how that goes.
+
+---
+
+[^patterns]: The point of the Dwyer patterns here is not that every AEC requirement is temporal logic. It is that many requirements have recurring semantic shapes: absence, existence, response, precedence, bounded existence, and so on. Pattern libraries give the lift process a vocabulary before it reaches for a theorem prover.
+
+[^lean]: Lean is a programming language and interactive theorem prover. It matters because some obligations eventually deserve proof-assistant rigour — high-consequence clauses, safety-critical interlocks, regulatory submissions where the cost of being wrong justifies the ceremony. It should not become the default hammer. For v1, typed Python predicates, deterministic tests, and auditable certificates are the shipping path; Lean is a tier-up option.
+
+[^gsa]: In the Guaranteed Safe AI framing, the verifier does not certify the model's inner thoughts. It certifies a claim relative to a world model and specification. That distinction is why the certificate can be smaller and more trustworthy than the agent that produced the candidate design.
+
+[^ai4fv]: AI4FV means "AI for formal verification": using AI to help produce predicates, witnesses, proofs, tests, and counterexamples. FV4AI means "formal verification for AI": proving properties of the AI system itself. The latter is the bigger research mountain. The former is already useful for engineering workflows.

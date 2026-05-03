@@ -1,0 +1,321 @@
+---
+// ABOUTME: Editorial three-step pipeline figure with inline SVG glyphs and arrow connectors.
+// ABOUTME: Used inline in prose to render a transformation as something more chart-like than a code fence.
+export type PipelineGlyph = 'document' | 'atomic' | 'register' | 'predicate' | 'corpus' | 'verifier' | 'certificate';
+
+export interface PipelineStep {
+	key: string;
+	glyph: PipelineGlyph;
+	label: string;
+	detail?: string;
+	accent?: string;
+}
+
+interface Props {
+	title?: string;
+	steps: PipelineStep[];
+	caption?: string;
+	dense?: boolean;
+}
+
+const { title, steps, caption, dense = false } = Astro.props;
+const DEFAULT_ACCENT = '#e8a84c';
+---
+
+<figure class={`dp${dense ? ' dp-dense' : ''}`}>
+	{title && <div class="dp-title">{title}</div>}
+
+	<ol class="dp-steps">
+		{steps.map((step, i) => (
+			<li
+				class={`dp-step${i < steps.length - 1 ? ' dp-step-with-arrow' : ''}`}
+				style={`--dp-accent: ${step.accent ?? DEFAULT_ACCENT}; --dp-i: ${i}; --dp-n: ${steps.length};`}
+			>
+					<div class="dp-icon" aria-hidden="true">
+						{step.glyph === 'document' && (
+							<svg viewBox="0 0 48 48" width="48" height="48" role="img" aria-hidden="true">
+								<rect x="11" y="6" width="22" height="32" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+								<path d="M27 6 L33 12" fill="none" stroke="currentColor" stroke-width="1.4"/>
+								<path d="M27 6 L27 12 L33 12" fill="none" stroke="currentColor" stroke-width="1.4"/>
+								<line x1="15" y1="17" x2="29" y2="17" stroke="currentColor" stroke-width="1.1" opacity="0.65"/>
+								<line x1="15" y1="21" x2="29" y2="21" stroke="currentColor" stroke-width="1.1" opacity="0.65"/>
+								<line x1="15" y1="25" x2="29" y2="25" stroke="currentColor" stroke-width="1.1" opacity="0.65"/>
+								<line x1="15" y1="29" x2="24" y2="29" stroke="currentColor" stroke-width="1.1" opacity="0.65"/>
+								<line x1="15" y1="33" x2="29" y2="33" stroke="currentColor" stroke-width="1.1" opacity="0.65"/>
+							</svg>
+						)}
+						{step.glyph === 'atomic' && (
+							<svg viewBox="0 0 48 48" width="48" height="48" role="img" aria-hidden="true">
+								<circle cx="24" cy="24" r="2.4" fill="currentColor"/>
+								<ellipse cx="24" cy="24" rx="14" ry="5.5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+								<ellipse cx="24" cy="24" rx="14" ry="5.5" fill="none" stroke="currentColor" stroke-width="1.3" transform="rotate(60 24 24)"/>
+								<ellipse cx="24" cy="24" rx="14" ry="5.5" fill="none" stroke="currentColor" stroke-width="1.3" transform="rotate(-60 24 24)"/>
+								<circle cx="38" cy="24" r="1.8" fill="currentColor"/>
+								<circle cx="17" cy="36.12" r="1.8" fill="currentColor"/>
+								<circle cx="17" cy="11.88" r="1.8" fill="currentColor"/>
+							</svg>
+						)}
+						{step.glyph === 'register' && (
+							<svg viewBox="0 0 48 48" width="48" height="48" role="img" aria-hidden="true">
+								<rect x="9" y="9" width="30" height="30" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+								<line x1="9" y1="17" x2="39" y2="17" stroke="currentColor" stroke-width="1.2"/>
+								<line x1="9" y1="25" x2="39" y2="25" stroke="currentColor" stroke-width="1.2" opacity="0.65"/>
+								<line x1="9" y1="33" x2="39" y2="33" stroke="currentColor" stroke-width="1.2" opacity="0.65"/>
+								<line x1="19" y1="17" x2="19" y2="39" stroke="currentColor" stroke-width="1.2" opacity="0.65"/>
+								<line x1="29" y1="17" x2="29" y2="39" stroke="currentColor" stroke-width="1.2" opacity="0.65"/>
+								<rect x="11" y="11" width="6" height="4" fill="currentColor" opacity="0.85"/>
+								<rect x="20" y="19" width="2.5" height="2" fill="currentColor" opacity="0.6"/>
+								<rect x="30" y="19" width="2.5" height="2" fill="currentColor" opacity="0.6"/>
+								<rect x="11" y="27" width="2.5" height="2" fill="currentColor" opacity="0.6"/>
+								<rect x="20" y="27" width="2.5" height="2" fill="currentColor" opacity="0.6"/>
+								<rect x="30" y="35" width="2.5" height="2" fill="currentColor" opacity="0.6"/>
+							</svg>
+						)}
+						{step.glyph === 'predicate' && (
+							<svg viewBox="0 0 48 48" width="48" height="48" role="img" aria-hidden="true">
+								<rect x="7" y="11" width="34" height="26" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+								<path d="M16 19 L16 29 M16 24 L22 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+								<circle cx="27" cy="20" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+								<path d="M27 22 L27 30 M23 26 L31 26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+								<line x1="11" y1="17" x2="14" y2="17" stroke="currentColor" stroke-width="1.2"/>
+								<line x1="34" y1="17" x2="37" y2="17" stroke="currentColor" stroke-width="1.2"/>
+								<line x1="11" y1="33" x2="14" y2="33" stroke="currentColor" stroke-width="1.2"/>
+								<line x1="34" y1="33" x2="37" y2="33" stroke="currentColor" stroke-width="1.2"/>
+							</svg>
+						)}
+						{step.glyph === 'corpus' && (
+							<svg viewBox="0 0 48 48" width="48" height="48" role="img" aria-hidden="true">
+								<rect x="9" y="9" width="30" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.3"/>
+								<rect x="9" y="20.5" width="30" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.3"/>
+								<rect x="9" y="32" width="30" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.3"/>
+								<circle cx="13.5" cy="12.5" r="1" fill="currentColor"/>
+								<circle cx="13.5" cy="24" r="1" fill="currentColor"/>
+								<circle cx="13.5" cy="35.5" r="1" fill="currentColor"/>
+								<line x1="18" y1="12.5" x2="30" y2="12.5" stroke="currentColor" stroke-width="1.1" opacity="0.65"/>
+								<line x1="18" y1="24" x2="32" y2="24" stroke="currentColor" stroke-width="1.1" opacity="0.65"/>
+								<line x1="18" y1="35.5" x2="28" y2="35.5" stroke="currentColor" stroke-width="1.1" opacity="0.65"/>
+								<line x1="33" y1="12.5" x2="35" y2="12.5" stroke="currentColor" stroke-width="1.4"/>
+							</svg>
+						)}
+						{step.glyph === 'verifier' && (
+							<svg viewBox="0 0 48 48" width="48" height="48" role="img" aria-hidden="true">
+								<path d="M24 6 L37 11 L37 24 C37 31 31 36 24 39 C17 36 11 31 11 24 L11 11 Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+								<path d="M18 23 L22.5 27.5 L31 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+							</svg>
+						)}
+						{step.glyph === 'certificate' && (
+							<svg viewBox="0 0 48 48" width="48" height="48" role="img" aria-hidden="true">
+								<rect x="8" y="9" width="32" height="22" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+								<line x1="13" y1="16" x2="29" y2="16" stroke="currentColor" stroke-width="1.1" opacity="0.65"/>
+								<line x1="13" y1="21" x2="34" y2="21" stroke="currentColor" stroke-width="1.1" opacity="0.65"/>
+								<line x1="13" y1="26" x2="26" y2="26" stroke="currentColor" stroke-width="1.1" opacity="0.65"/>
+								<circle cx="33" cy="34" r="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+								<path d="M30 34 L32.5 36.5 L36 32.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+							</svg>
+						)}
+					</div>
+				<div class="dp-step-body">
+					<div class="dp-step-label">{step.label}</div>
+					{step.detail && <div class="dp-step-detail">{step.detail}</div>}
+				</div>
+			</li>
+		))}
+	</ol>
+
+	{caption && <figcaption class="dp-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.dp {
+		margin: 2rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+	}
+
+	.dp-title {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+		margin: 0 0 1rem;
+	}
+
+	.dp-steps {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.5rem;
+	}
+
+	@media (min-width: 720px) {
+		.dp-steps {
+			flex-direction: row;
+			align-items: flex-start;
+			gap: 0.75rem;
+		}
+
+		/* Ladder treatment: each card sits a step lower than the one to its left,
+		   so the row descends from left to right. First card flush with the top. */
+		.dp-step {
+			margin-top: calc(var(--dp-i) * var(--dp-rise, 1.4rem));
+		}
+	}
+
+	.dp-step {
+		--dp-accent: #e8a84c;
+		position: relative;
+		flex: 1 1 0;
+		min-width: 0;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: 0.85rem;
+		padding: 0.9rem 1rem;
+		border: 1px solid var(--color-border);
+		border-left: 3px solid var(--dp-accent);
+		border-radius: 4px;
+		background: var(--color-surface);
+	}
+
+	@media (min-width: 720px) {
+		.dp-step {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0.6rem;
+			padding: 1rem 1rem 1.05rem;
+		}
+
+		/* Pipeline chevron between cards: a thin outline arrow that suggests flow,
+		   layered as outline + fill so it reads against the surface tone. */
+		.dp-step-with-arrow::before,
+		.dp-step-with-arrow::after {
+			content: '';
+			position: absolute;
+			top: 50%;
+			width: 0;
+			height: 0;
+			pointer-events: none;
+		}
+
+		.dp-step-with-arrow::before {
+			right: -11px;
+			transform: translateY(-50%);
+			border-top: 11px solid transparent;
+			border-bottom: 11px solid transparent;
+			border-left: 11px solid var(--color-border);
+			z-index: 1;
+		}
+
+		.dp-step-with-arrow::after {
+			right: -9px;
+			transform: translateY(-50%);
+			border-top: 9px solid transparent;
+			border-bottom: 9px solid transparent;
+			border-left: 9px solid var(--color-surface);
+			z-index: 2;
+		}
+	}
+
+	.dp-icon {
+		flex: none;
+		width: 3rem;
+		height: 3rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--dp-accent);
+	}
+
+	.dp-step-body {
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.dp-step-label {
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		font-weight: 500;
+		letter-spacing: 0.04em;
+		color: var(--color-text-primary);
+	}
+
+	.dp-step-detail {
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+		line-height: 1.5;
+		letter-spacing: 0.01em;
+		color: var(--color-text-secondary);
+	}
+
+	.dp-arrow {
+		list-style: none;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--color-text-tertiary);
+		padding: 0.1rem 0;
+	}
+
+	@media (min-width: 720px) {
+		.dp-arrow {
+			padding: 0 0.35rem;
+			align-self: center;
+		}
+	}
+
+	.dp-caption {
+		margin-top: 1rem;
+		padding-top: 0.85rem;
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--color-text-tertiary);
+		line-height: 1.55;
+		font-style: normal;
+	}
+
+	/* Dense variant — used when there are many stages (e.g. preview pipelines). */
+	.dp-dense {
+		--dp-rise: 0.7rem;
+	}
+
+	.dp-dense .dp-step {
+		padding: 0.7rem 0.75rem 0.75rem;
+	}
+
+	.dp-dense .dp-icon {
+		width: 2.25rem;
+		height: 2.25rem;
+	}
+
+	.dp-dense .dp-icon svg {
+		width: 36px;
+		height: 36px;
+	}
+
+	.dp-dense .dp-step-label {
+		font-size: 0.72rem;
+		/* Reserve two lines so cards stay the same height when one label wraps. */
+		min-height: calc(0.72rem * 1.4 * 2);
+		line-height: 1.4;
+		display: flex;
+		align-items: center;
+	}
+
+	.dp-dense .dp-step-detail {
+		font-size: 0.62rem;
+	}
+
+	@media (min-width: 720px) {
+		.dp-dense .dp-arrow {
+			padding: 0 0.15rem;
+		}
+	}
+</style>
