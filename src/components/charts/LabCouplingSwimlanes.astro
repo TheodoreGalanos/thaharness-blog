@@ -1,0 +1,330 @@
+<!-- ABOUTME: Editorial swimlane diagram showing aec-bench and Prime Lab workflow coupling. -->
+<!-- ABOUTME: Places each step in its owning lane while a central rail preserves sequence. -->
+---
+import type { LabCouplingLane, LabCouplingStep } from '../../data/lab-coupling-flow';
+
+interface Props {
+	title?: string;
+	steps: LabCouplingStep[];
+	caption?: string;
+}
+
+const { title, steps, caption } = Astro.props;
+
+function laneLabel(lane: LabCouplingLane): string {
+	return lane === 'aec-bench' ? 'aec-bench' : 'Prime Lab';
+}
+---
+
+<figure class="lcs" aria-label={title ?? 'aec-bench and Prime Lab swimlane diagram'}>
+	{title && <div class="lcs-title">{title}</div>}
+
+	<div class="lcs-lanes" aria-hidden="true">
+		<div class="lcs-lane-label lcs-lane-left">aec-bench</div>
+		<div class="lcs-lane-spacer"></div>
+		<div class="lcs-lane-label lcs-lane-right">Prime Lab</div>
+	</div>
+
+	<ol class="lcs-steps">
+		{steps.map((step, index) => (
+			<li
+				class="lcs-row"
+				data-lane={step.lane}
+				data-handoff={step.handoff ? 'true' : 'false'}
+			>
+				<div class="lcs-rail" aria-hidden="true">
+					<span class="lcs-dot">{String(index + 1).padStart(2, '0')}</span>
+				</div>
+				<div class="lcs-card">
+					<div class="lcs-card-head">
+						<span class="lcs-kicker">{step.kicker}</span>
+						<span class="lcs-owner">{laneLabel(step.lane)}</span>
+					</div>
+					<span class="lcs-label">{step.label}</span>
+					<span class="lcs-detail">{step.detail}</span>
+					{step.handoff && <span class="lcs-handoff">handoff</span>}
+				</div>
+			</li>
+		))}
+	</ol>
+
+	{caption && <figcaption class="lcs-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.lcs {
+		--lcs-left: var(--color-accent-secondary);
+		--lcs-right: var(--color-accent);
+		--lcs-rail: color-mix(in srgb, var(--color-accent-secondary) 45%, var(--color-border));
+		--lcs-card-bg: color-mix(in srgb, var(--color-surface) 90%, transparent);
+
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+		text-align: left;
+	}
+
+	.lcs-title {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+		margin: 0 0 1.25rem;
+	}
+
+	.lcs-lanes {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 4rem minmax(0, 1fr);
+		align-items: center;
+		gap: 0.75rem;
+		margin-bottom: 0.85rem;
+	}
+
+	.lcs-lane-label {
+		padding-bottom: 0.5rem;
+		border-bottom: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.lcs-lane-left {
+		color: var(--lcs-left);
+	}
+
+	.lcs-lane-right {
+		color: var(--lcs-right);
+		text-align: right;
+	}
+
+	.lcs-steps {
+		position: relative;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	.lcs-row {
+		position: relative;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 4rem minmax(0, 1fr);
+		align-items: center;
+		gap: 0.75rem;
+		min-height: 7.25rem;
+	}
+
+	.lcs-card {
+		position: relative;
+		display: grid;
+		gap: 0.4rem;
+		padding: 0.85rem 0.95rem 0.9rem;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		background:
+			linear-gradient(135deg, color-mix(in srgb, var(--lcs-left) 7%, transparent), transparent 48%),
+			var(--lcs-card-bg);
+		box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
+		overflow: hidden;
+	}
+
+	.lcs-row[data-lane='aec-bench'] .lcs-card {
+		grid-column: 1;
+	}
+
+	.lcs-row[data-lane='prime-lab'] .lcs-card {
+		grid-column: 3;
+		background:
+			linear-gradient(135deg, color-mix(in srgb, var(--lcs-right) 8%, transparent), transparent 48%),
+			var(--lcs-card-bg);
+	}
+
+	.lcs-card::before {
+		content: '';
+		position: absolute;
+		inset: 0 auto 0 0;
+		width: 2px;
+		background: var(--lcs-left);
+		opacity: 0.76;
+	}
+
+	.lcs-row[data-lane='prime-lab'] .lcs-card::before {
+		background: var(--lcs-right);
+	}
+
+	.lcs-row[data-handoff='true'] .lcs-card {
+		border-color: color-mix(in srgb, var(--color-accent) 42%, var(--color-border));
+	}
+
+	.lcs-card-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.75rem;
+	}
+
+	.lcs-kicker,
+	.lcs-owner,
+	.lcs-label,
+	.lcs-detail,
+	.lcs-handoff {
+		font-family: var(--font-mono);
+	}
+
+	.lcs-kicker,
+	.lcs-owner {
+		font-size: 0.625rem;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.lcs-owner {
+		white-space: nowrap;
+	}
+
+	.lcs-label {
+		font-size: 0.875rem;
+		font-weight: 500;
+		letter-spacing: 0.02em;
+		color: var(--color-text-primary);
+	}
+
+	.lcs-detail {
+		font-size: 0.72rem;
+		line-height: 1.5;
+		color: var(--color-text-secondary);
+	}
+
+	.lcs-handoff {
+		justify-self: start;
+		margin-top: 0.1rem;
+		padding: 0.15rem 0.4rem;
+		border: 1px solid color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
+		border-radius: 3px;
+		font-size: 0.6rem;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+	}
+
+	.lcs-rail {
+		position: relative;
+		grid-column: 2;
+		grid-row: 1;
+		align-self: stretch;
+		display: grid;
+		place-items: center;
+	}
+
+	.lcs-rail::after {
+		content: '';
+		position: absolute;
+		top: 50%;
+		bottom: calc(-0.75rem - 50%);
+		left: 50%;
+		width: 1px;
+		transform: translateX(-50%);
+		background: var(--lcs-rail);
+		z-index: 0;
+	}
+
+	.lcs-row:last-child .lcs-rail::after {
+		display: none;
+	}
+
+	.lcs-rail::before {
+		content: '';
+		position: absolute;
+		top: 50%;
+		height: 1px;
+		background: var(--lcs-rail);
+		z-index: 0;
+	}
+
+	.lcs-row[data-lane='aec-bench'] .lcs-rail::before {
+		left: 0;
+		right: 50%;
+	}
+
+	.lcs-row[data-lane='prime-lab'] .lcs-rail::before {
+		left: 50%;
+		right: 0;
+	}
+
+	.lcs-dot {
+		position: relative;
+		z-index: 1;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.75rem;
+		height: 1.75rem;
+		border: 1px solid var(--lcs-rail);
+		border-radius: 999px;
+		background: var(--color-bg);
+		font-family: var(--font-mono);
+		font-size: 0.625rem;
+		letter-spacing: 0.06em;
+		color: var(--color-text-tertiary);
+	}
+
+	.lcs-row[data-handoff='true'] .lcs-dot {
+		border-color: var(--color-accent);
+		color: var(--color-accent);
+	}
+
+	.lcs-caption {
+		margin-top: 1.5rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--color-text-tertiary);
+		line-height: 1.55;
+		font-style: normal;
+		text-align: left;
+	}
+
+	@media (max-width: 760px) {
+		.lcs-lanes {
+			grid-template-columns: 1fr 1fr;
+			gap: 0.75rem;
+		}
+
+		.lcs-lane-spacer {
+			display: none;
+		}
+
+		.lcs-row {
+			grid-template-columns: 2.5rem minmax(0, 1fr);
+			gap: 0.75rem;
+			min-height: 0;
+		}
+
+		.lcs-row[data-lane='aec-bench'] .lcs-card,
+		.lcs-row[data-lane='prime-lab'] .lcs-card {
+			grid-column: 2;
+		}
+
+		.lcs-rail {
+			grid-column: 1;
+		}
+
+		.lcs-rail::before {
+			left: 50%;
+			right: -0.75rem;
+		}
+
+		.lcs-row[data-lane='aec-bench'] .lcs-rail::before,
+		.lcs-row[data-lane='prime-lab'] .lcs-rail::before {
+			left: 50%;
+			right: -0.75rem;
+		}
+	}
+</style>

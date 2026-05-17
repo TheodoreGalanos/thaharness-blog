@@ -1,0 +1,187 @@
+---
+title: "Making aec-bench Trainable with Prime Lab"
+description: "How aec-bench and Prime Intellect's Lab turn engineering benchmarks into verifier-backed RL environments, adapter training runs, and inspectable traces."
+author: "Theodoros Galanos"
+category: "Engineering"
+draft: false
+pubDate: 2026-05-16
+tags: ["aec-bench", "prime-lab", "reinforcement-learning", "agent-evaluation", "harness-engineering", "ai-in-aec"]
+featured: false
+---
+
+import GroupedBars from '../../components/charts/GroupedBars.astro';
+import LabCouplingSwimlanes from '../../components/charts/LabCouplingSwimlanes.astro';
+import LineTrajectory from '../../components/charts/LineTrajectory.astro';
+import PrimeRunFlowDiagram from '../../components/charts/PrimeRunFlowDiagram.astro';
+import TrainableLoopDiagram from '../../components/charts/TrainableLoopDiagram.astro';
+import {
+	adapterComparisonData,
+	trainingTrajectoryData,
+} from '../../data/prime-rl-charts';
+import { labCouplingFlowSteps } from '../../data/lab-coupling-flow';
+import { primeRunFlowSteps } from '../../data/prime-run-flow';
+import { trainableLoopRows } from '../../data/trainable-loop-flow';
+
+Estimated reading time: 9 minutes
+
+aec-bench can train now.
+
+The first integration with Prime Intellect's (PI) [Prime Lab](https://www.primeintellect.ai/blog/lab) proves a practical point:
+
+**with the right infrastructure, real engineering tasks can become RL environments without losing the verifier that made them meaningful in the first place.**
+
+That is the step I have been circling in the previous articles. In [Where Capability Actually Lives in Agentic Engineering](/blog/where-capability-actually-lives-in-agentic-engineering/), the claim was that capability in engineering is not a property of the model alone. It lives across the model, tools, verifiers, output contracts, and operating environment. In [Benchmarking Agents on Real Engineering Work](/blog/benchmarking-agents-on-real-engineering-work/), that showed up empirically: remove the right harness support and performance did not degrade gracefully. It collapsed. In [The Harness Is All You Need](/blog/the-harness-is-all-you-need/), aec-bench became the benchmark layer for making that claim measurable.
+
+This post is the next step in that chain.
+
+If the out-of-distribution gap in engineering is partly an environment gap, then benchmarks are not enough. We also need a way to train models inside those environments.
+
+PI's Lab gives us that path.
+
+## TL;DR: Trainable aec-bench Tasks
+
+- aec-bench tasks can now be exported as Lab-compatible Verifiers environments.
+- The task-local verifier remains the source of truth, so training optimizes against the same check used for evaluation.
+- Lab handles the hosted RL loop: rollout collection, training, checkpoints, adapter deployment, and evals.
+- aec-bench can import the hosted eval samples back into its ledger, turning the result into inspectable traces instead of a dashboard number.
+- In the first small adapter check, reward moved from **0.333** to **0.800**, final environment responses rose from **2/15** to **8/15**, and empty model responses fell from **13/15** to **3/15**.
+
+The claim is deliberately narrow: this adapter became better at completing a small range of workflows. That is already a useful thing to be able to train.
+
+## From Benchmark Score to RL Environment
+
+Most benchmark work stops at measurement.
+
+That is necessary. It tells us where models fail, which harness choices matter, and how much of the work is still out of distribution for general-purpose systems. But if all we can do is score failures, the loop is incomplete.
+
+The more interesting loop is:
+
+<TrainableLoopDiagram
+	title="Real task to trainable loop"
+	rows={trainableLoopRows}
+	caption="The verifier stays attached as the task moves from benchmark instance to RL environment, then returns as inspectable traces after held-out evaluation."
+/>
+
+That is what the aec-bench and Lab integration now gives us.
+
+aec-bench supplies the work definition: the prompt, files, tools, expected output, and verifier. Lab supplies the training substrate: environment packaging, hosted execution, RL training, checkpoints, and adapter evaluation.
+
+The clean separation matters. Lab does not need to know what makes a retaining-wall check, short-circuit calculation, or bracket-load task meaningful. It just needs a Verifiers environment with a reward. aec-bench does not need to become an RL platform. It just needs to expose its tasks in the right shape.
+
+This is why the right infrastructure is so important: the benchmark keeps the meaning of the work; the Lab turns that work into a trainable environment.[^pi-lab]
+
+[^pi-lab]: I can't stress enough how blessed we are to have something like PI's Lab in our disposal. It opens up a myriad of opportunities otherwise unattainable outside of big labs. Huge kudos to the team!
+
+It is also the practical version of the argument in [Executable Standards](/blog/executable-standards/): obligations become more useful to agents when they stop living only as prose and start becoming checks, predicates, certificates, and rewards.
+
+## Why RL Environments Matter for Engineering OOD Failures
+
+In engineering, the hard failure is often not the model becoming incoherent but really when it becomes plausibly generic.
+
+It uses the wrong table. It applies the wrong assumption. It answers the nearby problem instead of this problem. It performs a calculation but never submits the artifact in the required form. This is what I meant in the earlier benchmark work by out-of-distribution behaviour: the model is not useless, but it is not reliably attached to the task world, or to the specific instance cut from that world.[^task-world]
+
+[^task-world]: The task world is the problem space. The instance is one concrete instantiation of part of that space.
+
+Evaluation tells us when that happens.
+
+RL environments let us put pressure on the behaviour itself.
+
+The question moves from appearance to behaviour:
+
+- did the model inspect the assigned files?
+- did it use the available tools?
+- did it recover after tool friction?
+- did it write the required output?
+- did it actually submit?
+- did the verifier accept the artifact?
+
+Those are workflow behaviours. They are exactly the behaviours that matter when a domain is not already solved by the base model's priors.
+
+## Exporting aec-bench Tasks to Prime Lab
+
+We exported an aec-bench task suite into a Prime-compatible Verifiers environment and ran a short hosted RL experiment on `Qwen/Qwen3.5-4B`.
+
+The mechanics were refreshingly direct:
+
+<PrimeRunFlowDiagram
+	title="Hosted run path"
+	steps={primeRunFlowSteps}
+	caption="The task suite leaves aec-bench as a Prime-compatible environment, trains in Lab, then returns as comparable base-vs-adapter traces inside the aec-bench ledger."
+/>
+
+The training run was intentionally small. It was not meant to establish a production-quality adapter but more so to understand whether the loop works end to end on real benchmark tasks?
+
+And it did!
+
+<LineTrajectory {...trainingTrajectoryData} />
+
+During the run, mean reward rose from **0.281** to **0.979**, and mean `submit_answer` calls rose from **0.099** to **0.917**. That second number is the more interesting one. It suggests the model was not merely producing better-looking text; it was more often reaching the part of the workflow where the verifier could evaluate the submitted artifact.
+
+The caveat is simple: this was a small training slice, probably helped by task-slice simplicity, and it was a loop proof rather than a benchmark-grade result. For this first pass, the point was to prove that the evaluation harness could become a training harness without changing the task's definition of success.
+
+## First Adapter Check: Base vs Adapter
+
+After training, we ran a small medium-difficulty stateful comparison and imported the Prime eval samples back into the aec-bench ledger.
+
+<GroupedBars {...adapterComparisonData} />
+
+The headline result:
+
+| Metric | Base | Adapter |
+|---|---:|---:|
+| Reward mean | 0.333 | 0.800 |
+| Nonzero rollouts | 5/15 | 12/15 |
+| Final environment response | 2/15 | 8/15 |
+| Empty response errors | 13/15 | 3/15 |
+| Mean tool calls | 2.67 | 4.33 |
+| Mean `submit_answer` calls | 0.13 | 0.53 |
+
+The adapter did more of the work. It read more, wrote more, submitted more, and failed with empty responses less often. I think it what happened was workflow learning rather than general engineering competence. 
+
+It became more likely for the model to stay inside the environment (task world) long enough to produce something the verifier could judge.
+
+Trace analysis supports that interpretation. Both base and adapter runs were mostly execution-heavy. The adapter did not become wildly more exploratory or magically more intelligent. It became better at execution-through-recovery: use the workspace, repair small tool friction, write the artifact, and submit it.
+
+Modest result, but a useful one.
+
+## Why Imported Traces Matter
+
+Hosted training dashboards are useful, but they are not enough for the kind of work aec-bench is trying to do.
+
+The important move is that the Lab's eval samples can easily come back into the aec-bench ledger. Once they are there, they can be inspected with the same reporting tools we use for normal benchmark runs: reward, stop condition, tool calls, error type, submission behaviour, and representative conversations.
+
+That turns the adapter check from an anecdote into an artifact.
+
+It also connects this work to [What If the Harness Could Improve Itself?](/blog/what-if-the-harness-could-improve-itself/). That article looked at automated improvement of one harness surface: the prompt. This integration makes a stronger version possible. We can now improve the policy itself while keeping the task, verifier, and trace analysis in the same experimental frame.
+
+This is also adjacent to [The Third Axis](/blog/the-third-axis/). The third axis was about improving the environment around the model, alongside model size and inference-time reasoning. Prime Lab gives that idea a concrete RL path: once a task environment is explicit and verifiable, the policy can adapt to it.
+
+## What the First Adapter Result Does and Does Not Show
+
+The result is narrow, but real. aec-bench can now expose engineering tasks as trainable environments, Lab can run hosted RL against them without replacing the verifier, and the resulting samples can come back into the aec-bench ledger for local inspection. In this first adapter check, that produced measurable movement in workflow completion.
+
+It does not mean the adapter has general engineering competence, or that the task family is solved. The eval was only 15 samples, and one task family stayed stubborn: retaining-wall stability remained **0/3** nonzero for both base and adapter. That is useful information, not an embarrassment. Some behaviours may be learnable from the current environment. Others may need better task design, better tools, stronger verifiers, or simply a larger and more varied training slice.
+
+## The Larger Point: Benchmark, Train, Inspect
+
+This is why the integration feels important.
+
+The path from real task to trainable environment is becoming short:
+
+<LabCouplingSwimlanes
+	title="aec-bench / Lab coupling"
+	steps={labCouplingFlowSteps}
+	caption="aec-bench owns the task, verifier, environment export, and trace inspection. Lab owns the hosted training and evaluation loop. The useful part is the handoff: the verifier goes out with the environment, and the traces come back for inspection."
+/>
+
+That used to be a research project. With aec-bench and Prime Lab, it starts to look like normal infrastructure.
+
+And that matters because closing the out-of-distribution gap in engineering will not come from one lever. Base models, tools, verifiers, environments, and training pressure all have to feed the same loop. And they all have to be accessible to domain expertise.
+
+We can define real work, measure real failures, train against those failures, and inspect whether the behaviour actually changed.
+
+For aec-bench, that is a real promotion.
+
+It stops being only a test.
+
+It is slowly becoming a lab.

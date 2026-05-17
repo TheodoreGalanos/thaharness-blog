@@ -1,0 +1,190 @@
+<!-- ABOUTME: Editorial top-down flow diagram for the Prime hosted RL run path. -->
+<!-- ABOUTME: Renders a compact vertical chain with verifier-linked steps emphasized. -->
+---
+import type { PrimeRunFlowStep } from '../../data/prime-run-flow';
+
+interface Props {
+	title?: string;
+	steps: PrimeRunFlowStep[];
+	caption?: string;
+}
+
+const { title, steps, caption } = Astro.props;
+---
+
+<figure class="prf" aria-label={title ?? 'Prime hosted run flow diagram'}>
+	{title && <div class="prf-title">{title}</div>}
+
+	<ol class="prf-chain">
+		{steps.map((step, index) => (
+			<li class="prf-item">
+				<div class="prf-card" data-emphasis={step.emphasis ? 'true' : 'false'}>
+					<div class="prf-kicker-row">
+						<span class="prf-kicker">{step.kicker}</span>
+						<span class="prf-number">{String(index + 1).padStart(2, '0')}</span>
+					</div>
+					<span class="prf-label">{step.label}</span>
+					<span class="prf-detail">{step.detail}</span>
+				</div>
+				{index < steps.length - 1 && (
+					<div class="prf-connector" aria-hidden="true">
+						<span></span>
+					</div>
+				)}
+			</li>
+		))}
+	</ol>
+
+	{caption && <figcaption class="prf-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.prf {
+		--prf-rail: color-mix(in srgb, var(--color-accent-secondary) 46%, var(--color-border));
+		--prf-card-bg: color-mix(in srgb, var(--color-surface) 90%, transparent);
+
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+		text-align: left;
+	}
+
+	.prf-title {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+		margin: 0 0 1.25rem;
+	}
+
+	.prf-chain {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 0;
+	}
+
+	.prf-item {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		justify-items: center;
+	}
+
+	.prf-card {
+		position: relative;
+		width: min(100%, 34rem);
+		display: grid;
+		gap: 0.45rem;
+		padding: 0.95rem 1rem 1rem;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		background:
+			linear-gradient(135deg, color-mix(in srgb, var(--color-accent-secondary) 7%, transparent), transparent 48%),
+			var(--prf-card-bg);
+		box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
+		overflow: hidden;
+	}
+
+	.prf-card::before {
+		content: '';
+		position: absolute;
+		inset: 0 auto 0 0;
+		width: 2px;
+		background: var(--color-accent-secondary);
+		opacity: 0.72;
+	}
+
+	.prf-card[data-emphasis='true'] {
+		border-color: color-mix(in srgb, var(--color-accent) 44%, var(--color-border));
+		background:
+			linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 10%, transparent), transparent 46%),
+			var(--prf-card-bg);
+	}
+
+	.prf-card[data-emphasis='true']::before {
+		background: var(--color-accent);
+		opacity: 0.9;
+	}
+
+	.prf-kicker-row {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.prf-kicker,
+	.prf-number,
+	.prf-detail {
+		font-family: var(--font-mono);
+	}
+
+	.prf-kicker {
+		font-size: 0.625rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.prf-number {
+		font-size: 0.625rem;
+		letter-spacing: 0.12em;
+		color: var(--color-text-tertiary);
+	}
+
+	.prf-label {
+		font-family: var(--font-mono);
+		font-size: 0.9375rem;
+		font-weight: 500;
+		letter-spacing: 0.02em;
+		color: var(--color-text-primary);
+	}
+
+	.prf-detail {
+		font-size: 0.75rem;
+		line-height: 1.5;
+		color: var(--color-text-secondary);
+	}
+
+	.prf-connector {
+		position: relative;
+		width: 1px;
+		height: 1.55rem;
+		background: var(--prf-rail);
+	}
+
+	.prf-connector span {
+		position: absolute;
+		left: 50%;
+		bottom: 0;
+		width: 0;
+		height: 0;
+		transform: translateX(-50%);
+		border-left: 4px solid transparent;
+		border-right: 4px solid transparent;
+		border-top: 7px solid var(--prf-rail);
+	}
+
+	.prf-caption {
+		margin-top: 1.5rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--color-text-tertiary);
+		line-height: 1.55;
+		font-style: normal;
+		text-align: left;
+	}
+
+	@media (max-width: 640px) {
+		.prf-card {
+			padding: 0.85rem 0.9rem 0.9rem;
+		}
+	}
+</style>
