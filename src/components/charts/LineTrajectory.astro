@@ -471,82 +471,7 @@ void panelPointCount;
 		stroke-width: 3;
 	}
 
-	/* Panel — right-gutter at ≥1440px, inline collapse below. */
-	.lt-panel {
-		margin: 0;
-		padding: 0;
-		opacity: 0;
-		max-height: 0;
-		overflow: hidden;
-		transition:
-			opacity 0.18s var(--ease-standard),
-			max-height 0.22s var(--ease-standard),
-			margin 0.22s var(--ease-standard);
-		pointer-events: none;
-	}
-
-	.lt.is-active .lt-panel {
-		opacity: 1;
-		max-height: 28rem;
-		margin-bottom: 1rem;
-	}
-
-	.lt-panel-sticky {
-		padding-top: 0.6rem;
-		border-top: 1px solid var(--color-border);
-	}
-
-	.lt-panel-inner {
-		display: block;
-		font-family: var(--font-body);
-		font-size: 0.875rem;
-		line-height: 1.55;
-		color: var(--color-text-primary);
-	}
-
-	.lt-panel-kicker {
-		display: block;
-		font-family: var(--font-mono);
-		font-size: 0.6875rem;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--color-accent);
-		margin-bottom: 0.5rem;
-		min-height: 0.9rem;
-	}
-
-	.lt-panel-body {
-		display: block;
-		color: var(--color-text-secondary);
-	}
-
-	@media (min-width: 1440px) {
-		.lt-panel {
-			position: absolute;
-			top: 0;
-			bottom: 0;
-			left: calc(100% + 2rem);
-			width: 14rem;
-			max-height: none;
-			margin: 0;
-			overflow: visible;
-		}
-
-		.lt.is-active .lt-panel {
-			max-height: none;
-			margin: 0;
-		}
-
-		.lt-panel-sticky {
-			position: sticky;
-			top: var(--lt-sticky-top);
-			padding: 0 0 0 1rem;
-			border-top: none;
-			border-left: 1px solid var(--color-border);
-		}
-	}
-
-	.lt-caption {
+		.lt-caption {
 		margin-top: 1.5rem;
 		padding-top: 1rem;
 		border-top: 1px solid var(--color-border);
@@ -559,14 +484,15 @@ void panelPointCount;
 </style>
 
 <script>
+	import { createChartHoverPanel } from '../../scripts/chart-hover-panel';
+
 	(() => {
 		const roots = document.querySelectorAll<HTMLElement>('[data-lt-root]');
 		roots.forEach((root) => {
-			const kickerEl = root.querySelector<HTMLElement>('[data-lt-kicker]');
-			const bodyEl = root.querySelector<HTMLElement>('[data-lt-body]');
+			const panel = createChartHoverPanel(root, '[data-lt-kicker]', '[data-lt-body]');
 			const seriesDataEl = root.querySelector<HTMLScriptElement>('[data-lt-series]');
 			const pointsDataEl = root.querySelector<HTMLScriptElement>('[data-lt-points]');
-			if (!kickerEl || !bodyEl || !seriesDataEl || !pointsDataEl) return;
+			if (!panel || !seriesDataEl || !pointsDataEl) return;
 
 			type SeriesMeta = { key: string; label: string; note: string; accent: string };
 			type PointData =
@@ -600,7 +526,6 @@ void panelPointCount;
 			const svg = root.querySelector<SVGSVGElement>('.lt-chart svg');
 			const tagged: SVGElement[] = [];
 			if (svg) {
-				// Lines: stroke colour match.
 				svg.querySelectorAll<SVGPathElement>('path').forEach((path) => {
 					const stroke = normaliseColor(path.getAttribute('stroke'));
 					const fill = normaliseColor(path.getAttribute('fill'));
@@ -610,7 +535,6 @@ void panelPointCount;
 						tagged.push(path);
 					}
 				});
-				// Dots (series data points, not event markers): fill colour match.
 				dots.forEach((dot) => {
 					const fill = normaliseColor(dot.getAttribute('fill'));
 					const key = accentToKey.get(fill);
@@ -619,12 +543,6 @@ void panelPointCount;
 						tagged.push(dot);
 					}
 				});
-			}
-
-			function setPanel(kicker: string, body: string) {
-				kickerEl!.textContent = kicker;
-				bodyEl!.textContent = body;
-				root.classList.add('is-active');
 			}
 
 			function highlightSeries(key: string | null) {
@@ -644,7 +562,7 @@ void panelPointCount;
 			}
 
 			function reset() {
-				root.classList.remove('is-active');
+				panel.reset();
 				dots.forEach((d) => d.classList.remove('is-active'));
 				markers.forEach((m) => m.classList.remove('is-active'));
 				highlightSeries(null);
@@ -656,15 +574,12 @@ void panelPointCount;
 					if (!p) return;
 					const meta = seriesMap.get(p.seriesKey);
 					dots.forEach((d, j) => d.classList.toggle('is-active', j === i));
-					setPanel(
+					panel.set(
 						`${meta?.label ?? p.seriesKey} · cycle ${p.cycle} · ${p.value.toFixed(2)}`,
 						meta?.note ?? '',
 					);
 				};
-				dot.addEventListener('mouseenter', show);
-				dot.addEventListener('focus', show);
-				dot.addEventListener('mouseleave', reset);
-				dot.addEventListener('blur', reset);
+				panel.bind(dot, show, reset);
 				dot.setAttribute('tabindex', '0');
 				dot.setAttribute('role', 'button');
 			});
@@ -674,15 +589,12 @@ void panelPointCount;
 					const p = markerPoints[i];
 					if (!p) return;
 					markers.forEach((m, j) => m.classList.toggle('is-active', j === i));
-					setPanel(
+					panel.set(
 						`${p.label} · cycle ${p.cycle} · ${p.value.toFixed(2)}`,
 						p.note,
 					);
 				};
-				mark.addEventListener('mouseenter', show);
-				mark.addEventListener('focus', show);
-				mark.addEventListener('mouseleave', reset);
-				mark.addEventListener('blur', reset);
+				panel.bind(mark, show, reset);
 				mark.setAttribute('tabindex', '0');
 				mark.setAttribute('role', 'button');
 			});
@@ -691,13 +603,10 @@ void panelPointCount;
 				const show = () => {
 					const label = pill.dataset.seriesLabel ?? '';
 					const desc = pill.dataset.description ?? '';
-					setPanel(label, desc);
+					panel.set(label, desc);
 					highlightSeries(pill.dataset.series ?? null);
 				};
-				pill.addEventListener('mouseenter', show);
-				pill.addEventListener('focus', show);
-				pill.addEventListener('mouseleave', reset);
-				pill.addEventListener('blur', reset);
+				panel.bind(pill, show, reset);
 			});
 		});
 	})();

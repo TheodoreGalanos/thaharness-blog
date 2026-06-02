@@ -185,82 +185,6 @@ const svg = renderPlot({
 		opacity: 0.35;
 	}
 
-	/* Panel — ephemeral, matches GroupedBars pattern. Right gutter at ≥1440px,
-	   inline collapse at narrower widths. */
-	.qvc-panel {
-		margin: 0;
-		padding: 0;
-		opacity: 0;
-		max-height: 0;
-		overflow: hidden;
-		transition:
-			opacity 0.18s var(--ease-standard),
-			max-height 0.22s var(--ease-standard),
-			margin 0.22s var(--ease-standard);
-		pointer-events: none;
-	}
-
-	.qvc.is-active .qvc-panel {
-		opacity: 1;
-		max-height: 24rem;
-		margin-bottom: 1rem;
-	}
-
-	.qvc-panel-sticky {
-		padding-top: 0.6rem;
-		border-top: 1px solid var(--color-border);
-	}
-
-	.qvc-panel-inner {
-		display: block;
-		font-family: var(--font-body);
-		font-size: 0.875rem;
-		line-height: 1.55;
-		color: var(--color-text-primary);
-	}
-
-	.qvc-panel-kicker {
-		display: block;
-		font-family: var(--font-mono);
-		font-size: 0.6875rem;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--color-accent);
-		margin-bottom: 0.5rem;
-		min-height: 0.9rem;
-	}
-
-	.qvc-panel-body {
-		display: block;
-		color: var(--color-text-secondary);
-	}
-
-	@media (min-width: 1440px) {
-		.qvc-panel {
-			position: absolute;
-			top: 0;
-			bottom: 0;
-			left: calc(100% + 2rem);
-			width: 14rem;
-			max-height: none;
-			margin: 0;
-			overflow: visible;
-		}
-
-		.qvc.is-active .qvc-panel {
-			max-height: none;
-			margin: 0;
-		}
-
-		.qvc-panel-sticky {
-			position: sticky;
-			top: var(--qvc-sticky-top);
-			padding: 0 0 0 1rem;
-			border-top: none;
-			border-left: 1px solid var(--color-border);
-		}
-	}
-
 	.qvc-caption {
 		margin-top: 1.5rem;
 		padding-top: 1rem;
@@ -274,13 +198,14 @@ const svg = renderPlot({
 </style>
 
 <script>
+	import { createChartHoverPanel } from '../../scripts/chart-hover-panel';
+
 	(() => {
 		const roots = document.querySelectorAll<HTMLElement>('[data-qvc-root]');
 		roots.forEach((root) => {
-			const kickerEl = root.querySelector<HTMLElement>('[data-qvc-kicker]');
-			const bodyEl = root.querySelector<HTMLElement>('[data-qvc-body]');
+			const panel = createChartHoverPanel(root, '[data-qvc-kicker]', '[data-qvc-body]');
 			const dataScript = root.querySelector<HTMLScriptElement>('[data-qvc-points]');
-			if (!kickerEl || !bodyEl || !dataScript) return;
+			if (!panel || !dataScript) return;
 
 			type Point = { key: string; label: string; cost: number; reward: number; note: string };
 			let points: Point[] = [];
@@ -292,14 +217,8 @@ const svg = renderPlot({
 
 			const marks = root.querySelectorAll<SVGElement>('.qvc-point');
 
-			function setPanel(kicker: string, body: string) {
-				kickerEl!.textContent = kicker;
-				bodyEl!.textContent = body;
-				root.classList.add('is-active');
-			}
-
 			function resetPanel() {
-				root.classList.remove('is-active');
+				panel.reset();
 				root.removeAttribute('data-qvc-hover');
 				marks.forEach((m) => m.classList.remove('is-active'));
 			}
@@ -310,15 +229,12 @@ const svg = renderPlot({
 					if (!p) return;
 					root.setAttribute('data-qvc-hover', p.key);
 					marks.forEach((m, j) => m.classList.toggle('is-active', i === j));
-					setPanel(
+					panel.set(
 						`${p.label} · $${p.cost.toFixed(2)} · reward ${p.reward.toFixed(2)}`,
 						p.note,
 					);
 				};
-				mark.addEventListener('mouseenter', show);
-				mark.addEventListener('focus', show);
-				mark.addEventListener('mouseleave', resetPanel);
-				mark.addEventListener('blur', resetPanel);
+				panel.bind(mark, show, resetPanel);
 				// Keyboard affordance
 				mark.setAttribute('tabindex', '0');
 				mark.setAttribute('role', 'button');

@@ -222,81 +222,6 @@ const svg = renderPlot({
 		opacity: 0.4;
 	}
 
-	/* Panel — identical pattern to sibling charts. */
-	.od-panel {
-		margin: 0;
-		padding: 0;
-		opacity: 0;
-		max-height: 0;
-		overflow: hidden;
-		transition:
-			opacity 0.18s var(--ease-standard),
-			max-height 0.22s var(--ease-standard),
-			margin 0.22s var(--ease-standard);
-		pointer-events: none;
-	}
-
-	.od.is-active .od-panel {
-		opacity: 1;
-		max-height: 24rem;
-		margin-bottom: 1rem;
-	}
-
-	.od-panel-sticky {
-		padding-top: 0.6rem;
-		border-top: 1px solid var(--color-border);
-	}
-
-	.od-panel-inner {
-		display: block;
-		font-family: var(--font-body);
-		font-size: 0.875rem;
-		line-height: 1.55;
-		color: var(--color-text-primary);
-	}
-
-	.od-panel-kicker {
-		display: block;
-		font-family: var(--font-mono);
-		font-size: 0.6875rem;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--color-accent);
-		margin-bottom: 0.5rem;
-		min-height: 0.9rem;
-	}
-
-	.od-panel-body {
-		display: block;
-		color: var(--color-text-secondary);
-	}
-
-	@media (min-width: 1440px) {
-		.od-panel {
-			position: absolute;
-			top: 0;
-			bottom: 0;
-			left: calc(100% + 2rem);
-			width: 14rem;
-			max-height: none;
-			margin: 0;
-			overflow: visible;
-		}
-
-		.od.is-active .od-panel {
-			max-height: none;
-			margin: 0;
-		}
-
-		.od-panel-sticky {
-			position: sticky;
-			top: var(--od-sticky-top);
-			padding: 0 0 0 1rem;
-			border-top: none;
-			border-left: 1px solid var(--color-border);
-		}
-	}
-
 	.od-caption {
 		margin-top: 1.5rem;
 		padding-top: 1rem;
@@ -310,13 +235,14 @@ const svg = renderPlot({
 </style>
 
 <script>
+	import { createChartHoverPanel } from '../../scripts/chart-hover-panel';
+
 	(() => {
 		const roots = document.querySelectorAll<HTMLElement>('[data-od-root]');
 		roots.forEach((root) => {
-			const kickerEl = root.querySelector<HTMLElement>('[data-od-kicker]');
-			const bodyEl = root.querySelector<HTMLElement>('[data-od-body]');
+			const panel = createChartHoverPanel(root, '[data-od-kicker]', '[data-od-body]');
 			const dataScript = root.querySelector<HTMLScriptElement>('[data-od-bars]');
-			if (!kickerEl || !bodyEl || !dataScript) return;
+			if (!panel || !dataScript) return;
 
 			type BarData = {
 				model: string;
@@ -334,14 +260,8 @@ const svg = renderPlot({
 
 			const bars = root.querySelectorAll<SVGElement>('.od-bar');
 
-			function setPanel(kicker: string, body: string) {
-				kickerEl!.textContent = kicker;
-				bodyEl!.textContent = body;
-				root.classList.add('is-active');
-			}
-
 			function resetPanel() {
-				root.classList.remove('is-active');
+				panel.reset();
 				root.removeAttribute('data-od-hover');
 				bars.forEach((b) => b.classList.remove('is-active'));
 			}
@@ -353,15 +273,12 @@ const svg = renderPlot({
 					root.setAttribute('data-od-hover', d.modelKey);
 					bars.forEach((b, j) => b.classList.toggle('is-active', i === j));
 					const suffix = d.count === 1 ? 'trace' : 'traces';
-					setPanel(
+					panel.set(
 						`${d.model} · reward ${d.bin} · ${d.count} ${suffix}`,
 						d.note,
 					);
 				};
-				bar.addEventListener('mouseenter', show);
-				bar.addEventListener('focus', show);
-				bar.addEventListener('mouseleave', resetPanel);
-				bar.addEventListener('blur', resetPanel);
+				panel.bind(bar, show, resetPanel);
 				bar.setAttribute('tabindex', '0');
 				bar.setAttribute('role', 'button');
 			});

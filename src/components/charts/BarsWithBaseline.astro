@@ -331,82 +331,6 @@ const baselinePct = baseline ? pct(baseline.value) : null;
 		color: var(--color-text-secondary);
 	}
 
-	/* Panel — same ephemeral pattern as GroupedBars. Right-gutter at ≥1440px,
-	   inline collapse below. */
-	.bwb-panel {
-		margin: 0;
-		padding: 0;
-		opacity: 0;
-		max-height: 0;
-		overflow: hidden;
-		transition:
-			opacity 0.18s var(--ease-standard),
-			max-height 0.22s var(--ease-standard),
-			margin 0.22s var(--ease-standard);
-		pointer-events: none;
-	}
-
-	.bwb.is-active .bwb-panel {
-		opacity: 1;
-		max-height: 24rem;
-		margin-bottom: 1rem;
-	}
-
-	.bwb-panel-sticky {
-		padding-top: 0.6rem;
-		border-top: 1px solid var(--color-border);
-	}
-
-	.bwb-panel-inner {
-		display: block;
-		font-family: var(--font-body);
-		font-size: 0.875rem;
-		line-height: 1.55;
-		color: var(--color-text-primary);
-	}
-
-	.bwb-panel-kicker {
-		display: block;
-		font-family: var(--font-mono);
-		font-size: 0.6875rem;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--color-accent);
-		margin-bottom: 0.5rem;
-		min-height: 0.9rem;
-	}
-
-	.bwb-panel-body {
-		display: block;
-		color: var(--color-text-secondary);
-	}
-
-	@media (min-width: 1440px) {
-		.bwb-panel {
-			position: absolute;
-			top: 0;
-			bottom: 0;
-			left: calc(100% + 2rem);
-			width: 14rem;
-			max-height: none;
-			margin: 0;
-			overflow: visible;
-		}
-
-		.bwb.is-active .bwb-panel {
-			max-height: none;
-			margin: 0;
-		}
-
-		.bwb-panel-sticky {
-			position: sticky;
-			top: var(--bwb-sticky-top);
-			padding: 0 0 0 1rem;
-			border-top: none;
-			border-left: 1px solid var(--color-border);
-		}
-	}
-
 	.bwb-caption {
 		margin-top: 1.5rem;
 		padding-top: 1rem;
@@ -428,25 +352,16 @@ const baselinePct = baseline ? pct(baseline.value) : null;
 </style>
 
 <script>
+	import { createChartHoverPanel } from '../../scripts/chart-hover-panel';
+
 	(() => {
 		const roots = document.querySelectorAll<HTMLElement>('[data-bwb-root]');
 		roots.forEach((root) => {
-			const kickerEl = root.querySelector<HTMLElement>('[data-bwb-kicker]');
-			const bodyEl = root.querySelector<HTMLElement>('[data-bwb-body]');
-			if (!kickerEl || !bodyEl) return;
+			const panel = createChartHoverPanel(root, '[data-bwb-kicker]', '[data-bwb-body]');
+			if (!panel) return;
 
 			const bars = root.querySelectorAll<HTMLElement>('[data-bwb-bar]');
 			const baselineEl = root.querySelector<HTMLElement>('[data-bwb-baseline]');
-
-			function setPanel(kicker: string, body: string) {
-				kickerEl!.textContent = kicker;
-				bodyEl!.textContent = body;
-				root.classList.add('is-active');
-			}
-
-			function resetPanel() {
-				root.classList.remove('is-active');
-			}
 
 			bars.forEach((bar) => {
 				const show = () => {
@@ -457,24 +372,18 @@ const baselinePct = baseline ? pct(baseline.value) : null;
 					const kicker = suffix
 						? `${label} · ${value} · ${suffix}`
 						: `${label} · ${value}`;
-					setPanel(kicker, note);
+					panel.set(kicker, note);
 				};
-				bar.addEventListener('mouseenter', show);
-				bar.addEventListener('focus', show);
-				bar.addEventListener('mouseleave', resetPanel);
-				bar.addEventListener('blur', resetPanel);
+				panel.bind(bar, show);
 			});
 
 			if (baselineEl) {
 				const show = () => {
 					const label = baselineEl.dataset.baselineLabel ?? '';
 					const description = baselineEl.dataset.description ?? '';
-					setPanel(label, description);
+					panel.set(label, description);
 				};
-				baselineEl.addEventListener('mouseenter', show);
-				baselineEl.addEventListener('focus', show);
-				baselineEl.addEventListener('mouseleave', resetPanel);
-				baselineEl.addEventListener('blur', resetPanel);
+				panel.bind(baselineEl, show);
 			}
 		});
 	})();

@@ -1,0 +1,363 @@
+<!-- ABOUTME: Editorial reward heatmap — model rows × task columns, cells bucketed by reward band. -->
+<!-- ABOUTME: Pure CSS grid, shared right-gutter hover panel, no fabricated values (data supplied). -->
+---
+export interface RewardHeatmapColumn {
+	key: string;
+	label: string;
+}
+
+export interface RewardHeatmapCell {
+	column: string;
+	reward: number;
+	failed?: boolean;
+}
+
+export interface RewardHeatmapRow {
+	key: string;
+	label: string;
+	group?: string;
+	cells: RewardHeatmapCell[];
+	note?: string;
+}
+
+interface Props {
+	title?: string;
+	subtitle?: string;
+	columns: RewardHeatmapColumn[];
+	rows: RewardHeatmapRow[];
+	caption?: string;
+}
+
+const { title, subtitle, columns, rows, caption } = Astro.props;
+
+function cellFor(row: RewardHeatmapRow, columnKey: string): RewardHeatmapCell | null {
+	return row.cells.find((c) => c.column === columnKey) ?? null;
+}
+
+// Reward bands → tone class. A failed status (or absent reward) is the hard zero.
+function cellTone(cell: RewardHeatmapCell | null): string {
+	if (!cell || cell.failed || cell.reward <= 0) return 'fail';
+	if (cell.reward >= 1) return 'full';
+	if (cell.reward >= 0.75) return 'strong';
+	if (cell.reward >= 0.4) return 'partial';
+	return 'low';
+}
+
+function cellText(cell: RewardHeatmapCell | null): string {
+	if (!cell) return '—';
+	if (cell.failed) return 'fail';
+	return cell.reward.toFixed(2);
+}
+
+const rowsWithDivider = rows.map((r, i) => ({
+	row: r,
+	dividerBefore: i > 0 && rows[i - 1].group !== r.group,
+}));
+---
+
+<figure class="rh" data-rh-root>
+	{title && (
+		<div class="rh-title">
+			{title}
+			{subtitle && <span class="rh-subtitle"> · {subtitle}</span>}
+		</div>
+	)}
+
+	<div class="rh-body">
+		<aside class="rh-panel" aria-live="polite">
+			<div class="rh-panel-sticky">
+				<div class="rh-panel-inner">
+					<span class="rh-panel-kicker" data-rh-kicker></span>
+					<span class="rh-panel-body" data-rh-body></span>
+				</div>
+			</div>
+		</aside>
+
+		<div
+			class="rh-grid"
+			style={`grid-template-columns: minmax(8rem, 13rem) repeat(${columns.length}, minmax(3.6rem, 1fr));`}
+		>
+			<div class="rh-header-label" aria-hidden="true"></div>
+			{columns.map((col) => (
+				<div class="rh-col-label">{col.label}</div>
+			))}
+
+			{rowsWithDivider.map(({ row, dividerBefore }) => (
+				<Fragment>
+					{dividerBefore && <div class="rh-row-divider" aria-hidden="true"></div>}
+					<button
+						type="button"
+						class="rh-row-label"
+						data-rh-row-label
+						data-row={row.key}
+						data-row-label={row.label}
+						data-description={row.note ?? ''}
+					>
+						{row.label}
+					</button>
+					{columns.map((col) => {
+						const cell = cellFor(row, col.key);
+						const tone = cellTone(cell);
+						return (
+							<div
+								class={`rh-cell rh-cell-${tone}`}
+								data-rh-cell
+								data-row={row.key}
+								data-row-label={row.label}
+								data-column-label={col.label}
+								data-reward={cell ? cell.reward.toFixed(3) : ''}
+								data-failed={cell?.failed ? '1' : '0'}
+								tabindex="0"
+								role="button"
+								aria-label={`${row.label}, ${col.label}: ${cell?.failed ? 'failed run' : `reward ${cellText(cell)}`}`}
+							>
+								<span class="rh-cell-value">{cellText(cell)}</span>
+							</div>
+						);
+					})}
+				</Fragment>
+			))}
+		</div>
+	</div>
+
+	{caption && <figcaption class="rh-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.rh {
+		--rh-sticky-top: 8rem;
+		--rh-fail: #bf4d43;
+		--rh-low: #d87b55;
+		--rh-partial: #e8a84c;
+		--rh-strong: #5a8a84;
+		--rh-full: #7ab5af;
+		position: relative;
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+	}
+
+	.rh-title {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+		margin: 0 0 1.25rem;
+	}
+
+	.rh-subtitle {
+		color: var(--color-text-tertiary);
+		font-weight: 400;
+	}
+
+	.rh-body {
+		position: relative;
+	}
+
+	.rh-grid {
+		display: grid;
+		row-gap: 0.35rem;
+		column-gap: 0.45rem;
+		align-items: center;
+	}
+
+	.rh-header-label,
+	.rh-col-label {
+		font-family: var(--font-mono);
+		font-size: 0.64rem;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+		text-align: center;
+		padding: 0 0 0.25rem;
+		border-bottom: 1px solid var(--color-border);
+		line-height: 1.25;
+	}
+
+	.rh-header-label {
+		border-bottom-color: transparent;
+	}
+
+	.rh-row-divider {
+		grid-column: 1 / -1;
+		height: 1px;
+		background: var(--color-border);
+		opacity: 0.8;
+		margin: 0.35rem 0;
+	}
+
+	.rh-row-label {
+		background: transparent;
+		border: none;
+		padding: 0;
+		margin: 0;
+		text-align: left;
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		letter-spacing: 0.02em;
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		transition: color 0.2s var(--ease-standard);
+	}
+
+	.rh-row-label:hover,
+	.rh-row-label:focus-visible {
+		color: var(--color-text-primary);
+		outline: none;
+	}
+
+	.rh-cell {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 2.7rem;
+		padding: 0.4rem 0.3rem;
+		border: 1px solid var(--color-border);
+		cursor: pointer;
+		transition:
+			filter 0.18s var(--ease-standard),
+			opacity 0.18s var(--ease-standard),
+			border-color 0.18s var(--ease-standard);
+	}
+
+	.rh-cell-fail {
+		background: color-mix(in srgb, var(--rh-fail) 78%, transparent);
+		border-color: color-mix(in srgb, var(--rh-fail) 60%, var(--color-border));
+	}
+	.rh-cell-low {
+		background: color-mix(in srgb, var(--rh-low) 55%, transparent);
+		border-color: color-mix(in srgb, var(--rh-low) 45%, var(--color-border));
+	}
+	.rh-cell-partial {
+		background: color-mix(in srgb, var(--rh-partial) 50%, transparent);
+		border-color: color-mix(in srgb, var(--rh-partial) 40%, var(--color-border));
+	}
+	.rh-cell-strong {
+		background: color-mix(in srgb, var(--rh-strong) 72%, transparent);
+		border-color: color-mix(in srgb, var(--rh-strong) 55%, var(--color-border));
+	}
+	.rh-cell-full {
+		background: var(--rh-full);
+		border-color: var(--rh-full);
+	}
+
+	.rh-cell:hover,
+	.rh-cell:focus-visible {
+		filter: brightness(1.1);
+		outline: none;
+		border-color: var(--color-accent);
+	}
+
+	.rh[data-hover-row] .rh-cell:not(.is-row-active) {
+		opacity: 0.35;
+	}
+
+	.rh-cell-value {
+		font-family: var(--font-mono);
+		font-size: 0.82rem;
+		font-weight: 500;
+		letter-spacing: 0.02em;
+		line-height: 1;
+	}
+
+	.rh-cell-fail .rh-cell-value,
+	.rh-cell-strong .rh-cell-value,
+	.rh-cell-full .rh-cell-value {
+		color: var(--color-bg);
+	}
+
+	.rh-cell-low .rh-cell-value,
+	.rh-cell-partial .rh-cell-value {
+		color: #2a1c10;
+	}
+
+	.rh-caption {
+		margin-top: 1.5rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--color-text-tertiary);
+		line-height: 1.55;
+		font-style: normal;
+	}
+
+	@media (max-width: 640px) {
+		.rh-cell {
+			min-height: 2.1rem;
+			padding: 0.3rem 0.15rem;
+		}
+		.rh-cell-value {
+			font-size: 0.68rem;
+		}
+		.rh-row-label {
+			font-size: 0.66rem;
+		}
+		.rh-col-label {
+			font-size: 0.56rem;
+		}
+	}
+</style>
+
+<script>
+	import { createChartHoverPanel } from '../../scripts/chart-hover-panel';
+
+	(() => {
+		const roots = document.querySelectorAll<HTMLElement>('[data-rh-root]');
+		roots.forEach((root) => {
+			const panel = createChartHoverPanel(root, '[data-rh-kicker]', '[data-rh-body]');
+			if (!panel) return;
+
+			const cells = root.querySelectorAll<HTMLElement>('[data-rh-cell]');
+			const rowLabels = root.querySelectorAll<HTMLElement>('[data-rh-row-label]');
+
+			function activateRow(key: string | null) {
+				if (!key) {
+					root.removeAttribute('data-hover-row');
+					cells.forEach((c) => c.classList.remove('is-row-active'));
+					return;
+				}
+				root.setAttribute('data-hover-row', key);
+				cells.forEach((c) => {
+					c.classList.toggle('is-row-active', c.dataset.row === key);
+				});
+			}
+
+			cells.forEach((cell) => {
+				const show = () => {
+					const rowLabel = cell.dataset.rowLabel ?? '';
+					const colLabel = cell.dataset.columnLabel ?? '';
+					const failed = cell.dataset.failed === '1';
+					const reward = cell.dataset.reward ?? '';
+					panel.set(
+						`${rowLabel} · ${colLabel}`,
+						failed ? 'failed status · no completed trial' : `reward ${reward}`,
+					);
+					activateRow(cell.dataset.row ?? null);
+				};
+				const hide = () => {
+					panel.reset();
+					activateRow(null);
+				};
+				panel.bind(cell, show, hide);
+			});
+
+			rowLabels.forEach((labelEl) => {
+				const show = () => {
+					const rowLabel = labelEl.dataset.rowLabel ?? '';
+					const desc = labelEl.dataset.description ?? '';
+					panel.set(rowLabel, desc);
+					activateRow(labelEl.dataset.row ?? null);
+				};
+				const hide = () => {
+					panel.reset();
+					activateRow(null);
+				};
+				panel.bind(labelEl, show, hide);
+			});
+		});
+	})();
+</script>

@@ -1,0 +1,259 @@
+/* ABOUTME: Shared right-gutter hover-panel styling for editorial chart components. */
+/* ABOUTME: Centralizes the repeated ephemeral note panel used by chart primitives. */
+
+:is(
+  .gb-panel,
+  .bwb-panel,
+  .sb-panel,
+  .lt-panel,
+  .qvc-panel,
+  .od-panel,
+  .ah-panel,
+  .hsb-panel
+) {
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition:
+    opacity 0.18s var(--ease-standard),
+    max-height 0.22s var(--ease-standard),
+    margin 0.22s var(--ease-standard);
+  pointer-events: none;
+}
+
+:is(
+  .gb.is-active .gb-panel,
+  .bwb.is-active .bwb-panel,
+  .sb.is-active .sb-panel,
+  .lt.is-active .lt-panel,
+  .qvc.is-active .qvc-panel,
+  .od.is-active .od-panel,
+  .ah.is-active .ah-panel,
+  .hsb.is-active .hsb-panel
+) {
+  opacity: 1;
+  max-height: var(--chart-hover-panel-max-height, 24rem);
+  margin-bottom: 1rem;
+}
+
+:is(
+  .gb-panel-sticky,
+  .bwb-panel-sticky,
+  .sb-panel-sticky,
+  .lt-panel-sticky,
+  .qvc-panel-sticky,
+  .od-panel-sticky,
+  .ah-panel-sticky,
+  .hsb-panel-sticky
+) {
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--color-border);
+}
+
+:is(
+  .gb-panel-inner,
+  .bwb-panel-inner,
+  .sb-panel-inner,
+  .lt-panel-inner,
+  .qvc-panel-inner,
+  .od-panel-inner,
+  .ah-panel-inner,
+  .hsb-panel-inner
+) {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--color-text-primary);
+}
+
+:is(
+  .gb-panel-kicker,
+  .bwb-panel-kicker,
+  .sb-panel-kicker,
+  .lt-panel-kicker,
+  .qvc-panel-kicker,
+  .od-panel-kicker,
+  .ah-panel-kicker,
+  .hsb-panel-kicker
+) {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  margin-bottom: 0.5rem;
+  min-height: 0.9rem;
+}
+
+:is(
+  .gb-panel-body,
+  .bwb-panel-body,
+  .sb-panel-body,
+  .lt-panel-body,
+  .qvc-panel-body,
+  .od-panel-body,
+  .ah-panel-body,
+  .hsb-panel-body
+) {
+  display: block;
+  color: var(--color-text-secondary);
+}
+
+.lt {
+  --chart-hover-panel-max-height: 28rem;
+}
+
+@media (min-width: 1440px) {
+  :is(
+    .gb-panel,
+    .bwb-panel,
+    .sb-panel,
+    .lt-panel,
+    .qvc-panel,
+    .od-panel,
+    .ah-panel,
+    .hsb-panel
+  ) {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(100% + 2rem);
+    width: 14rem;
+    max-height: none;
+    margin: 0;
+    overflow: visible;
+  }
+
+  :is(
+    .gb.is-active .gb-panel,
+    .bwb.is-active .bwb-panel,
+    .sb.is-active .sb-panel,
+    .lt.is-active .lt-panel,
+    .qvc.is-active .qvc-panel,
+    .od.is-active .od-panel,
+    .ah.is-active .ah-panel,
+    .hsb.is-active .hsb-panel
+  ) {
+    max-height: none;
+    margin: 0;
+  }
+
+  :is(
+    .gb-panel-sticky,
+    .bwb-panel-sticky,
+    .sb-panel-sticky,
+    .lt-panel-sticky,
+    .qvc-panel-sticky,
+    .od-panel-sticky,
+    .ah-panel-sticky,
+    .hsb-panel-sticky
+  ) {
+    position: sticky;
+    top: var(
+      --chart-hover-sticky-top,
+      var(
+        --gb-sticky-top,
+        var(
+          --bwb-sticky-top,
+          var(
+            --sb-sticky-top,
+            var(
+              --lt-sticky-top,
+              var(
+                --qvc-sticky-top,
+                var(
+                  --od-sticky-top,
+                  var(--ah-sticky-top, var(--hsb-sticky-top, 8rem))
+                )
+              )
+            )
+          )
+        )
+      )
+    );
+    padding: 0 0 0 1rem;
+    border-top: none;
+    border-left: 1px solid var(--color-border);
+  }
+}
+
+/* Release-eval chart primitives: reward heatmap (.rh) + model score strip (.mss).
+   Self-contained copy of the shared hover-panel behaviour to avoid touching
+   every selector list above. */
+:is(.rh-panel, .mss-panel, .fb-panel) {
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition:
+    opacity 0.18s var(--ease-standard),
+    max-height 0.22s var(--ease-standard),
+    margin 0.22s var(--ease-standard);
+  pointer-events: none;
+}
+
+:is(.rh.is-active .rh-panel, .mss.is-active .mss-panel, .fb.is-active .fb-panel) {
+  opacity: 1;
+  max-height: var(--chart-hover-panel-max-height, 24rem);
+  margin-bottom: 1rem;
+}
+
+:is(.rh-panel-sticky, .mss-panel-sticky, .fb-panel-sticky) {
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--color-border);
+}
+
+:is(.rh-panel-inner, .mss-panel-inner, .fb-panel-inner) {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--color-text-primary);
+}
+
+:is(.rh-panel-kicker, .mss-panel-kicker, .fb-panel-kicker) {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  margin-bottom: 0.5rem;
+  min-height: 0.9rem;
+}
+
+:is(.rh-panel-body, .mss-panel-body, .fb-panel-body) {
+  display: block;
+  color: var(--color-text-secondary);
+}
+
+@media (min-width: 1440px) {
+  :is(.rh-panel, .mss-panel, .fb-panel) {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(100% + 2rem);
+    width: 14rem;
+    max-height: none;
+    margin: 0;
+    overflow: visible;
+  }
+
+  :is(.rh.is-active .rh-panel, .mss.is-active .mss-panel, .fb.is-active .fb-panel) {
+    max-height: none;
+    margin: 0;
+  }
+
+  :is(.rh-panel-sticky, .mss-panel-sticky, .fb-panel-sticky) {
+    position: sticky;
+    top: var(--chart-hover-sticky-top, var(--rh-sticky-top, var(--mss-sticky-top, var(--fb-sticky-top, 8rem))));
+    padding: 0 0 0 1rem;
+    border-top: none;
+    border-left: 1px solid var(--color-border);
+  }
+}

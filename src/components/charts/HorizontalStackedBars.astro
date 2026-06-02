@@ -321,82 +321,7 @@ const orderedRows = groups.length
 		display: none;
 	}
 
-	/* Panel — same right-gutter pattern as sibling charts. */
-	.hsb-panel {
-		margin: 0;
-		padding: 0;
-		opacity: 0;
-		max-height: 0;
-		overflow: hidden;
-		transition:
-			opacity 0.18s var(--ease-standard),
-			max-height 0.22s var(--ease-standard),
-			margin 0.22s var(--ease-standard);
-		pointer-events: none;
-	}
-
-	.hsb.is-active .hsb-panel {
-		opacity: 1;
-		max-height: 24rem;
-		margin-bottom: 1rem;
-	}
-
-	.hsb-panel-sticky {
-		padding-top: 0.6rem;
-		border-top: 1px solid var(--color-border);
-	}
-
-	.hsb-panel-inner {
-		display: block;
-		font-family: var(--font-body);
-		font-size: 0.875rem;
-		line-height: 1.55;
-		color: var(--color-text-primary);
-	}
-
-	.hsb-panel-kicker {
-		display: block;
-		font-family: var(--font-mono);
-		font-size: 0.6875rem;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--color-accent);
-		margin-bottom: 0.5rem;
-		min-height: 0.9rem;
-	}
-
-	.hsb-panel-body {
-		display: block;
-		color: var(--color-text-secondary);
-	}
-
-	@media (min-width: 1440px) {
-		.hsb-panel {
-			position: absolute;
-			top: 0;
-			bottom: 0;
-			left: calc(100% + 2rem);
-			width: 14rem;
-			max-height: none;
-			margin: 0;
-			overflow: visible;
-		}
-
-		.hsb.is-active .hsb-panel {
-			max-height: none;
-			margin: 0;
-		}
-
-		.hsb-panel-sticky {
-			position: sticky;
-			top: var(--hsb-sticky-top);
-			padding: 0 0 0 1rem;
-			border-top: none;
-			border-left: 1px solid var(--color-border);
-		}
-	}
-
-	.hsb-caption {
+		.hsb-caption {
 		margin-top: 1.5rem;
 		padding-top: 1rem;
 		border-top: 1px solid var(--color-border);
@@ -422,26 +347,17 @@ const orderedRows = groups.length
 </style>
 
 <script>
+	import { createChartHoverPanel } from '../../scripts/chart-hover-panel';
+
 	(() => {
 		const roots = document.querySelectorAll<HTMLElement>('[data-hsb-root]');
 		roots.forEach((root) => {
-			const kickerEl = root.querySelector<HTMLElement>('[data-hsb-kicker]');
-			const bodyEl = root.querySelector<HTMLElement>('[data-hsb-body]');
-			if (!kickerEl || !bodyEl) return;
+			const panel = createChartHoverPanel(root, '[data-hsb-kicker]', '[data-hsb-body]');
+			if (!panel) return;
 
 			const segments = root.querySelectorAll<HTMLElement>('[data-hsb-segment]');
 			const legendPills = root.querySelectorAll<HTMLElement>('[data-hsb-legend]');
 			const rowLabels = root.querySelectorAll<HTMLElement>('[data-hsb-row-label]');
-
-			function setPanel(kicker: string, body: string) {
-				kickerEl!.textContent = kicker;
-				bodyEl!.textContent = body;
-				root.classList.add('is-active');
-			}
-
-			function resetPanel() {
-				root.classList.remove('is-active');
-			}
 
 			function activateSegment(key: string | null) {
 				if (!key) {
@@ -473,51 +389,42 @@ const orderedRows = groups.length
 					const segLabel = seg.dataset.segmentLabel ?? '';
 					const formatted = seg.dataset.formatted ?? '';
 					const note = seg.dataset.note ?? seg.dataset.description ?? '';
-					setPanel(`${rowLabel} · ${segLabel} ${formatted}`, note);
+					panel.set(`${rowLabel} · ${segLabel} ${formatted}`, note);
 					activateSegment(seg.dataset.segment ?? null);
 				};
 				const hide = () => {
-					resetPanel();
+					panel.reset();
 					activateSegment(null);
 				};
-				seg.addEventListener('mouseenter', show);
-				seg.addEventListener('focus', show);
-				seg.addEventListener('mouseleave', hide);
-				seg.addEventListener('blur', hide);
+				panel.bind(seg, show, hide);
 			});
 
 			legendPills.forEach((pill) => {
 				const show = () => {
 					const label = pill.dataset.segmentLabel ?? '';
 					const desc = pill.dataset.description ?? '';
-					setPanel(label, desc);
+					panel.set(label, desc);
 					activateSegment(pill.dataset.segment ?? null);
 				};
 				const hide = () => {
-					resetPanel();
+					panel.reset();
 					activateSegment(null);
 				};
-				pill.addEventListener('mouseenter', show);
-				pill.addEventListener('focus', show);
-				pill.addEventListener('mouseleave', hide);
-				pill.addEventListener('blur', hide);
+				panel.bind(pill, show, hide);
 			});
 
 			rowLabels.forEach((labelEl) => {
 				const show = () => {
 					const rowLabel = labelEl.dataset.rowLabel ?? '';
 					const desc = labelEl.dataset.description ?? '';
-					setPanel(rowLabel, desc);
+					panel.set(rowLabel, desc);
 					activateRow(labelEl.dataset.row ?? null);
 				};
 				const hide = () => {
-					resetPanel();
+					panel.reset();
 					activateRow(null);
 				};
-				labelEl.addEventListener('mouseenter', show);
-				labelEl.addEventListener('focus', show);
-				labelEl.addEventListener('mouseleave', hide);
-				labelEl.addEventListener('blur', hide);
+				panel.bind(labelEl, show, hide);
 			});
 		});
 	})();

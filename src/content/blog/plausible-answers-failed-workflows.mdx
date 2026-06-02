@@ -1,0 +1,501 @@
+---
+title: "Plausible Answers, Failed Workflows"
+description: "An AEC-Bench release evaluation read as workflow reliability, not prose quality. Chapter by chapter: why a model can produce a plausible answer and still fail the durable record a project has to audit."
+author: "Theodoros Galanos"
+category: "Engineering"
+draft: false
+pubDate: 2026-06-02
+tags: ["harness-engineering", "agentic-ai", "ai-in-aec", "ai-benchmarks", "agent-evaluation", "quality-assurance", "workflow-reliability"]
+featured: false
+---
+
+import ModelScoreStrip from '../../components/charts/ModelScoreStrip.astro';
+import RewardHeatmap from '../../components/charts/RewardHeatmap.astro';
+import FailureBars from '../../components/charts/FailureBars.astro';
+import FlowDiagram from '../../components/charts/FlowDiagram.astro';
+import Pullquote from '../../components/Pullquote.astro';
+import Sidenote from '../../components/Sidenote.astro';
+import {
+  readbackPipelineData,
+  readbackModelStripData,
+  readbackHeatmapData,
+  readbackFailureData,
+  governancePipelineData,
+  governanceModelStripData,
+  governancePairData,
+  toolResultHeatmapData,
+  monitoringHeatmapData,
+  toolResultFailureData,
+  monitoringFailureData,
+  closeoutPipelineData,
+  closeoutModelStripData,
+  closeoutPairData,
+  shardHeatmapData,
+  migrationHeatmapData,
+  shardFailureData,
+  migrationFailureData,
+  groundingPipelineData,
+  citationDrawingPairData,
+  drawingModelStripData,
+  citationTaskHeatmapData,
+  drawingTaskHeatmapData,
+  citationFailureData,
+  drawingFailureData,
+  styleTransferPipelineData,
+  styleRecordRepairPairData,
+  styleModelStripData,
+  recordTaskHeatmapData,
+  repairTaskHeatmapData,
+  recordFailureData,
+  repairFailureData,
+  retryArtifactPipelineData,
+  scaffoldLadderData,
+  scaffoldMatrixData,
+  scaffoldSplitData,
+  verifierRetryFailureData,
+  scaffoldReductionFailureData,
+} from '../../data/aec-bench-release-charts';
+
+Estimated reading time: 36 minutes
+
+The simplest way to read a model evaluation is to ask which model won.
+
+For engineering agents, that is not enough.
+
+Engineering work is not only a question-answering problem. An agent has to read a brief, find the right quantities, decide whether to reach for a tool, preserve the source it was given, write something durable, and return an answer another system can check. The score at the end is a compression of all of that. Read only the score and you lose the part that actually predicts whether the agent is safe to put in a workflow.
+
+This post reads one such evaluation the other way around. It draws on a recent release sweep across the benchmark, organised as a sequence of chapters. Each chapter takes one group of related tasks, looks past the single reward number, and asks a narrower question: not *was the answer right*, but *did the workflow survive the model*.
+
+<Pullquote>
+A model can produce a plausible answer and still fail the workflow.
+</Pullquote>
+
+That sentence is the recurring distinction across every chapter. The hard part is rarely whether the model knows the right answer. It is whether the model preserves source truth, writes durable artifacts, follows control boundaries, keeps state aligned, and produces evidence that another system can verify.
+
+This is a quality-assurance lens, not an intelligence test. We start where the gap is widest.
+
+## What's coming
+
+Six chapters, one moving question — *did the workflow survive the model?* — asked at six escalating points in an engineering agent's job:
+
+1. **Readback Is Not a Receipt** — can the model leave a durable, self-consistent record at all? Mostly not: the best model sits at 0.70 on tasks that are not, on paper, hard.
+2. **Evidence Is Not Authority** — can it decide which signal is allowed to govern a decision, and record why? The judgment is usually fine; the provenance fields are where it slips.
+3. **Closeout Is a Dependency Claim** — can it keep a whole dependency graph straight when many required items must clear at once? It gets the verdict and drops the lineage.
+4. **Evidence Has Coordinates** — can it bind an answer to the exact source or coordinate frame? The first place the strong models simply pass — a clean floor test.
+5. **Style Is Not a Waiver** — can it rewrite a document for a new audience without quietly laundering the risk inside it? Yes for the prose; the audit artifact is the hard part.
+6. **Feedback Is Not Execution** — when the workflow says a file is missing, does it write the file or just claim it did? Retry helps only when execution is made observable.
+
+The thread through all six: a plausible answer is cheap, and the models that lead this benchmark are the ones that treat the durable artifact — not the chat reply — as the real deliverable. The conclusion pulls the cross-cutting findings together.
+
+## Chapter 1 — Readback Is Not a Receipt
+
+The first task group is deliberately small: an anomaly-review exercise built around readback<Sidenote>Readback means re-opening a record you just wrote and confirming, field by field, that it matches what you decided — the audit equivalent of a control-room operator repeating an instruction back to prove it landed.</Sidenote>. Six models, six review tasks, thirty-six trials in total.
+
+Each model receives a small review packet[^packet] — a policy, the underlying source records, a draft analysis, a review request, and a note applying pressure to just approve it — and has to decide whether the draft can be released. That decision is the easy part. The actual test is what happens after it.
+
+The model has to write a structured review record, then read that record back into a separate check, and finish with a short quality-assurance note whose fields agree with both. The answer has to survive as files on disk, not just as text in the reply.
+
+<FlowDiagram {...readbackPipelineData} />
+
+There are three places to lose credit, and only the first is about engineering judgment. The other two are about whether the judgment became governed project state: a record with exact IDs, an owner, a fingerprint, and a readback that genuinely matches the record it claims to check.
+
+### Result snapshot
+
+Across 36 trials the mean reward was 0.412. The strongest model, `gpt-5-3-chat`, averaged 0.695. No model came close to topping out a group of tasks that, on paper, is not hard.
+
+<ModelScoreStrip {...readbackModelStripData} />
+
+The strong models all entered the right workflow shape: a compact final answer, a record file, a readback file. Their misses were dull — owners, fingerprints, exact evidence IDs. The interesting rows are at the bottom.
+
+`gpt-oss-120b` mostly failed at runtime: five of six trials never completed, so there was nothing to audit. That is a harness failure, and it is worth keeping separate from a reasoning failure.
+
+`deepseek-v3-2` is the more instructive negative example. It completed all six tasks and scored zero on all six. Its outputs were enormous — a mean of roughly 116 KB against the ~400 bytes the strong models emitted — full of planning text, pseudo-tool calls, and narrated file-writing. The verifier found no preserved artifacts. A great deal of text was produced. The project state never changed.[^contract]
+
+<Pullquote>
+A transcript can look like work while failing to leave project state.
+</Pullquote>
+
+### Where the credit lands
+
+Breaking the same trials out by task shows that the failures are both model-specific and task-specific, and that almost everything lives in the partial band<Sidenote>Each trial scores between 0 and 1. A few near the top mean the record was almost complete; zeros mean nothing usable survived. The “partial band” is the wide middle — here roughly 0.4 to 0.7 — where the output has the right structure but enough wrong or missing fields that no downstream system could safely consume it.</Sidenote>.
+
+<RewardHeatmap {...readbackHeatmapData} />
+
+There is exactly one full pass in the whole group — `gpt-5-3-chat` on the case where the draft total conflicts with the source — and one strong partial, the same model on the clean, releasable case. Everything else for the competent models sits between 0.5 and 0.61: the right shape, but not accurate enough to be a record another system could trust and ingest. `deepseek-v3-2` is a solid block of zeros despite completing every run.
+
+That partial band is the whole point. The grading is punishing almost-correct project state, which is exactly the right thing to punish for audit work. A record that is 90% right is not 90% useful to the system that ingests it.
+
+### Failure fingerprint
+
+Sorting the checks by how often they were lost makes the failure family obvious.
+
+<FailureBars {...readbackFailureData} />
+
+Almost every lost check is about readback equality and provenance, not the engineering call itself. The check that the readback actually matches the record failed in 35 of 36 trials — the readback step almost never became the receipt it was supposed to be. Owners, fingerprints, evidence IDs, and issue IDs follow right behind.
+
+### What this chapter teaches
+
+Readback is a control surface, not a guarantee: re-reading a record only becomes a receipt when the record and the readback carry exact, matching fields — and here they almost never did. Writing the files is necessary but not sufficient; the strong models reached the right shape and still lost credit on owners, fingerprints, and exact IDs, which is why even the best sits at 0.695 rather than near 1.0. The remaining gap is not dramatic reasoning — it is exactness, the boring fields a downstream system actually ingests. Downstream systems do not ingest vibes; they ingest fields.
+
+<Pullquote>
+An answer convinces a reader. An artifact survives an audit.
+</Pullquote>
+
+That is the interpretive key for everything that follows. Chapter 2 moves from generic audit state into operational decision records, and asks a question prior to *can you record it*: which evidence is even allowed to govern the decision?
+
+## Chapter 2 — Evidence Is Not Authority
+
+Chapter 1 asked whether a model could leave a durable record behind. Chapter 2 asks something prior to that: can the model decide which evidence is even allowed to govern a decision?
+
+Operational systems rarely fail because a signal is missing. They fail because the wrong signal is handed authority. A stale dashboard looks reassuring. A cached tool pass looks finished. A retry quietly supersedes the failed attempt before it. A warning permits limited progress but not clean release. A current breach should override a green summary. A maintenance window changes whether a reading even counts.
+
+This chapter uses two related task groups from the same sweep, both built around that authority boundary.
+
+In the first group, the governing evidence comes from **tool outputs** — a timeout, a failed-then-retried check, a stale cached pass, a pass carrying a warning, a clean pass, an unsupported-tool gap. The model has to decide which result may govern closeout and write a decision record that matches its visible summary.
+
+In the second group, the evidence comes from **monitoring telemetry**[^telemetry] — stale dashboards, current samples, active thresholds, sensor faults, maintenance windows, and live breaches. The model has to settle on an operational status and preserve the fields that made that status valid.
+
+In both, being cautious is not the same as being correct. The decision has to name the right status, cite the exact evidence that governs, reject the exact evidence that does not, and record an owner and action a later workflow can audit.
+
+<FlowDiagram {...governancePipelineData} />
+
+<Pullquote>
+A system fails when the wrong signal is handed authority.
+</Pullquote>
+
+### Result snapshot
+
+Across both groups the strong models look healthy. The four GPT and Grok models complete every run and sit near 0.85–0.90. The interesting rows are, again, at the bottom — and they fail in two completely different ways.
+
+<ModelScoreStrip {...governanceModelStripData} />
+
+`deepseek-v3-2` repeats its Chapter 1 signature: it finishes every run, emits tens of kilobytes of narration, and leaves almost no verifier-visible record. `gpt-oss-120b` is the opposite failure — it writes clean records when it finishes, but four of its twelve runs never complete at all.
+
+That split is worth holding onto, because a single leaderboard number would blur it. Two different questions are in play: does the model finish the run, and when it finishes does it satisfy the record contract? A model can be good at one and bad at the other.
+
+<Pullquote>
+Finishing the run and satisfying the record are different competencies.
+</Pullquote>
+
+The two evidence sources are not equally hard. Tool-result decisions average 0.71; monitoring averages 0.67.
+
+<RewardHeatmap {...governancePairData} />
+
+The gap is intuitive once you look at the inputs. A tool output arrives pre-labelled — it already says "timeout" or "stale cache" or "unsupported." The model still has to apply policy, but the input carries a decision vocabulary. A monitoring status has to be synthesised: the model has to weigh freshness, threshold authority, sensor validity, maintenance context, and breach state before it can name a status at all. More synthesis, more ways to be partly right.
+
+### Where the hard cases are
+
+Breaking each group out by task shows that the hard cells are not scattered randomly. They sit exactly where authority has to be taken away from the signal that looks safest — the green dashboard, the cached pass that already reads as finished, the result that says the work is done — and given instead to a less convenient one: a fresher sample, a current breach, a threshold that has since changed.
+
+<RewardHeatmap {...toolResultHeatmapData} />
+
+In the tool-result group, the standout is the stale cached pass: `gpt-5-3-chat` takes the only full pass on it, correctly refusing a cached result that was computed against a superseded demand. The hardest column is the unsupported-tool gap, where the model has to fall back to a manual source *and* disclose that the tool never ran — the one place `gpt-oss-120b` fails outright.
+
+<RewardHeatmap {...monitoringHeatmapData} />
+
+Monitoring tells the same story more sharply. The healthy-current and stale-dashboard controls are handled well; the difficulty concentrates on the superseded threshold, the maintenance window, and the current breach over a green summary — the three cases where the reassuring signal is the wrong one to trust. `gpt-oss-120b` is the cautionary row: a perfect stale-dashboard record sitting next to three runs that never completed.
+
+### Failure fingerprint
+
+Sorting the lost checks makes the failure family obvious, and it is the same family in both groups: governance fields, not judgment.
+
+<FailureBars {...toolResultFailureData} />
+
+<FailureBars {...monitoringFailureData} />
+
+The single check that tops both panels is *policy followed* — failed in 28 of 36 tool-result trials and 34 of 36 monitoring trials. That sounds damning until you read why it failed. It is almost never failing because a model cleared an asset it should have held. It fails because a policy-required field underneath it is missing, imprecise, or contradicted by the final summary: an evidence ID that does not match, a threshold not preserved exactly, an owner name that drifts, a status code that disagrees with the prose.
+
+A small but sharp example sits inside the monitoring group. On the stale-dashboard task, one model correctly refused to certify the asset as healthy — the dashboard was green but stale, and the latest sample was outside the freshness window. It still lost credit, because it recorded the status as *limited / inconclusive* rather than *hold / not clear*.[^status] In language those sound equally cautious. In the record they are different operational states, and they route to different downstream handling.
+
+### What this chapter teaches
+
+Caution in prose is not caution in the record: the strong models say the stale dashboard or cached pass cannot govern, then fail to preserve the exact rejected evidence, governing evidence, or threshold that proves it, and a reviewer inspects the record rather than the intent. Status codes are part of that proof, not wording preferences; *hold* and *limited* sound equally careful and route to different downstream handling. Governance fields (evidence IDs, thresholds, owners, action and status codes) are first-class outputs rather than formatting details: the policy was not followed unless the record says why.
+
+<Pullquote>
+Evidence becomes governing evidence only when the record says so.
+</Pullquote>
+
+Chapter 3 raises the difficulty again: closeout under dependency constraints, where authority is no longer one packet but spread across required shards, gate results, stale replacements, and waivers the model has to keep straight at once.
+
+## Chapter 3 — Closeout Is a Dependency Claim
+
+Chapter 2 asked which single signal may govern a decision. Chapter 3 asks a harder version of the same question: when a decision depends on *many* required items at once, can the model keep the whole dependency graph intact?
+
+Closeout<Sidenote>Closeout is the moment a package is formally declared finished — signed off as complete and cleared to move to the next stage. It is the gate every dependency has to clear before downstream work is allowed to begin, which is what makes it an audit point rather than a status update.</Sidenote> is the obvious place to test it. Percent complete is not closeout. A dashboard can say most shards passed; a migration table can show most gates green; a waiver can look administratively convenient. None of those facts close the package on their own. Closeout is a claim that *every* required dependency has current, valid, auditable evidence — and the record has to carry that whole trail.
+
+This chapter uses two closeout task groups from the same sweep.
+
+The first splits a package review into **parallel discipline shards**<Sidenote>A shard is one slice of a larger job run on its own — here, one discipline's checks (say, all the structural ones) processed as a separate unit. The package only closes when every required shard has come back complete and passing, so a shard that was never run, cancelled, or left stale is a hole in the dependency graph, not a rounding error.</Sidenote> — separate checks running in parallel across disciplines like mechanical, electrical, and structural. The model sees the manifest of required shards (the authoritative list of which slices must come back), the shard results, an aggregate dashboard, and pressure, and has to decide whether the batch is ready, held, incomplete, or ready-with-warning.[^closeoutstatus]
+
+The second is a **standards migration** — moving a project from an old set of design standards onto a new one, which is only permitted once a fixed set of checks has passed. Each of those required checks is a *gate*. The model sees the gate manifest (the authoritative list of which gates must pass), the gate results, and a *waiver register* — the log of formally authorised exceptions, where someone with the right authority has signed off on skipping a specific gate. Its job is to decide whether the migration can close: accepting current passes, rejecting stale or failed results, and honouring only the waivers that are genuinely authorised.
+
+<FlowDiagram {...closeoutPipelineData} />
+
+<Pullquote>
+A package does not close because most of its checks passed. It closes when every required one is accounted for.
+</Pullquote>
+
+### Result snapshot
+
+The two groups average almost identically — 0.64 each — but that number is misleading, and worth taking apart.
+
+<ModelScoreStrip {...closeoutModelStripData} />
+
+For the four artifact-producing models, closeout is largely a solved problem: they complete every run and sit between 0.89 and 0.96. The suite mean is dragged down by the same two failures from earlier chapters, now in sharper relief. `deepseek-v3-2` completes all twelve runs and scores zero on every one — it leaves no closeout record. `gpt-oss-120b` is the mirror image: eleven of its twelve runs never complete, but the single run that did was a flawless shard record.
+
+That is the cleanest illustration yet of why one number is not enough. "Can produce a perfect closeout record" and "reliably finishes the task" are different claims, and `gpt-oss-120b` satisfies the first while failing the second.
+
+The two settings are not equally clean for the strong models. Per model, migration gates run slightly ahead of shard closeout.
+
+<RewardHeatmap {...closeoutPairData} />
+
+The gap is small and the direction is intuitive: a migration gate is a single named check with a pass, a fail, or a waiver, whereas a shard batch forces the model to reconcile a manifest against partial dashboards, cancellations, and stale runs before it can even name a status.
+
+### Where the hard cases are
+
+Breaking each group out by task shows the difficulty sitting exactly where a dependency has to be *rejected* in favour of a less convenient truth.
+
+<RewardHeatmap {...shardHeatmapData} />
+
+The encouraging result is the partial-dashboard task, the highest-scoring shard case. The dashboard sampled only part of the manifest and looked comfortable, but two required shards were never run. Every artifact-producing model held the line — marking the batch incomplete, citing the passes it did have, and naming the missing shards rather than trusting the summary. The hardest task is the cancelled shard, where a cancelled dependency is simultaneously a rejected result *and* a missing required completion, and the record has to carry it as both.
+
+<RewardHeatmap {...migrationHeatmapData} />
+
+Migration tells the same story. Clean closeouts and unrun-gate cases are handled well; the difficulty concentrates on the unauthorized waiver, where a convenient-looking waiver attached to a failed gate has to be rejected while the blocker and the failed result both survive into the record.
+
+### Failure fingerprint
+
+Sorting the lost checks shows the same family failing in both groups, and it is not the headline decision. The models almost always get the ready-or-hold call right. What they drop is the bookkeeping underneath it: the *dependency lineage* (exactly which results were used, which were rejected, which were missing) and the *status code*, the machine-readable outcome a downstream system actually routes on.
+
+<FailureBars {...shardFailureData} />
+
+<FailureBars {...migrationFailureData} />
+
+*Policy followed* tops both panels, and for the same reason as Chapter 2: it almost never fails because a model closed a package it should have held. It fails because the lineage underneath it is incomplete — a result that was used or rejected but not recorded exactly, a missing shard left off the list, a blocker that did not survive into the record, a status code that disagrees with the prose decision.
+
+The recurring pattern is that dependency *categories are not interchangeable*. A cancelled shard can be rejected evidence and still leave a required shard incomplete. A failed gate can be listed as failed and still need to appear as a rejected result. An unauthorized waiver can be rejected while the failed gate remains the blocker. These are small differences in a written explanation and large differences in a workflow state machine.
+
+### What this chapter teaches
+
+A summary is context, not authority: the partial-dashboard result is the good news — the strong models reliably refused to let an aggregate dashboard stand in for shards it never sampled, the authority boundary holding under load. But closeout can be correct and still unauditable. The models almost always get the ready-or-hold verdict right; what they drop is the trail underneath it — which required dependency failed, which result was used, which was rejected, which blocker applies. That trail is the proof, not the verdict.
+
+<Pullquote>
+The record that closes a package has to carry every dependency it cleared — not just the word *done*.
+</Pullquote>
+
+Chapter 4 changes the kind of evidence entirely — from dependency bookkeeping to grounded text and spatial geometry — to ask whether the same record discipline holds when the truth lives in a source span or a coordinate frame.
+
+## Chapter 4 — Evidence Has Coordinates
+
+The first three chapters were all about records: what a result says, which signal may govern, which dependencies have to clear. This chapter changes the *kind* of evidence and asks a more basic question underneath all of them — can the model bind its answer to the right evidence in the first place?
+
+Evidence can live in a paragraph. It can also live in a coordinate system. This chapter uses two task groups that test each.
+
+The first is **textual**. Each task carries three engineering claims — a required bearing capacity, a commissioning pressure, a voltage drop — and six nearby source files, some of which are superseded revisions or scope-adjacent distractors. The model has to return, for every claim, the exact source it came from and the exact value, while refusing to cite a distractor or invent an unsupported claim.
+
+The second is **spatial**. Each task gives the model a current drawing and a superseded one, both as machine-readable vector geometry,[^vector] plus a transform (a scale, a translation, a rotation), a schedule of required clearances, and a policy. The model has to apply the transform *before* it measures anything, reject the superseded drawing, decide whether the geometry clears the requirement, and write a geometry record that matches its own visible summary.
+
+<FlowDiagram {...groundingPipelineData} />
+
+<Pullquote>
+An answer is only as good as the evidence it is bound to — the right source, or the right coordinate frame.
+</Pullquote>
+
+### Result snapshot
+
+This is the first chapter where the strong models simply pass. Putting the two surfaces side by side shows it clearly.
+
+<RewardHeatmap {...citationDrawingPairData} />
+
+The four strongest models bind text and geometry exactly — a clean ceiling that the earlier chapters never produced. That is worth stating plainly: in this controlled setting, exact source-and-value citation and text-visible transformed geometry are *solved* for the top tier. It is also worth bounding carefully, which the closing of this chapter does.
+
+The interesting structure is at the bottom, and it is the same split as Chapter 3 wearing different clothes. `gpt-oss-120b` fails citation outright — every run failed to produce a usable claim map — yet turns in partial competence on drawing when its runs complete. `deepseek-v3-2` is the mirror image: it produces a few citation partials but leaves no geometry record at all.
+
+The record contract only bites on the drawing side — a citation answer is a final-answer JSON map with no separate artifact, whereas a drawing task demands a written geometry record — so the per-model record detail is worth looking at there.
+
+<ModelScoreStrip {...drawingModelStripData} />
+
+The same two tells from earlier chapters reappear in the output column: `deepseek-v3-2` emits a long narration (tens of kilobytes) and produces no record; `gpt-oss-120b` completes only half its runs. Above them, the GPT and Grok outputs are compact and exact.
+
+### Where the hard cases are
+
+Because the strong models saturate, the task grids read differently from the earlier chapters: the colour now lives almost entirely in the bottom two rows.
+
+<RewardHeatmap {...citationTaskHeatmapData} />
+
+Citation barely varies by discipline. Every strong model is perfect on bridge bearings, commissioning pressures, egress methods, and geotechnical limits alike. The only variation is whether the weaker models can produce an exact map at all — and largely they cannot.
+
+<RewardHeatmap {...drawingTaskHeatmapData} />
+
+Drawing has one genuinely hard case: the rotated drain arrow. It is the single task that trips an otherwise-perfect model — Grok — because the direction relation only flips *after* the 180° rotation is applied. Read the geometry in the original frame and the arrow looks fine; read it in the transformed frame and it conflicts. Translations and scales are far more forgiving, because they move a point without changing what "which way does it point" means.
+
+### Failure fingerprint
+
+The two surfaces fail in shapes that match their structure — and the contrast is the point.
+
+<FailureBars {...citationFailureData} />
+
+<FailureBars {...drawingFailureData} />
+
+Citation failures are concentrated: a single cluster of five, which is simply the two models that could not produce an exact map. Drawing failures are broad and *coupled*. A wrong transformed measure does not fail alone — it drags the threshold comparison, the conflict flag, the decision code, and the record that summarises them all down with it. Spatial grounding has more fields that have to agree at once, so a single measurement error shows up as a row of red.
+
+That coupling is the most useful thing the drawing panel says. The misses are not "the model could not produce a record." They are "the record exists, the schema is mostly right, and one transformed number is wrong" — which then propagates. Grok's rotated-arrow miss is exactly this: correct drawing IDs, correct transform ID, correct rejected-evidence trail, and a wrong relation after the rotation.
+
+### What this chapter teaches
+
+Grounding is not one skill: text grounding binds a claim to a source-and-value pair, spatial grounding binds geometry to a transformed coordinate frame, and a model can be excellent at one surface and fail the other on completion alone. Where the strong models do fail spatially, it is a higher-quality failure than the no-record collapse of earlier chapters — the record exists and one transformed number is wrong, which a benchmark can isolate and drive down. And saturation is itself a finding: when the top tier sits on the ceiling the suite stops discriminating between them, which makes it a clean floor test for everything messier that follows.
+
+<Pullquote>
+In compact, text-visible settings, the strong models align evidence exactly. The open question is whether that survives messier retrieval and richer drawings.
+</Pullquote>
+
+Chapter 5 applies pressure of a different kind: not whether a model can find the right evidence, but whether it can *rewrite* a document for a new audience without quietly dropping the material risk inside it.
+
+## Chapter 5 — Style Is Not a Waiver
+
+Chapter 4 asked whether a model could bind its answer to the right evidence. This chapter keeps the evidence fixed and changes the *output*: rewrite this technical note for a different audience. It is one of the most ordinary requests a model gets — and a quietly dangerous one.
+
+The rule is simple to state. Change the style; do not change the engineering truth. The difficulty is that the requested styles are exactly the ones that create pressure to move it. "Client-positive" leans on you to soften a hold. "Marketing brief" leans on you to omit a blocker. "Plain language" leans on you to drop the caveat that made the original sentence true. A rewrite can be clearer, friendlier, more polished — and launder material risk on the way through.[^laundering]
+
+These tasks do not score prose quality. They score whether status, numeric values, caveats, issue IDs, and source IDs survive the rewrite *and* a structured integrity report. This chapter uses two groups: a first-pass rewrite, and a repair group that hands the model an already-laundered draft to fix.
+
+<FlowDiagram {...styleTransferPipelineData} />
+
+<Pullquote>
+A style request can change the wording. It must not change the status.
+</Pullquote>
+
+### Result snapshot
+
+The headline result is not the suite means — 0.61 and 0.64, barely apart. It is what happens to the strong models when you give them a draft to repair.
+
+<RewardHeatmap {...styleRecordRepairPairData} />
+
+On the first pass, the four artifact-producing models cluster around 0.85–0.89. Show them a laundered draft and require a readback, and three of them jump toward the ceiling — `gpt-5-3-chat` to 0.9955, `gpt-5-2` to 0.982, Grok to 0.96. The exception is `gpt-5-1`, flat across the two, for a reason worth holding onto: its repair residuals are not in the prose but in the readback artifact.
+
+The bottom of the table is the familiar split. `gpt-oss-120b` manages one decent first-pass record, then fails every repair run outright — the rewrite-report-readback chain is simply too many artifacts. `deepseek-v3-2` completes everything and scores near-zero on both: it leaves no integrity report to grade.
+
+<ModelScoreStrip {...styleModelStripData} />
+
+Both groups demand written artifacts, so the record contract bites on both sides. The output column shows the same two tells from earlier chapters — deepseek-v3-2's tens-of-kilobytes narration with nothing to audit, and gpt-oss-120b's incompletion.
+
+### Where the hard cases are
+
+Splitting each group by style shows where the pressure actually lands.
+
+<RewardHeatmap {...recordTaskHeatmapData} />
+
+The encouraging first-pass result is that the *prose* stays risk-honest across every style — the strong models do not uplift a hold to please a client-positive brief or drop a blocker for a marketing one. What separates the styles is report exactness. The risk-register and plain-language tasks, which carry the most fields to preserve, sit lowest, because that is where an exact-evidence-ID or caveat-preservation field is most likely to slip.
+
+<RewardHeatmap {...repairTaskHeatmapData} />
+
+Repair lifts almost everything. With a laundered draft to react to, even the marketing-omission and blocker cases — the hardest first-pass tasks — become tractable, because the model is now correcting a concrete error rather than guarding against an abstract one. The clean control matters here too: one draft is *not* laundered, and a good model has to leave it alone rather than invent a repair.
+
+### Failure fingerprint
+
+The two groups fail in different places, and the shift is the whole point of adding repair.
+
+<FailureBars {...recordFailureData} />
+
+<FailureBars {...repairFailureData} />
+
+The first pass fails in the report, not the prose: *evidence IDs listed exactly* fails in 34 of 36 trials. The visible rewrite can say exactly the right thing while the integrity report loses the linkage that would let an auditor trace it back to source. Repair moves the failures downstream — into whether the draft was actually repaired, whether unsupported softening was flagged, and whether the readback confirms the report. That readback is, once again, a separate competence: `gpt-5-1` repairs every rewrite cleanly and still loses points because its readback artifact has the wrong shape — the Chapter 1 lesson returning in a new setting.
+
+### What this chapter teaches
+
+Style transfer is not the hard part: the models write good audience-appropriate prose and largely keep it risk-honest, not uplifting a hold to please a client-positive brief or dropping a blocker for a marketing one. The hard part is the audit artifact — a rewrite that *reads* safe is not a report that proves it stayed safe, and the recurring first-pass miss is the exact evidence ID that makes it traceable back to source. Repair turns out to be a control surface in its own right: handing the model a laundered draft and demanding a readback recovered risk the first pass had blurred, and lifted the strongest models toward the ceiling. And a clean control keeps repair honest — one draft is not laundered, and "repairing" it anyway distorts the source just as surely as laundering does.
+
+<Pullquote>
+The right control for a rewrite is not to forbid it — it is to make it prove the risk survived.
+</Pullquote>
+
+The final chapter closes the loop. Every chapter so far has leaned on the model producing the right artifact; the last asks what happens when the workflow tells the model an artifact is missing — whether it can recover under retry, or whether the record discipline breaks the moment the runtime pushes back.
+
+## Chapter 6 — Feedback Is Not Execution
+
+Every chapter so far has assumed the model gets one clean shot at the artifact. This one removes that assumption. The workflow now pushes back — *the required file is missing* — and the question is what the model does next. Does it create the file, or does it write a sentence claiming the file exists?
+
+The distinction is trivial in a chat window and decisive in a workflow. "I wrote the integrity report" and an actual integrity report sitting in the workspace look identical in the transcript. Only one of them can be audited. A downstream system cannot read a claim that lives in the final answer; it needs durable files, the right schema, and a way to prove the files are the ones the workflow expects.
+
+To pull those concerns apart, this chapter walks a *scaffold ladder* — four retry suites over the same style-transfer repair task, each giving the model more workflow support than the last. The first offers only a fixed "file missing" note. The second adds a real second turn after the verifier rejects the first attempt. The third makes a helper step mandatory and requires it to stamp an execution marker.[^marker] The fourth pulls half of that scaffold back out. The point of the ladder is not that more support is always better — it is to find which rung actually makes execution observable.
+
+<FlowDiagram {...retryArtifactPipelineData} />
+
+<Pullquote>
+Saying a file was written is not the same as writing it.
+</Pullquote>
+
+### Result snapshot
+
+The suite means barely move — 0.70, 0.63, 0.69, 0.67 — and they hide the story rather than tell it, because two models complete almost every run while leaving nothing durable behind.<Sidenote>`deepseek-v3-2` finishes its runs and scores near-zero because it writes no verifier-visible artifacts; `gpt-oss-120b` mostly fails to complete the artifact stack at all. Averaging them in flattens the ladder.</Sidenote> The four artifact-producing models tell it clearly.
+
+<RewardHeatmap {...scaffoldLadderData} />
+
+Read top to bottom, the strong-model column climbs and then steps back. Static feedback already lands at 0.9977 — capable models treat writing the file as part of the job, no live loop required. A real retry turn actually drops the strong mean to 0.8935, because a second turn is stricter about proving the side effects happened. The mandatory helper is the one rung where every strong model hits a clean 1.00. Then the reduced scaffold pulls it back to 0.9087.
+
+<RewardHeatmap {...scaffoldMatrixData} />
+
+The per-model grid shows where the movement comes from. The four strong models are near-saturated everywhere except two places: `gpt-5-2`'s live-retry trough at 0.67, and the shared dip on the reduced scaffold. The mandatory-helper column is the only one where all four hit 1.00 — and, tellingly, the only column where `gpt-oss-120b` falls to zero, because being *required* to run the helper is harder for it than being allowed to skip it.
+
+`gpt-5-2`'s trough is the cleanest single result in the chapter. On a marketing-noise retry it writes the integrity report and the readback check correctly, and the visible rewrite preserves the exceedance — 62 dB against a 55 dB limit, mitigation unapproved, activity on hold. The files are right. What it omits is the compact final summary, so the workflow has no proof to credit. The side effects happened; the final contract did not say so. Nothing is wrong with the engineering — the failure is entirely about proving the work.
+
+### Where the hard cases are
+
+The reduced-scaffold suite is the one worth splitting, because it is built to isolate which part of the scaffold was load-bearing. Half its tasks hand the model a malformed helper payload to repair and then run; the other half take the helper away and make the model write the execution marker by hand.
+
+<RewardHeatmap {...scaffoldSplitData} />
+
+The split is stark and consistent. Every strong model holds a perfect 1.00 when it only has to fix a malformed payload and let the helper run — and every one of them drops to about 0.81 when it has to produce the marker itself. The misses are not in the prose or the source evidence; they are in the execution metadata. In one plain-language flood case `gpt-5-1` preserves the 0.35 m freeboard and the provisional tailwater caveat, writes the report and readback correctly, then marks the payload as repaired when manual mode required the opposite. A small field, exactly wrong, and the marker fails.
+
+`gpt-oss-120b` inverts the pattern in a way that confirms it: forced to repair the malformed helper it scores zero, but left to write the marker by hand it reaches a partial 0.54. Repairing a structure that already exists is a different skill from producing the proof-of-execution from scratch, and the durable boundary is the second one.
+
+### Failure fingerprint
+
+The whole chapter is in how the failures move as you climb the ladder.
+
+<FailureBars {...verifierRetryFailureData} />
+
+<FailureBars {...scaffoldReductionFailureData} />
+
+In the live-retry suite the failures still cluster on the files and the final contract: the report and readback go unwritten, and the distinctively retry-shaped miss is the side-effect JSON, which either floods the final answer or vanishes from it entirely.<Sidenote>The contract is deliberately narrow: the durable files are the evidence, and the final answer is only a compact status surface. Pasting the full side-effect JSON into the answer is a leak; omitting it is a missing proof. Both fail.</Sidenote> Pull the scaffold and the surface shifts. The file-and-report checks that dominated earlier fall to ten; the new top of the list is the marker and the repaired payload — proving the step ran, in the exact shape, without a helper to lean on.
+
+### What this chapter teaches
+
+A retry loop is not a recovery loop: the live-retry suite has a genuine second turn and still scores below the static one — 0.8935 against 0.9977 — because it asks for harder proof after the turn. Feedback hands the model another chance; it does not perform the fix on the model's behalf. The mandatory helper earns its place by making execution observable (run the helper, write the report and readback, stamp the marker, emit the summary), and that is the one rung where every strong model saturates. Pull the helper and the last boundary shifts to the metadata: the models keep writing good rewrites and lose points on marker exactness. The fix is not less scaffold but *targeted* scaffold, aimed only at the field still slipping.
+
+<Pullquote>
+A model has not repaired the workflow until the files, markers, and final contract all agree.
+</Pullquote>
+
+## What the six chapters add up to
+
+Read end to end, the six task groups are one escalating question — *did the workflow survive the model?* — and they share one answer. The hard part is almost never the engineering judgment. The models name the right status, hold the right line, preserve the visible risk. What they drop, over and over, is the part that makes the judgment usable to another system: the exact field, the matching readback, the dependency trail, the proof that a file was actually written.
+
+Four patterns hold across every chapter.
+
+**Trust has two axes, and one number hides them.** Whether a model finishes the run and whether it satisfies the record contract are different competencies. `deepseek-v3-2` finishes everything and leaves nothing durable; `gpt-oss-120b` writes clean records but often never completes. A single leaderboard mean blurs two opposite failures into one mediocre row.
+
+**The failures live in provenance, not the verdict.** *Policy followed* is the most-failed check in chapter after chapter — and it almost never fails because a model cleared something it should have held. It fails because the field underneath it is missing or imprecise: an evidence ID that does not match, a threshold not preserved, a status code that disagrees with the prose. The reasoning is sound; the record cannot be audited.
+
+**Proof is a separate skill from the work.** The readback that has to equal the record, the integrity report that has to trace to source, the marker that has to prove the step ran — every chapter has a version of this, and it is consistently where the strong models lose their last points. Doing the work and proving the work are not the same competence, and a workflow depends on the second.
+
+**Verbosity is not execution.** The recurring negative example, `deepseek-v3-2`, produces the most text and the least durable state across every chapter it appears in — though in its case that is partly an interaction-contract failure rather than a pure behavioural one.[^contract] Either way, long, fluent narration about writing files is the failure mode to watch for in any agent put near a real workflow.
+
+The practical takeaway is narrow and useful. The model that tops a prose leaderboard is not automatically the model you can put in an engineering workflow. The one you can trust is the one that treats the durable artifact — not the chat reply — as the real deliverable: it leaves exact records, binds answers to exact evidence, preserves risk through a rewrite, and proves that the side effects happened. A plausible answer is cheap. A workflow that survives the model is the thing worth measuring — and the thing these six chapters were built to measure.
+
+---
+
+[^packet]: Concretely: the policy might be "do not release if any quantity disagrees with the source by more than 2%"; the source records are the original measured values; the draft analysis is a write-up claiming the design is clean; the review request is "approve for release"; and the pressure note is a line like "the client needs this signed off today."
+
+[^contract]: One caveat about `deepseek-v3-2` specifically. Reading its raw outputs, most of its zero scores look like an *interaction-contract* failure rather than a clean capability measurement: nearly all of its runs were captured as raw output instead of adapter-written results, with reasoning markers and textual tool-call plans standing in for actual tool calls and verifier-visible files. Those runs are valid failures under the harness — the durable artifact genuinely never lands — but they are better read as adapter/protocol misalignment than as evidence about the model's domain reasoning. The clean test would be a small control rerun under a stricter "final JSON only" contract or a provider-specific tool-call shim; until then, treat this model's rows as contract-contaminated, and read it throughout as an illustration of the *workflow* failure mode, not a verdict on the model.
+[^telemetry]: Telemetry just means the live readings a system emits about itself — sensor samples, dashboard summaries, threshold alarms, trend logs. The catch is that not all of it is current or authoritative: a dashboard can be green but hours stale, or a green reading can sit under a threshold that has since been superseded.
+
+[^status]: In a governed workflow these are codes, not adjectives. *Hold / not clear* says the asset cannot proceed; *limited / inconclusive* says it can proceed under caveats. A downstream system reads the code, not the surrounding sentence, so a cautious-sounding paragraph attached to the wrong code still routes the asset the wrong way.
+
+[^closeoutstatus]: Each closeout resolves to one status code, not a sentence: *ready* (proceed), *hold* (a required item failed), *incomplete* (a required item is missing or cancelled), or *ready-with-warning* / *ready-with-authorised-waiver* (proceed under a recorded caveat). As in Chapter 2, the downstream system routes on the code, so the right code matters as much as the right reasoning.
+
+[^vector]: Vector geometry means the drawing is stored as shapes and coordinates — points, lines, transforms — in text the model can read directly, rather than as a flat image of pixels. That distinction matters: it means these results show the model reasoning about geometry it can already parse, not recovering geometry from a picture. Pixel-based drawing review is a harder, separate problem.
+
+[^laundering]: *Risk laundering* is the quiet version of the problem: not lying about the engineering state outright, but rewriting around it until it reads as acceptable — a hold described as "progressing," a failed limit dropped from the summary, a caveat simplified away. The status never formally changes; it just stops being visible. That is what makes a polished rewrite a genuine control point rather than cosmetic work.
+
+[^marker]: An *execution marker* is a small file the workflow step stamps when it actually runs — recording which operation wrote the artifacts and, often, a hash of what it wrote. It exists precisely so that "the side-effect step ran" is something a verifier can check directly, rather than something it has to take the model's word for. The *helper* is the scripted writer the model invokes to produce that marker and the integrity files in one observable operation.

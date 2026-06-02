@@ -386,90 +386,7 @@ const valuesByCategory = categories.map((cat) => {
 		opacity: 1;
 	}
 
-	/* Panel — ephemeral overlay. Hidden until a bar/legend/category is
-	   activated. Narrow viewports: collapses inline above the bars. Wide
-	   viewports (≥1440px, where editorial-body reserves right-side gutter for
-	   sidenotes): absolute-positioned into that right gutter so the chart
-	   itself never shifts. */
-	.gb-panel {
-		margin: 0;
-		padding: 0;
-		opacity: 0;
-		max-height: 0;
-		overflow: hidden;
-		transition:
-			opacity 0.18s var(--ease-standard),
-			max-height 0.22s var(--ease-standard),
-			margin 0.22s var(--ease-standard);
-		pointer-events: none;
-	}
-
-	.gb.is-active .gb-panel {
-		opacity: 1;
-		max-height: 24rem;
-		margin-bottom: 1rem;
-	}
-
-	.gb-panel-sticky {
-		padding-top: 0.6rem;
-		border-top: 1px solid var(--color-border);
-	}
-
-	.gb-panel-inner {
-		display: block;
-		font-family: var(--font-body);
-		font-size: 0.875rem;
-		line-height: 1.55;
-		color: var(--color-text-primary);
-	}
-
-	.gb-panel-kicker {
-		display: block;
-		font-family: var(--font-mono);
-		font-size: 0.6875rem;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--color-accent);
-		margin-bottom: 0.5rem;
-		min-height: 0.9rem;
-	}
-
-	.gb-panel-body {
-		display: block;
-		color: var(--color-text-secondary);
-	}
-
-	/* Wide viewports — float the panel into the right-side gutter reserved
-	   for sidenotes. Outer .gb-panel becomes an absolute spanning element;
-	   the inner .gb-panel-sticky tracks the viewport within the chart's
-	   vertical bounds. */
-	@media (min-width: 1440px) {
-		.gb-panel {
-			position: absolute;
-			top: 0;
-			bottom: 0;
-			left: calc(100% + 2rem);
-			width: 14rem;
-			max-height: none;
-			margin: 0;
-			overflow: visible;
-		}
-
-		.gb.is-active .gb-panel {
-			max-height: none;
-			margin: 0;
-		}
-
-		.gb-panel-sticky {
-			position: sticky;
-			top: var(--gb-sticky-top);
-			padding: 0 0 0 1rem;
-			border-top: none;
-			border-left: 1px solid var(--color-border);
-		}
-	}
-
-	.gb-caption {
+		.gb-caption {
 		margin-top: 1.5rem;
 		padding-top: 1rem;
 		border-top: 1px solid var(--color-border);
@@ -493,27 +410,18 @@ const valuesByCategory = categories.map((cat) => {
 </style>
 
 <script>
+	import { createChartHoverPanel } from '../../scripts/chart-hover-panel';
+
 	(() => {
 		const roots = document.querySelectorAll<HTMLElement>('[data-gb-root]');
 		roots.forEach((root) => {
-			const kickerEl = root.querySelector<HTMLElement>('[data-gb-kicker]');
-			const bodyEl = root.querySelector<HTMLElement>('[data-gb-body]');
-			if (!kickerEl || !bodyEl) return;
+			const panel = createChartHoverPanel(root, '[data-gb-kicker]', '[data-gb-body]');
+			if (!panel) return;
 
 			const bars = root.querySelectorAll<HTMLElement>('[data-gb-bar]');
 			const legendPills = root.querySelectorAll<HTMLElement>('[data-gb-legend]');
 			const catTriggers = root.querySelectorAll<HTMLElement>('[data-gb-cat-trigger]');
 			const groups = root.querySelectorAll<HTMLElement>('.gb-group');
-
-			function setPanel(kicker: string, body: string) {
-				kickerEl!.textContent = kicker;
-				bodyEl!.textContent = body;
-				root.classList.add('is-active');
-			}
-
-			function resetPanel() {
-				root.classList.remove('is-active');
-			}
 
 			function activateSeries(seriesKey: string | null) {
 				if (!seriesKey) {
@@ -548,51 +456,42 @@ const valuesByCategory = categories.map((cat) => {
 					const categoryLabel = bar.dataset.categoryLabel ?? '';
 					const value = bar.dataset.value ?? '';
 					const note = bar.dataset.note ?? '';
-					setPanel(`${seriesLabel} · ${categoryLabel} · ${value}`, note);
+					panel.set(`${seriesLabel} · ${categoryLabel} · ${value}`, note);
 					activateSeries(bar.dataset.series ?? null);
 				};
 				const hide = () => {
-					resetPanel();
+					panel.reset();
 					activateSeries(null);
 				};
-				bar.addEventListener('mouseenter', show);
-				bar.addEventListener('focus', show);
-				bar.addEventListener('mouseleave', hide);
-				bar.addEventListener('blur', hide);
+				panel.bind(bar, show, hide);
 			});
 
 			legendPills.forEach((pill) => {
 				const show = () => {
 					const seriesLabel = pill.dataset.seriesLabel ?? '';
 					const description = pill.dataset.description ?? '';
-					setPanel(seriesLabel, description);
+					panel.set(seriesLabel, description);
 					activateSeries(pill.dataset.series ?? null);
 				};
 				const hide = () => {
-					resetPanel();
+					panel.reset();
 					activateSeries(null);
 				};
-				pill.addEventListener('mouseenter', show);
-				pill.addEventListener('focus', show);
-				pill.addEventListener('mouseleave', hide);
-				pill.addEventListener('blur', hide);
+				panel.bind(pill, show, hide);
 			});
 
 			catTriggers.forEach((trigger) => {
 				const show = () => {
 					const categoryLabel = trigger.dataset.categoryLabel ?? '';
 					const description = trigger.dataset.description ?? '';
-					setPanel(categoryLabel, description);
+					panel.set(categoryLabel, description);
 					activateCategory(trigger.dataset.category ?? null);
 				};
 				const hide = () => {
-					resetPanel();
+					panel.reset();
 					activateCategory(null);
 				};
-				trigger.addEventListener('mouseenter', show);
-				trigger.addEventListener('focus', show);
-				trigger.addEventListener('mouseleave', hide);
-				trigger.addEventListener('blur', hide);
+				panel.bind(trigger, show, hide);
 			});
 		});
 	})();

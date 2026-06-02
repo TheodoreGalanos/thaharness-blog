@@ -1,0 +1,410 @@
+<!-- ABOUTME: Editorial model score strip — one row per model with completion, mean reward, artifacts, output size. -->
+<!-- ABOUTME: Shows compact-with-artifacts vs verbose-without-artifacts contrast; shared right-gutter hover panel. -->
+---
+export interface ModelScoreStripModel {
+	key: string;
+	label: string;
+	completed: number;
+	total: number;
+	meanReward: number;
+	artifactRate: number;
+	outputBytes: number;
+	note?: string;
+	highlight?: boolean;
+}
+
+interface Props {
+	title?: string;
+	subtitle?: string;
+	models: ModelScoreStripModel[];
+	rewardDomain?: [number, number];
+	caption?: string;
+}
+
+const {
+	title,
+	subtitle,
+	models,
+	rewardDomain = [0, 1],
+	caption,
+} = Astro.props;
+
+const [rewardMin, rewardMax] = rewardDomain;
+const rewardRange = rewardMax - rewardMin || 1;
+
+function rewardPct(v: number): number {
+	const clamped = Math.min(Math.max(v, rewardMin), rewardMax);
+	return ((clamped - rewardMin) / rewardRange) * 100;
+}
+
+function formatBytes(n: number): string {
+	if (n >= 1000) {
+		const kb = n / 1000;
+		return `${kb >= 100 ? Math.round(kb) : kb.toFixed(1)} KB`;
+	}
+	return `${n} B`;
+}
+
+// Log-scaled marker position for output size, so a 116 KB transcript and a
+// 400-byte answer can sit on the same row without the small values vanishing.
+const byteValues = models.map((m) => Math.max(m.outputBytes, 1));
+const logMin = Math.log10(Math.min(...byteValues));
+const logMax = Math.log10(Math.max(...byteValues));
+const logRange = logMax - logMin || 1;
+
+function bytePct(n: number): number {
+	const v = Math.log10(Math.max(n, 1));
+	return ((v - logMin) / logRange) * 100;
+}
+
+const REWARD_ACCENT = '#d87b55';
+const HIGHLIGHT_ACCENT = '#e8a84c';
+---
+
+<figure class="mss" data-mss-root>
+	{title && (
+		<div class="mss-title">
+			{title}
+			{subtitle && <span class="mss-subtitle"> · {subtitle}</span>}
+		</div>
+	)}
+
+	<div class="mss-body">
+		<aside class="mss-panel" aria-live="polite">
+			<div class="mss-panel-sticky">
+				<div class="mss-panel-inner">
+					<span class="mss-panel-kicker" data-mss-kicker></span>
+					<span class="mss-panel-body" data-mss-body></span>
+				</div>
+			</div>
+		</aside>
+
+		<div class="mss-grid">
+			<div class="mss-head mss-head-model" aria-hidden="true"></div>
+			<div class="mss-head" aria-hidden="true">done</div>
+			<div class="mss-head" aria-hidden="true">mean reward</div>
+			<div class="mss-head mss-head-right" aria-hidden="true">artifacts</div>
+			<div class="mss-head mss-head-right" aria-hidden="true">output</div>
+
+			{models.map((m) => {
+				const fill = rewardPct(m.meanReward);
+				const donePct = m.total > 0 ? (m.completed / m.total) * 100 : 0;
+				const accent = m.highlight ? HIGHLIGHT_ACCENT : REWARD_ACCENT;
+				return (
+					<div
+						class:list={['mss-row', { 'is-highlight': m.highlight }]}
+						data-mss-row
+						data-label={m.label}
+						data-completed={String(m.completed)}
+						data-total={String(m.total)}
+						data-reward={m.meanReward.toFixed(4)}
+						data-artifact={(m.artifactRate * 100).toFixed(0)}
+						data-bytes={formatBytes(m.outputBytes)}
+						data-note={m.note ?? ''}
+						style={`--mss-accent: ${accent};`}
+						tabindex="0"
+						aria-label={`${m.label}: ${m.completed} of ${m.total} completed, mean reward ${m.meanReward.toFixed(3)}, artifact rate ${(m.artifactRate * 100).toFixed(0)} percent, mean output ${formatBytes(m.outputBytes)}`}
+					>
+						<span class="mss-model">{m.label}</span>
+
+						<span class="mss-done">
+							<span class="mss-done-track" aria-hidden="true">
+								<span class="mss-done-fill" style={`width: ${donePct}%;`}></span>
+							</span>
+							<span class="mss-done-text">{m.completed}/{m.total}</span>
+						</span>
+
+						<span class="mss-reward">
+							<span class="mss-reward-track" aria-hidden="true">
+								<span class="mss-reward-fill" style={`width: ${fill}%;`}></span>
+							</span>
+							<span class="mss-reward-value">{m.meanReward.toFixed(3)}</span>
+						</span>
+
+						<span class="mss-artifact">
+							<span class="mss-artifact-track" aria-hidden="true">
+								<span class="mss-artifact-fill" style={`width: ${(m.artifactRate * 100).toFixed(0)}%;`}></span>
+							</span>
+							<span class="mss-artifact-text">{Math.round(m.artifactRate * 100)}%</span>
+						</span>
+
+						<span class="mss-bytes">
+							<span class="mss-bytes-rail" aria-hidden="true">
+								<span class="mss-bytes-dot" style={`left: ${bytePct(m.outputBytes)}%;`}></span>
+							</span>
+							<span class="mss-bytes-text">{formatBytes(m.outputBytes)}</span>
+						</span>
+					</div>
+				);
+			})}
+		</div>
+	</div>
+
+	{caption && <figcaption class="mss-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.mss {
+		--mss-sticky-top: 8rem;
+		--mss-track-bg: color-mix(in srgb, var(--color-border) 70%, transparent);
+		--mss-done: #5a8a84;
+		--mss-fail: #bf4d43;
+		--mss-artifact: #7ab5af;
+		position: relative;
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+	}
+
+	.mss-title {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+		margin: 0 0 1.25rem;
+	}
+
+	.mss-subtitle {
+		color: var(--color-text-tertiary);
+		font-weight: 400;
+	}
+
+	.mss-body {
+		position: relative;
+	}
+
+	.mss-grid {
+		display: grid;
+		grid-template-columns: minmax(8rem, 11rem) 4rem 1fr 4.2rem 5rem;
+		column-gap: 0.75rem;
+		row-gap: 0.4rem;
+		align-items: center;
+	}
+
+	.mss-head {
+		font-family: var(--font-mono);
+		font-size: 0.62rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+		padding: 0 0 0.3rem;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.mss-head-model {
+		border-bottom-color: transparent;
+	}
+
+	.mss-head-right {
+		text-align: right;
+	}
+
+	.mss-row {
+		display: grid;
+		grid-template-columns: subgrid;
+		grid-column: 1 / -1;
+		align-items: center;
+		padding: 0.3rem 0.4rem;
+		border-radius: 3px;
+		cursor: pointer;
+		transition: background-color 0.2s var(--ease-standard);
+	}
+
+	.mss-row:hover,
+	.mss-row:focus-visible {
+		background: color-mix(in srgb, var(--mss-accent) 10%, transparent);
+		outline: none;
+	}
+
+	.mss-model {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		letter-spacing: 0.02em;
+		color: var(--color-text-secondary);
+	}
+
+	.mss-row:hover .mss-model,
+	.mss-row:focus-visible .mss-model,
+	.mss-row.is-highlight .mss-model {
+		color: var(--color-text-primary);
+	}
+
+	/* Completion */
+	.mss-done {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+	}
+
+	.mss-done-track {
+		position: relative;
+		height: 0.35rem;
+		background: var(--mss-fail);
+		border-radius: 2px;
+		overflow: hidden;
+	}
+
+	.mss-done-fill {
+		display: block;
+		height: 100%;
+		background: var(--mss-done);
+	}
+
+	.mss-done-text {
+		font-family: var(--font-mono);
+		font-size: 0.66rem;
+		color: var(--color-text-tertiary);
+	}
+
+	/* Reward */
+	.mss-reward {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+	}
+
+	.mss-reward-track {
+		position: relative;
+		flex: 1;
+		height: 0.9rem;
+		background: var(--mss-track-bg);
+		border-radius: 2px;
+		overflow: hidden;
+	}
+
+	.mss-reward-fill {
+		display: block;
+		height: 100%;
+		background: var(--mss-accent);
+		border-radius: 2px;
+		transition: filter 0.2s var(--ease-standard);
+	}
+
+	.mss-row:hover .mss-reward-fill,
+	.mss-row:focus-visible .mss-reward-fill {
+		filter: brightness(1.12);
+	}
+
+	.mss-reward-value {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		color: var(--color-text-secondary);
+		min-width: 2.6rem;
+		text-align: right;
+	}
+
+	.mss-row.is-highlight .mss-reward-value {
+		color: var(--mss-accent);
+	}
+
+	/* Artifacts */
+	.mss-artifact {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 0.2rem;
+	}
+
+	.mss-artifact-track {
+		width: 100%;
+		height: 0.35rem;
+		background: var(--mss-track-bg);
+		border-radius: 2px;
+		overflow: hidden;
+	}
+
+	.mss-artifact-fill {
+		display: block;
+		height: 100%;
+		background: var(--mss-artifact);
+	}
+
+	.mss-artifact-text {
+		font-family: var(--font-mono);
+		font-size: 0.66rem;
+		color: var(--color-text-tertiary);
+	}
+
+	/* Output size */
+	.mss-bytes {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 0.2rem;
+	}
+
+	.mss-bytes-rail {
+		position: relative;
+		width: 100%;
+		height: 0.35rem;
+		background: var(--mss-track-bg);
+		border-radius: 2px;
+	}
+
+	.mss-bytes-dot {
+		position: absolute;
+		top: 50%;
+		width: 0.5rem;
+		height: 0.5rem;
+		border-radius: 50%;
+		background: var(--color-text-secondary);
+		transform: translate(-50%, -50%);
+	}
+
+	.mss-bytes-text {
+		font-family: var(--font-mono);
+		font-size: 0.66rem;
+		color: var(--color-text-tertiary);
+	}
+
+	.mss-caption {
+		margin-top: 1.5rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--color-text-tertiary);
+		line-height: 1.55;
+		font-style: normal;
+	}
+
+	@media (max-width: 720px) {
+		.mss-grid {
+			grid-template-columns: minmax(6rem, 9rem) 3.2rem 1fr 3.4rem;
+		}
+		.mss-head:last-child,
+		.mss-bytes {
+			display: none;
+		}
+	}
+</style>
+
+<script>
+	import { createChartHoverPanel } from '../../scripts/chart-hover-panel';
+
+	(() => {
+		const roots = document.querySelectorAll<HTMLElement>('[data-mss-root]');
+		roots.forEach((root) => {
+			const panel = createChartHoverPanel(root, '[data-mss-kicker]', '[data-mss-body]');
+			if (!panel) return;
+
+			const rows = root.querySelectorAll<HTMLElement>('[data-mss-row]');
+			rows.forEach((row) => {
+				const show = () => {
+					const label = row.dataset.label ?? '';
+					const completed = row.dataset.completed ?? '';
+					const total = row.dataset.total ?? '';
+					const reward = row.dataset.reward ?? '';
+					const artifact = row.dataset.artifact ?? '';
+					const bytes = row.dataset.bytes ?? '';
+					const note = row.dataset.note ?? '';
+					const stats = `${completed}/${total} done · reward ${reward} · ${artifact}% artifacts · ${bytes}`;
+					panel.set(label, note ? `${stats}\n${note}` : stats);
+				};
+				panel.bind(row, show);
+			});
+		});
+	})();
+</script>
