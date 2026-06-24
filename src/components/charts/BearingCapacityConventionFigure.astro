@@ -1,0 +1,398 @@
+<!-- ABOUTME: Blog-native figure for the Terzaghi bearing-capacity convention failure. -->
+<!-- ABOUTME: Shows complete inputs, competing factor authorities, and run-level evidence. -->
+---
+import type { BearingCapacityFigureData } from '../../data/task-world-figures';
+
+interface Props {
+	title?: string;
+	data: BearingCapacityFigureData;
+	caption?: string;
+}
+
+const { title, data, caption } = Astro.props;
+---
+
+<figure class="bcf" aria-label={title ?? 'Bearing-capacity convention failure'}>
+	{title && <div class="bcf-title">{title}</div>}
+
+	<div class="bcf-board">
+		<header class="bcf-head">
+			<div>
+				<div class="bcf-model">{data.model}</div>
+				<div class="bcf-path">{data.taskPath}</div>
+			</div>
+			<div class="bcf-status" data-kind="ok">
+				<span></span>
+				{data.status}
+			</div>
+		</header>
+
+		<section class="bcf-inputs" aria-label="Task inputs">
+			<div class="bcf-section-label">everything needed was on the page</div>
+			<div class="bcf-input-grid">
+				{data.inputs.map((input) => (
+					<div class="bcf-chip">
+						<span>{input.key}</span>
+						<strong>{input.value}</strong>
+					</div>
+				))}
+			</div>
+		</section>
+
+		<section class="bcf-methods" aria-label="Competing engineering conventions">
+			<div class="bcf-section-label">two ways to pick the bearing-capacity factors</div>
+			<div class="bcf-method-grid">
+				<article class="bcf-method" data-kind="fail">
+					<div class="bcf-method-head">
+						<strong>{data.remembered.label}</strong>
+						<span>{data.remembered.eyebrow}</span>
+					</div>
+					<div class="bcf-factor-grid">
+						{data.factors.map((factor) => (
+							<div>
+								<span>{factor.name}</span>
+								<strong>{factor.remembered}</strong>
+							</div>
+						))}
+					</div>
+					<div class="bcf-answer">
+						<span>allowable qa</span>
+						<strong>{data.remembered.answer}</strong>
+					</div>
+				</article>
+
+				<article class="bcf-method" data-kind="pass">
+					<div class="bcf-method-head">
+						<strong>{data.expected.label}</strong>
+						<span>{data.expected.eyebrow}</span>
+					</div>
+					<div class="bcf-factor-grid">
+						{data.factors.map((factor) => (
+							<div>
+								<span>{factor.name}</span>
+								<strong>{factor.expected}</strong>
+							</div>
+						))}
+					</div>
+					<div class="bcf-answer">
+						<span>allowable qa</span>
+						<strong>{data.expected.answer}</strong>
+					</div>
+				</article>
+			</div>
+			<div class="bcf-takeaway">{data.takeaway}</div>
+		</section>
+
+		<section class="bcf-ledger" aria-label="Run ledger">
+			{data.ledger.map((row) => (
+				<div class="bcf-ledger-row" data-kind={row.result}>
+					<div class="bcf-result">{row.result}</div>
+					<div>
+						<strong>rep {row.run} / {row.answer}</strong>
+						<span>{row.method}</span>
+					</div>
+				</div>
+			))}
+		</section>
+	</div>
+
+	{caption && <figcaption class="bcf-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.bcf {
+		--bcf-good: #7ab5af;
+		--bcf-good-strong: #6fb88a;
+		--bcf-bad: #d87b55;
+		--bcf-amber: var(--color-accent);
+		--bcf-card: color-mix(in srgb, var(--color-surface) 90%, transparent);
+
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+		text-align: left;
+		container-type: inline-size;
+	}
+
+	.bcf-title {
+		margin: 0 0 1.25rem;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		color: var(--color-accent);
+	}
+
+	.bcf-board {
+		display: grid;
+		gap: 1rem;
+		padding: 1.1rem;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		background:
+			linear-gradient(135deg, color-mix(in srgb, var(--bcf-amber) 6%, transparent), transparent 44%),
+			color-mix(in srgb, var(--color-surface) 92%, transparent);
+		box-shadow: 0 12px 30px rgba(0, 0, 0, 0.11);
+	}
+
+	.bcf-head,
+	.bcf-method-head,
+	.bcf-answer,
+	.bcf-ledger-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.bcf-head {
+		padding: 0.8rem 0.95rem;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		background: color-mix(in srgb, var(--color-terminal-bg) 70%, transparent);
+	}
+
+	.bcf-model,
+	.bcf-path,
+	.bcf-status,
+	.bcf-section-label,
+	.bcf-chip,
+	.bcf-method,
+	.bcf-takeaway,
+	.bcf-ledger-row {
+		font-family: var(--font-mono);
+	}
+
+	.bcf-model {
+		font-size: 1rem;
+		font-weight: 600;
+		color: var(--color-text-primary);
+	}
+
+	.bcf-path {
+		margin-top: 0.25rem;
+		font-size: 0.75rem;
+		color: var(--color-text-secondary);
+	}
+
+	.bcf-status {
+		flex: 0 0 auto;
+		padding: 0.45rem 0.65rem;
+		border: 1px solid color-mix(in srgb, var(--bcf-good-strong) 62%, var(--color-border));
+		border-radius: 999px;
+		font-size: 0.6875rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		color: var(--bcf-good-strong);
+		background: color-mix(in srgb, var(--bcf-good-strong) 10%, transparent);
+	}
+
+	.bcf-status span {
+		display: inline-block;
+		width: 0.45rem;
+		height: 0.45rem;
+		margin-right: 0.4rem;
+		border-radius: 50%;
+		background: var(--bcf-good-strong);
+	}
+
+	.bcf-section-label {
+		margin-bottom: 0.65rem;
+		font-size: 0.6875rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.bcf-input-grid {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.55rem;
+	}
+
+	.bcf-chip {
+		display: inline-flex;
+		align-items: baseline;
+		gap: 0.45rem;
+		padding: 0.48rem 0.65rem;
+		border: 1px solid color-mix(in srgb, var(--bcf-good) 48%, var(--color-border));
+		border-radius: 6px;
+		background: color-mix(in srgb, var(--bcf-good) 8%, transparent);
+	}
+
+	.bcf-chip span {
+		font-size: 0.6875rem;
+		color: var(--color-text-tertiary);
+	}
+
+	.bcf-chip strong {
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: var(--bcf-good);
+	}
+
+	.bcf-method-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.85rem;
+	}
+
+	.bcf-method {
+		padding: 0.9rem 0.95rem;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		background: var(--bcf-card);
+	}
+
+	.bcf-method[data-kind='fail'] {
+		border-color: color-mix(in srgb, var(--bcf-bad) 58%, var(--color-border));
+		background:
+			linear-gradient(135deg, color-mix(in srgb, var(--bcf-bad) 8%, transparent), transparent 50%),
+			var(--bcf-card);
+	}
+
+	.bcf-method[data-kind='pass'] {
+		border-color: color-mix(in srgb, var(--bcf-good) 58%, var(--color-border));
+		background:
+			linear-gradient(135deg, color-mix(in srgb, var(--bcf-good) 8%, transparent), transparent 50%),
+			var(--bcf-card);
+	}
+
+	.bcf-method-head strong {
+		font-size: 0.8125rem;
+		font-weight: 700;
+		text-transform: uppercase;
+	}
+
+	.bcf-method-head span {
+		font-size: 0.6875rem;
+		color: var(--color-text-tertiary);
+	}
+
+	.bcf-method[data-kind='fail'] .bcf-method-head strong,
+	.bcf-method[data-kind='fail'] .bcf-factor-grid strong,
+	.bcf-method[data-kind='fail'] .bcf-answer strong {
+		color: var(--bcf-bad);
+	}
+
+	.bcf-method[data-kind='pass'] .bcf-method-head strong,
+	.bcf-method[data-kind='pass'] .bcf-factor-grid strong,
+	.bcf-method[data-kind='pass'] .bcf-answer strong {
+		color: var(--bcf-good);
+	}
+
+	.bcf-factor-grid {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 0.65rem;
+		margin-top: 0.9rem;
+	}
+
+	.bcf-factor-grid span,
+	.bcf-answer span,
+	.bcf-ledger-row span {
+		display: block;
+		font-size: 0.6875rem;
+		color: var(--color-text-tertiary);
+	}
+
+	.bcf-factor-grid strong {
+		display: block;
+		margin-top: 0.15rem;
+		font-size: 1.25rem;
+		font-weight: 600;
+	}
+
+	.bcf-answer {
+		margin-top: 0.95rem;
+		padding-top: 0.85rem;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.bcf-answer strong {
+		font-size: 1.45rem;
+		font-weight: 600;
+	}
+
+	.bcf-takeaway {
+		margin-top: 0.75rem;
+		font-size: 0.8125rem;
+		font-weight: 700;
+		color: var(--bcf-bad);
+		text-align: center;
+	}
+
+	.bcf-ledger {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 0.65rem;
+	}
+
+	.bcf-ledger-row {
+		justify-content: flex-start;
+		padding: 0.7rem 0.75rem;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		background: var(--bcf-card);
+	}
+
+	.bcf-ledger-row[data-kind='pass'] {
+		border-color: color-mix(in srgb, var(--bcf-good) 52%, var(--color-border));
+	}
+
+	.bcf-ledger-row[data-kind='fail'] {
+		border-color: color-mix(in srgb, var(--bcf-bad) 62%, var(--color-border));
+	}
+
+	.bcf-result {
+		width: 3.4rem;
+		font-size: 0.6875rem;
+		font-weight: 800;
+		text-transform: uppercase;
+	}
+
+	.bcf-ledger-row[data-kind='pass'] .bcf-result {
+		color: var(--bcf-good);
+	}
+
+	.bcf-ledger-row[data-kind='fail'] .bcf-result {
+		color: var(--bcf-bad);
+	}
+
+	.bcf-ledger-row strong {
+		display: block;
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--color-text-primary);
+	}
+
+	.bcf-caption {
+		margin-top: 1rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		line-height: 1.55;
+		color: var(--color-text-tertiary);
+		font-style: normal;
+		text-align: left;
+	}
+
+	@container (max-width: 44rem) {
+		.bcf-head,
+		.bcf-method-head,
+		.bcf-answer {
+			display: grid;
+			gap: 0.35rem;
+		}
+
+		.bcf-status {
+			width: max-content;
+		}
+
+		.bcf-method-grid,
+		.bcf-ledger {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

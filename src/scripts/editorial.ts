@@ -59,6 +59,31 @@ export function computeSlotWindow(
   return { left: start, center: start + 1, right: start + 2 };
 }
 
+export function computeAnchorScrollTop(
+  targetViewportTop: number,
+  scrollY: number,
+  anchorOffset: number,
+): number {
+  return Math.max(0, scrollY + targetViewportTop - anchorOffset);
+}
+
+export function computeCssLengthPixels(
+  value: string,
+  rootFontSize: number,
+  elementFontSize: number,
+): number | null {
+  const match = value.trim().match(/^(-?\d*\.?\d+)(px|rem|em)?$/);
+  if (!match) return null;
+
+  const amount = Number.parseFloat(match[1]);
+  const unit = match[2] ?? "px";
+  if (!Number.isFinite(amount)) return null;
+
+  if (unit === "rem") return amount * rootFontSize;
+  if (unit === "em") return amount * elementFontSize;
+  return amount;
+}
+
 function setupChapterTracking(): void {
   const links = document.querySelectorAll<HTMLAnchorElement>(
     "[data-chapter-link]",
@@ -158,11 +183,63 @@ function setupChapterMorph(): void {
   observer.observe(sentinel);
 }
 
+function getEditorialAnchorOffset(): number {
+  const layout = document.querySelector<HTMLElement>(".editorial-layout");
+  const source = layout ?? document.documentElement;
+  const sourceStyle = getComputedStyle(source);
+  const rootStyle = getComputedStyle(document.documentElement);
+  const value = computeCssLengthPixels(
+    sourceStyle.getPropertyValue("--editorial-anchor-offset"),
+    Number.parseFloat(rootStyle.fontSize),
+    Number.parseFloat(sourceStyle.fontSize),
+  );
+  return value ?? 132;
+}
+
+function scrollToHashTarget(hash: string, behavior: ScrollBehavior): boolean {
+  if (!hash.startsWith("#")) return false;
+  const id = window.decodeURIComponent(hash.slice(1));
+  const target = document.getElementById(id);
+  if (!target) return false;
+
+  const scrollTop = computeAnchorScrollTop(
+    target.getBoundingClientRect().top,
+    window.scrollY,
+    getEditorialAnchorOffset(),
+  );
+  window.scrollTo({ top: scrollTop, behavior });
+  return true;
+}
+
+function setupFootnoteAnchorScrolling(): void {
+  document.addEventListener("click", (event) => {
+    if (!(event.target instanceof Element)) return;
+    const link = event.target.closest<HTMLAnchorElement>(
+      "a[data-footnote-ref], a[data-footnote-backref]",
+    );
+    if (!link?.hash) return;
+    if (!document.getElementById(window.decodeURIComponent(link.hash.slice(1)))) {
+      return;
+    }
+
+    event.preventDefault();
+    history.pushState(null, "", link.hash);
+    scrollToHashTarget(link.hash, "smooth");
+  });
+
+  if (window.location.hash) {
+    window.requestAnimationFrame(() => {
+      scrollToHashTarget(window.location.hash, "auto");
+    });
+  }
+}
+
 if (typeof document !== "undefined") {
   const init = () => {
     setupProgressBar();
     setupChapterTracking();
     setupChapterMorph();
+    setupFootnoteAnchorScrolling();
   };
 
   if (document.readyState === "loading") {

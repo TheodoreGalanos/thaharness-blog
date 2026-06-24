@@ -1,0 +1,215 @@
+<!-- ABOUTME: Editorial flow diagram for the meta-harness composition loop. -->
+<!-- ABOUTME: Renders problem intake, profiling, review, run evidence, and repair as one chain. -->
+---
+import type { MetaHarnessFlowStep } from '../../data/meta-harness-diagrams';
+
+interface Props {
+	title?: string;
+	steps: MetaHarnessFlowStep[];
+	caption?: string;
+}
+
+const { title, steps, caption } = Astro.props;
+---
+
+<figure class="mhf" aria-label={title ?? 'Meta-harness composition flow'}>
+	{title && <div class="mhf-title">{title}</div>}
+
+	<ol class="mhf-steps">
+		{steps.map((step, index) => (
+			<li class="mhf-step" data-emphasis={step.emphasis ? 'true' : 'false'}>
+				<div class="mhf-card">
+					<div class="mhf-meta">
+						<span class="mhf-kicker">{step.kicker}</span>
+						<span class="mhf-number">{String(index + 1).padStart(2, '0')}</span>
+					</div>
+					<span class="mhf-label">{step.label}</span>
+					<span class="mhf-detail">{step.detail}</span>
+				</div>
+				{index < steps.length - 1 && <span class="mhf-connector" aria-hidden="true"></span>}
+			</li>
+		))}
+	</ol>
+
+	<div class="mhf-loop" aria-hidden="true">
+		<span class="mhf-loop-line"></span>
+		<span class="mhf-loop-label">repair can return to world generation</span>
+	</div>
+
+	{caption && <figcaption class="mhf-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.mhf {
+		--mhf-rail: color-mix(in srgb, var(--color-accent-secondary) 46%, var(--color-border));
+		--mhf-card-bg: color-mix(in srgb, var(--color-surface) 90%, transparent);
+
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+		text-align: left;
+		container-type: inline-size;
+	}
+
+	.mhf-title {
+		margin: 0 0 1.25rem;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+	}
+
+	.mhf-steps {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		grid-template-columns: repeat(7, minmax(0, 1fr));
+		gap: 0.65rem;
+		align-items: stretch;
+	}
+
+	.mhf-step {
+		position: relative;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		min-width: 0;
+	}
+
+	.mhf-card {
+		min-height: 10rem;
+		display: grid;
+		grid-template-rows: auto auto 1fr;
+		gap: 0.45rem;
+		padding: 0.9rem 0.85rem 0.95rem;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		background:
+			linear-gradient(135deg, color-mix(in srgb, var(--color-accent-secondary) 7%, transparent), transparent 48%),
+			var(--mhf-card-bg);
+		box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
+	}
+
+	.mhf-step[data-emphasis='true'] .mhf-card {
+		border-color: color-mix(in srgb, var(--color-accent) 42%, var(--color-border));
+		background:
+			linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 10%, transparent), transparent 46%),
+			var(--mhf-card-bg);
+	}
+
+	.mhf-meta {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.75rem;
+		font-family: var(--font-mono);
+		font-size: 0.625rem;
+		color: var(--color-text-tertiary);
+	}
+
+	.mhf-kicker {
+		text-transform: uppercase;
+		letter-spacing: 0.12em;
+	}
+
+	.mhf-number {
+		letter-spacing: 0.08em;
+	}
+
+	.mhf-label {
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		line-height: 1.3;
+		color: var(--color-text-primary);
+		overflow-wrap: break-word;
+	}
+
+	.mhf-detail {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		line-height: 1.45;
+		color: var(--color-text-secondary);
+		overflow-wrap: break-word;
+	}
+
+	.mhf-connector {
+		position: absolute;
+		top: 50%;
+		left: calc(100% + 0.18rem);
+		width: 0.48rem;
+		height: 1px;
+		background: var(--mhf-rail);
+	}
+
+	.mhf-connector::after {
+		content: '';
+		position: absolute;
+		top: 50%;
+		right: -1px;
+		width: 0;
+		height: 0;
+		transform: translateY(-50%);
+		border-top: 4px solid transparent;
+		border-bottom: 4px solid transparent;
+		border-left: 6px solid var(--mhf-rail);
+	}
+
+	.mhf-loop {
+		margin-top: 0.95rem;
+		display: flex;
+		align-items: center;
+		gap: 0.7rem;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.mhf-loop-line {
+		height: 1px;
+		flex: 1;
+		background: linear-gradient(90deg, transparent, var(--mhf-rail), transparent);
+	}
+
+	.mhf-caption {
+		margin-top: 1.4rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		line-height: 1.55;
+		color: var(--color-text-tertiary);
+		font-style: normal;
+		text-align: left;
+	}
+
+	@container (max-width: 68rem) {
+		.mhf-steps {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 0.85rem;
+		}
+
+		.mhf-connector {
+			display: none;
+		}
+	}
+
+	@container (max-width: 44rem) {
+		.mhf-steps {
+			grid-template-columns: 1fr;
+			gap: 0.85rem;
+		}
+
+		.mhf-card {
+			min-height: auto;
+		}
+
+		.mhf-connector {
+			display: none;
+		}
+	}
+</style>

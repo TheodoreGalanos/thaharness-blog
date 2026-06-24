@@ -1,0 +1,457 @@
+<!-- ABOUTME: Blog-native figure for the pedestrian-clearance missing-input failure. -->
+<!-- ABOUTME: Shows the missing walking speed, guessed runs, and expected crossing time. -->
+---
+import type { MissingInputFigureData } from '../../data/task-world-figures';
+
+interface Props {
+	title?: string;
+	data: MissingInputFigureData;
+	caption?: string;
+}
+
+const { title, data, caption } = Astro.props;
+
+const axisMin = Math.min(...data.axisTicks);
+const axisMax = Math.max(...data.axisTicks);
+const axisLeft = 56;
+const axisRight = 904;
+const axisY = 90;
+const axisX = (value: number) =>
+	axisLeft + ((value - axisMin) / (axisMax - axisMin)) * (axisRight - axisLeft);
+const expectedX = axisX(data.expectedAnswer);
+const guessedMax = Math.max(...data.runs.map((run) => run.answer));
+const bandX = axisX(guessedMax);
+const plottedRuns = data.runs.map((run, index) => ({
+	...run,
+	x: axisX(run.answer),
+	y: axisY + (index - 1) * 15,
+}));
+---
+
+<figure class="mws" aria-label={title ?? 'Missing walking-speed failure'}>
+	{title && <div class="mws-title">{title}</div>}
+
+	<div class="mws-board">
+		<header class="mws-head">
+			<div>
+				<div class="mws-model">{data.model}</div>
+				<div class="mws-path">{data.taskPath}</div>
+			</div>
+			<div class="mws-status">
+				<span></span>
+				{data.status}
+			</div>
+		</header>
+
+		<section class="mws-equation" aria-label="Clearance equation">
+			<div class="mws-term">
+				<span>clearance</span>
+			</div>
+			<div class="mws-operator">=</div>
+			<div class="mws-term" data-kind="given">
+				<strong>{data.distance}</strong>
+				<span>given in the prompt</span>
+			</div>
+			<div class="mws-operator">/</div>
+			<div class="mws-term" data-kind="missing">
+				<strong>{data.missingInput}</strong>
+				<span>never given</span>
+			</div>
+		</section>
+
+		<section class="mws-axis-wrap" aria-label="Crossing time axis">
+			<div class="mws-section-label">seconds of crossing time</div>
+			<svg class="mws-axis" viewBox="0 0 960 184" role="img" aria-label="Grok answers 28, 31, and 31 seconds; expected answer 41 seconds.">
+				<rect
+					x={bandX}
+					y={axisY - 52}
+					width={expectedX - bandX}
+					height="104"
+					class="mws-gap"
+				/>
+				<line x1={axisLeft - 16} y1={axisY} x2={axisRight + 16} y2={axisY} class="mws-baseline" />
+				{data.axisTicks.map((tick) => (
+					<g>
+						<line x1={axisX(tick)} y1={axisY - 7} x2={axisX(tick)} y2={axisY + 7} class="mws-tick" />
+						<text x={axisX(tick)} y={axisY + 34} text-anchor="middle" class="mws-tick-label">{tick}s</text>
+					</g>
+				))}
+				{plottedRuns.map((run) => (
+					<g>
+						<circle cx={run.x} cy={run.y} r="8" class="mws-guess-dot" />
+						<text x={run.x} y={run.y - 15} text-anchor="middle" class="mws-run-label">rep {run.run}</text>
+					</g>
+				))}
+				<text x={axisX(29.5)} y={axisY - 54} text-anchor="middle" class="mws-guess-label">Grok: 28, 31, 31 s</text>
+				<line x1={expectedX} y1={axisY - 60} x2={expectedX} y2={axisY + 48} class="mws-expected-line" />
+				<circle cx={expectedX} cy={axisY} r="8" class="mws-expected-dot" />
+				<text x={expectedX} y={axisY - 72} text-anchor="middle" class="mws-expected-label">expected {data.expectedAnswer}s</text>
+				<text x={(bandX + expectedX) / 2} y={axisY + 82} text-anchor="middle" class="mws-gap-label">about 10-13 s less time to cross</text>
+			</svg>
+		</section>
+
+		<section class="mws-ledger" aria-label="Invented walking speeds">
+			<div class="mws-table">
+				<div class="mws-table-head">
+					<span>run</span>
+					<span>invented speed</span>
+					<span>answer</span>
+					<span>score</span>
+				</div>
+				{data.runs.map((run) => (
+					<div class="mws-table-row">
+						<span>rep {run.run}</span>
+						<strong>{run.speed}</strong>
+						<span>{run.answer} s</span>
+						<strong>0.0</strong>
+					</div>
+				))}
+			</div>
+			<div class="mws-note">
+				<strong>Required value: {data.expectedSpeed}.</strong>
+				<span>{data.takeaway}</span>
+			</div>
+		</section>
+	</div>
+
+	{caption && <figcaption class="mws-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.mws {
+		--mws-good: #7ab5af;
+		--mws-good-strong: #6fb88a;
+		--mws-bad: #d87b55;
+		--mws-warn: #e8a84c;
+		--mws-card: color-mix(in srgb, var(--color-surface) 90%, transparent);
+
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+		text-align: left;
+		container-type: inline-size;
+	}
+
+	.mws-title {
+		margin: 0 0 1.25rem;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		color: var(--color-accent);
+	}
+
+	.mws-board {
+		display: grid;
+		gap: 1rem;
+		padding: 1.1rem;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		background:
+			linear-gradient(135deg, color-mix(in srgb, var(--mws-bad) 6%, transparent), transparent 44%),
+			color-mix(in srgb, var(--color-surface) 92%, transparent);
+		box-shadow: 0 12px 30px rgba(0, 0, 0, 0.11);
+	}
+
+	.mws-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.mws-model,
+	.mws-path,
+	.mws-status,
+	.mws-equation,
+	.mws-section-label,
+	.mws-axis,
+	.mws-ledger,
+	.mws-caption {
+		font-family: var(--font-mono);
+	}
+
+	.mws-model {
+		font-size: 1rem;
+		font-weight: 600;
+	}
+
+	.mws-path {
+		margin-top: 0.25rem;
+		font-size: 0.75rem;
+		color: var(--color-text-tertiary);
+	}
+
+	.mws-status {
+		flex: 0 0 auto;
+		padding: 0.45rem 0.65rem;
+		border: 1px solid color-mix(in srgb, var(--mws-bad) 66%, var(--color-border));
+		border-radius: 999px;
+		font-size: 0.6875rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		color: var(--mws-bad);
+		background: color-mix(in srgb, var(--mws-bad) 10%, transparent);
+	}
+
+	.mws-status span {
+		display: inline-block;
+		width: 0.45rem;
+		height: 0.45rem;
+		margin-right: 0.4rem;
+		border-radius: 50%;
+		background: var(--mws-bad);
+	}
+
+	.mws-equation {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.3fr) auto minmax(0, 1.4fr);
+		gap: 0.75rem;
+		align-items: stretch;
+	}
+
+	.mws-term {
+		display: grid;
+		place-items: center;
+		gap: 0.35rem;
+		min-height: 5.9rem;
+		padding: 0.75rem;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		background: var(--mws-card);
+		text-align: center;
+	}
+
+	.mws-term > span:first-child,
+	.mws-term strong {
+		font-size: 1.35rem;
+		font-weight: 600;
+		line-height: 1.15;
+		color: var(--color-text-primary);
+	}
+
+	.mws-term span:last-child {
+		font-size: 0.6875rem;
+		color: var(--color-text-tertiary);
+		text-transform: uppercase;
+	}
+
+	.mws-term[data-kind='given'] {
+		border-color: color-mix(in srgb, var(--mws-good) 52%, var(--color-border));
+		background: color-mix(in srgb, var(--mws-good) 8%, transparent);
+	}
+
+	.mws-term[data-kind='given'] strong,
+	.mws-term[data-kind='given'] span:last-child {
+		color: var(--mws-good);
+	}
+
+	.mws-term[data-kind='missing'] {
+		border-color: color-mix(in srgb, var(--mws-warn) 70%, var(--color-border));
+		border-style: dashed;
+		background: color-mix(in srgb, var(--mws-warn) 8%, transparent);
+	}
+
+	.mws-term[data-kind='missing'] strong,
+	.mws-term[data-kind='missing'] span:last-child {
+		color: var(--mws-warn);
+	}
+
+	.mws-operator {
+		align-self: center;
+		font-size: 1.6rem;
+		color: var(--color-text-tertiary);
+	}
+
+	.mws-section-label {
+		margin-bottom: 0.5rem;
+		font-size: 0.6875rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.mws-axis {
+		display: block;
+		width: 100%;
+		height: auto;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		background: color-mix(in srgb, var(--color-terminal-bg) 72%, transparent);
+	}
+
+	.mws-gap {
+		fill: color-mix(in srgb, var(--mws-bad) 16%, transparent);
+	}
+
+	.mws-baseline,
+	.mws-tick {
+		stroke: color-mix(in srgb, var(--color-text-secondary) 28%, transparent);
+		stroke-width: 2;
+	}
+
+	.mws-tick-label,
+	.mws-run-label {
+		fill: var(--color-text-tertiary);
+		font-family: var(--font-mono);
+		font-size: 14px;
+	}
+
+	.mws-guess-dot {
+		fill: var(--mws-warn);
+		stroke: var(--color-bg);
+		stroke-width: 2;
+	}
+
+	.mws-guess-label {
+		fill: var(--mws-warn);
+		font-family: var(--font-mono);
+		font-size: 18px;
+		font-weight: 700;
+	}
+
+	.mws-expected-line {
+		stroke: var(--mws-good-strong);
+		stroke-width: 3;
+	}
+
+	.mws-expected-dot {
+		fill: var(--mws-good-strong);
+		stroke: var(--color-bg);
+		stroke-width: 2;
+	}
+
+	.mws-expected-label {
+		fill: var(--mws-good-strong);
+		font-family: var(--font-mono);
+		font-size: 18px;
+		font-weight: 700;
+	}
+
+	.mws-gap-label {
+		fill: var(--mws-bad);
+		font-family: var(--font-mono);
+		font-size: 16px;
+		font-weight: 700;
+	}
+
+	.mws-ledger {
+		display: grid;
+		grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+		gap: 1rem;
+		align-items: stretch;
+	}
+
+	.mws-table,
+	.mws-note {
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		background: var(--mws-card);
+	}
+
+	.mws-table {
+		overflow: hidden;
+	}
+
+	.mws-table-head,
+	.mws-table-row {
+		display: grid;
+		grid-template-columns: 0.8fr 1.35fr 0.9fr 0.7fr;
+		gap: 0.65rem;
+		align-items: center;
+		padding: 0.65rem 0.75rem;
+	}
+
+	.mws-table-head {
+		border-bottom: 1px solid var(--color-border);
+		font-size: 0.625rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.mws-table-row {
+		border-bottom: 1px solid var(--color-border);
+		font-size: 0.8125rem;
+	}
+
+	.mws-table-row:last-child {
+		border-bottom: none;
+	}
+
+	.mws-table-row span:first-child {
+		color: var(--color-text-tertiary);
+	}
+
+	.mws-table-row strong:first-of-type {
+		color: var(--mws-warn);
+	}
+
+	.mws-table-row strong:last-child {
+		color: var(--mws-bad);
+		text-align: right;
+	}
+
+	.mws-note {
+		display: grid;
+		align-content: center;
+		gap: 0.6rem;
+		padding: 1rem;
+		font-size: 0.9375rem;
+		line-height: 1.45;
+	}
+
+	.mws-note strong {
+		color: var(--mws-good);
+	}
+
+	.mws-note span {
+		color: var(--color-text-secondary);
+	}
+
+	.mws-caption {
+		margin-top: 1rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-size: 0.8125rem;
+		line-height: 1.55;
+		color: var(--color-text-tertiary);
+		font-style: normal;
+		text-align: left;
+	}
+
+	@container (max-width: 44rem) {
+		.mws-head,
+		.mws-ledger {
+			display: grid;
+			gap: 0.75rem;
+		}
+
+		.mws-status {
+			width: max-content;
+		}
+
+		.mws-equation {
+			grid-template-columns: 1fr;
+		}
+
+		.mws-term > span:first-child,
+		.mws-term strong {
+			font-size: 1.2rem;
+		}
+
+		.mws-operator {
+			justify-self: center;
+		}
+
+		.mws-ledger {
+			grid-template-columns: 1fr;
+		}
+
+		.mws-table-head,
+		.mws-table-row {
+			grid-template-columns: 0.7fr 1.25fr 0.7fr 0.55fr;
+			gap: 0.45rem;
+		}
+	}
+</style>

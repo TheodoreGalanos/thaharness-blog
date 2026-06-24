@@ -16,8 +16,14 @@
 
 /* Anchor targets clear the sticky site header plus the compact chapter strip
    that becomes fixed on scroll (~4.25rem header + ~2.3rem strip). */
-.editorial-layout .prose :is(h2, h3, h4, h5, h6) {
-  scroll-margin-top: 7rem;
+.editorial-layout {
+  --editorial-anchor-offset: 8.25rem;
+}
+
+.editorial-layout
+  .prose
+  :is(h2, h3, h4, h5, h6, [data-footnotes] li[id], [data-footnote-ref][id]) {
+  scroll-margin-top: var(--editorial-anchor-offset);
 }
 
 /* Chapter strip — "in this piece" overview that morphs into a sticky compact bar on scroll */

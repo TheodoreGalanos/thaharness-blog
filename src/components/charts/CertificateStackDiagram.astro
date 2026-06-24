@@ -1,0 +1,202 @@
+<!-- ABOUTME: Editorial nested certificate diagram for meta-harness runs. -->
+<!-- ABOUTME: Shows the composed-harness certificate wrapping the ordinary task-run certificate. -->
+---
+import type { CertificateStackData, CertificateStackSection } from '../../data/meta-harness-diagrams';
+
+interface Props {
+	title?: string;
+	stack: CertificateStackData;
+	caption?: string;
+}
+
+const { title, stack, caption } = Astro.props;
+
+function sectionList(section: CertificateStackSection): string {
+	return section.items.join(', ');
+}
+---
+
+<figure class="csd" aria-label={title ?? 'Meta-harness certificate stack'}>
+	{title && <div class="csd-title">{title}</div>}
+
+	<div class="csd-shell">
+		<div class="csd-shell-head">
+			<span class="csd-shell-kicker">meta-harness certificate</span>
+			<span class="csd-shell-label">what made this run possible?</span>
+		</div>
+
+		<div class="csd-grid">
+			{stack.meta.map((section) => (
+				<section class="csd-section">
+					<span class="csd-kicker">{section.kicker}</span>
+					<h3>{section.label}</h3>
+					<p>{sectionList(section)}</p>
+				</section>
+			))}
+
+			<section class="csd-task">
+				<span class="csd-kicker">{stack.taskRun.kicker}</span>
+				<h3>{stack.taskRun.label}</h3>
+				<ul>
+					{stack.taskRun.items.map((item) => (
+						<li>{item}</li>
+					))}
+				</ul>
+			</section>
+
+			{stack.evidence.map((section) => (
+				<section class="csd-section">
+					<span class="csd-kicker">{section.kicker}</span>
+					<h3>{section.label}</h3>
+					<p>{sectionList(section)}</p>
+				</section>
+			))}
+		</div>
+	</div>
+
+	{caption && <figcaption class="csd-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.csd {
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+		text-align: left;
+	}
+
+	.csd-title {
+		margin: 0 0 1.25rem;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-accent);
+	}
+
+	.csd-shell {
+		padding: 1.1rem;
+		border: 1px solid color-mix(in srgb, var(--color-accent) 32%, var(--color-border));
+		border-radius: 6px;
+		background:
+			linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 7%, transparent), transparent 42%),
+			color-mix(in srgb, var(--color-surface) 92%, transparent);
+		box-shadow: 0 12px 30px rgba(0, 0, 0, 0.11);
+	}
+
+	.csd-shell-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
+		margin-bottom: 1rem;
+	}
+
+	.csd-shell-kicker,
+	.csd-shell-label,
+	.csd-kicker,
+	.csd-section h3,
+	.csd-task h3,
+	.csd-section p,
+	.csd-task li,
+	.csd-caption {
+		font-family: var(--font-mono);
+	}
+
+	.csd-shell-kicker,
+	.csd-kicker {
+		font-size: 0.625rem;
+		text-transform: uppercase;
+		letter-spacing: 0.13em;
+		color: var(--color-accent);
+	}
+
+	.csd-shell-label {
+		font-size: 0.6875rem;
+		color: var(--color-text-tertiary);
+	}
+
+	.csd-grid {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 0.75rem;
+	}
+
+	.csd-section,
+	.csd-task {
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+	}
+
+	.csd-section {
+		padding: 0.9rem 0.95rem;
+	}
+
+	.csd-task {
+		grid-column: 1 / -1;
+		padding: 1rem;
+		border-color: color-mix(in srgb, var(--color-accent-secondary) 44%, var(--color-border));
+		background:
+			linear-gradient(135deg, color-mix(in srgb, var(--color-accent-secondary) 8%, transparent), transparent 48%),
+			color-mix(in srgb, var(--color-surface) 90%, transparent);
+	}
+
+	.csd-section h3,
+	.csd-task h3 {
+		margin: 0.35rem 0 0.45rem;
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--color-text-primary);
+	}
+
+	.csd-section p {
+		margin: 0;
+		font-size: 0.75rem;
+		line-height: 1.5;
+		color: var(--color-text-secondary);
+	}
+
+	.csd-task ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 0.55rem;
+	}
+
+	.csd-task li {
+		padding: 0.65rem 0.7rem;
+		border: 1px solid var(--color-border);
+		border-radius: 5px;
+		font-size: 0.75rem;
+		line-height: 1.4;
+		color: var(--color-text-secondary);
+		background: var(--color-surface);
+	}
+
+	.csd-caption {
+		margin-top: 1.4rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-size: 0.8125rem;
+		line-height: 1.55;
+		color: var(--color-text-tertiary);
+		font-style: normal;
+		text-align: left;
+	}
+
+	@media (max-width: 780px) {
+		.csd-shell-head {
+			display: grid;
+			gap: 0.35rem;
+		}
+
+		.csd-grid,
+		.csd-task ul {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

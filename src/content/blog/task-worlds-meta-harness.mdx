@@ -1,0 +1,807 @@
+---
+title: "Task Worlds and Meta-Harnesses"
+description: "How task worlds, Badiou, Plasticity, and the AEC-Bench meta-harness turn task prose, evidence, review, governance, and repair into runnable machinery."
+author: "Theodoros Galanos"
+category: "Engineering"
+draft: false
+pubDate: 2026-06-24
+tags: ["agentic-ai", "harness-engineering", "aec-bench", "task-worlds", "ai-evaluation", "philosophy"]
+featured: false
+---
+
+import CertificateStackDiagram from '../../components/charts/CertificateStackDiagram.astro';
+import BearingCapacityConventionFigure from '../../components/charts/BearingCapacityConventionFigure.astro';
+import MetaHarnessFlowDiagram from '../../components/charts/MetaHarnessFlowDiagram.astro';
+import MissingWalkingSpeedFigure from '../../components/charts/MissingWalkingSpeedFigure.astro';
+import {
+	metaHarnessCertificateStack,
+	metaHarnessFlowSteps,
+} from '../../data/meta-harness-diagrams';
+import {
+	bearingCapacityFigure,
+	missingWalkingSpeedFigure,
+} from '../../data/task-world-figures';
+
+Estimated reading time: 15 minutes
+
+## TL;DR
+
+This essay argues that agent tasks in domains like engineering are not just
+prompts or dataset rows. They are worlds: they decide what the agent can see,
+which rules have authority, what counts as evidence, which failures can be
+named, and what can be repaired.
+
+In order to generalise across complex engineering tasks, we need a meta-harness:
+a harness that knows how to construct other harness runs. Given a new, messy
+task, it can produce a problem brief and task-world profile, plan operations over
+that world, run reviewer and governance layers, materialise a recipe, bind
+execution evidence back through sandbox execution, and use failures to improve future world
+designs.
+
+This gives us operational plasticity. Instead of hand-building a new harness for
+every domain, or letting an agent improvise invisibly, the system can adapt while
+keeping its decisions reviewable.
+
+In aec-bench terms, this points toward a contract-driven pipeline:
+
+`task prose -> problem brief -> task-world profile -> operation/reviewer plan -> governed run evidence -> comparison ledger -> repair loop`
+
+The philosophical frame of this work is based on Alain Badiou's work and
+philosophical framework, but the engineering focus is concrete: make task worlds
+legible enough that agents can run, fail, be audited, and reshape the harness
+itself.
+
+## Tasks Are Worlds, Not Prompts
+
+In domains where work is tied to standards, units, evidence, tools,
+conventions, approvals, and liability, an agent task is more than text sent to a
+model. It is a world.
+
+A task world decides what appears to the agent, which actions exist, what counts
+as evidence, what counts as success, which contradictions are tolerated, which
+artifacts survive review, and which failures are repairable. The score is an
+output of that world. It is not the world itself.
+
+This matters most in non-IID domains. Engineering tasks, legal workflows,
+clinical protocols, enterprise operations, security work, and scientific
+experiments do not arrive as neat draws from one stable distribution. They come
+with local conventions, partial information, conflicting sources, hidden
+authority chains, and different meanings of "done."
+
+Two small engineering examples make the point.
+
+In one shallow-foundation task, every numeric input was provided. A strong model
+still failed because it reached for a familiar textbook formula instead of the
+project-specific table the task required. The arithmetic was not the failure.
+The model chose the wrong engineering convention.
+
+<BearingCapacityConventionFigure
+	title="Complete inputs, wrong convention"
+	data={bearingCapacityFigure}
+	caption="The task gave every scalar input. The failure came from choosing the wrong authority for the bearing-capacity factors."
+/>
+
+In a pedestrian-clearance task, the distance was given but walking speed was not.
+The model supplied its own walking speed, calculated a precise answer, and never
+treated the missing scalar as missing. Across repeated runs it invented
+different speeds. Again, the issue was not arithmetic. The issue was the
+relationship between the model and the world's authority structure.
+
+<MissingWalkingSpeedFigure
+	title="Missing scalar, invented constant"
+	data={missingWalkingSpeedFigure}
+	caption="The prompt omitted walking speed. Across repeated runs, the model supplied its own speed and produced confident but inconsistent crossing times."
+/>
+
+Those failures are small, but they expose the larger issue. Put plainly: the
+model needed to know which rulebook to trust, whether it was allowed to fill in
+missing facts, what answer shape mattered, and what evidence a reviewer would
+need later.
+
+That is why benchmark design cannot stop at task text and expected answer.
+
+The practical thesis is:
+
+> Agents operate inside worlds. If we want them to work across new problem
+> spaces, we need a way to describe, compose, validate, and repair those worlds.
+
+Two ideas follow.
+
+Badiou's philosophical vocabulary gives us a sharper way to think about task
+worlds: a world is not a container, but a regime of counting and appearing. The
+main references here are Alain Badiou's *Being and Event*, translated by Oliver
+Feltham, and
+[*Logics of Worlds*](https://www.bloomsbury.com/us/logics-of-worlds-9780826494702/),
+translated by Alberto Toscano.
+
+## Eighteen Years Later
+
+Around eighteen years ago, when I was a much younger researcher at TU Delft, I
+found philosophy. I do not remember the exact path in. I only remember what
+happened after: for a while, it became almost everything I did.
+
+I read Kierkegaard, Freud, Lacan, Zizek, and eventually Badiou. Zizek likes to
+call Badiou "the Master," usually after assigning himself the part of the
+jester. The joke stuck with me, but so did the philosophy.
+
+Badiou gave me a center. His work offered a way to think about what a world is,
+what it means for something to exist in that world, how change happens, how an
+event breaks the old language, and how fidelity to that event can make a new
+truth possible.
+
+That machinery changed how I think. It taught me to work with contradiction
+rather than rush to dissolve it. It shaped the way I read systems, institutions,
+technical claims, and failures. Of all the side trips of knowledge I have taken,
+philosophy is probably the one that did the most damage, in the best possible
+sense.
+
+So it is a strange pleasure to come back to it here, eighteen years later, for a
+practical problem in agent infrastructure.
+
+The idea is simple enough to say plainly:
+
+> Harness design for novel tasks is a way to structure and reconfigure their
+> worlds.
+
+That is the personal reason Badiou is here. The technical reason is that his
+language helps name what harnesses already do: they structure worlds.
+
+A meta-harness makes that theory operational. It composes harness layers on
+demand so agents can act in new worlds without pretending every task belongs to
+the same distribution.
+
+## Making Worlds Strange Again
+
+That theory needs a careful hand. Badiou does not give us a ready-made formal
+theory of agent benchmarks. Instead, he makes the word "world" strange again. 
+
+Badiou's formalisms do not produce agent benchmarks directly. I am using his
+vocabulary as a way to think about meta-harness design.
+
+Specifically, I will be leaning on *Being and Event* for
+situation[^badiou-situation], multiplicity[^badiou-multiplicity],
+count-as-one[^badiou-count-as-one], event[^badiou-event], and
+fidelity[^badiou-fidelity]; and on
+[*Logics of Worlds*](https://www.bloomsbury.com/us/logics-of-worlds-9780826494702/)
+for the shift toward appearance[^badiou-appearance],
+object[^badiou-object], relation[^badiou-relation],
+world logic[^badiou-world-logic], and forms of
+change[^badiou-forms-of-change].
+
+In a typical benchmark vocabulary, a world is a container. Put an agent in a repo,
+a browser, a terminal, a spreadsheet, a simulated API, or a workplace sandbox,
+and call that the world. Badiou's theory makes the question more demanding:
+
+> What operation counted this multiplicity as one world?
+
+For agent tasks, that means asking what has been admitted into the world and
+under what authority:
+
+- which files, messages, database rows, standards, policies, logs, tools, and
+  traces belong;
+- which affordances let the agent perceive or alter them;
+- which side effects count as real;
+- which artifacts count as proof;
+- which failures are nameable by the current taxonomy;
+- which parts of the work exist but do not appear to the agent, verifier,
+  reviewer, or generator.
+
+A task world is more than state. It is appearance.
+
+The **agent-visible world** is what the model can perceive: prompt context, files,
+tool outputs, shell results, browser pixels, DOM state, connector responses,
+memory, logs, and schemas.
+
+The **verifier-visible world** is what tests, state diffs, validators, artifact
+checks, policy checks, and scoring code can inspect.
+
+The **reviewer-visible world** is what a person can reconstruct from the retained
+evidence: traces, screenshots, diffs, transcripts, output files, and
+explanations.
+
+The **generator-visible world** is what the meta-harness can use later to mutate,
+combine, restrict, repair, or retire task worlds.
+
+Badly designed worlds collapse these surfaces. The agent sees one thing, the verifier
+checks another, the reviewer receives a thin final answer, and the generator
+learns almost nothing from the failed run.
+
+Well designed worlds keep the visibility surfaces distinct enough that mismatches become
+objects. If the agent could not see the clause, say that. If the verifier could
+not inspect the artifact, say that. If the reviewer cannot reconstruct why the
+field failed, say that. If the generator cannot tell which part of the world
+caused the failure, the world is not yet generative.
+
+The better question for benchmark design is therefore not:
+
+> What task should we ask?
+
+It is:
+
+> What must appear, to which authority, for this world to make a trustworthy
+> claim?
+
+That sounds philosophical. It is also a harness requirement.
+
+## The Logic Of A Task World
+
+Once a task world is treated as a regime of appearance, the next question is how
+statements inside that world become accepted. The agent says an artifact was
+created. The verifier says a field passed. A reviewer says the answer follows
+the right method. The run certificate says a result can be trusted. A task world
+needs rules for how those statements become valid enough to act on.
+
+Appearance alone is not enough. The world must know when a statement is
+settled, when it needs a witness, when it is only partially supported, and when
+contradictory evidence can be held without corrupting the run.
+
+The harness name for that translation is a logic profile.
+
+A realistic task world needs three kinds of logical gates.
+
+The first is **closure**. Closure borrows from
+[classical logic](https://plato.stanford.edu/entries/logic-classical/): the
+world asks for a clean decision about a proposition. Some propositions should
+be decidable inside the world:
+
+- the file exists or it does not;
+- the schema validates or it does not;
+- the test passes or it fails;
+- the required approval exists or it does not;
+- the forbidden side effect occurred or it did not.
+
+Closure gates end ambiguity. They are right for machine-verifiable invariants,
+exact artifacts, permission boundaries, and state assertions. This is where the
+argument from [Executable Standards](/blog/executable-standards/) enters the
+world layer: obligations become more useful to agents when they stop living
+only as prose and become predicates a verifier can run.
+
+The second is **construction**. Construction borrows from
+[intuitionistic logic](https://plato.stanford.edu/entries/logic-intuitionistic/)
+in the practical sense that a statement counts only when the run can produce a
+witness for it. Before the witness exists, the useful state may be
+not-yet-proven rather than true or false.
+
+"No failing test was found" is not the same as "the required artifact was
+produced." "The model described a JSON object" is not the same as "the JSON file
+exists where the verifier can inspect it." "No reviewer objected" is not the
+same as "review evidence exists."
+
+Badiou's intensities of appearance matter here. Some things in a task world do
+not simply exist or not exist. They appear weakly, partially, or fully. A rubric
+item can be absent, weakly evidenced, partly satisfied, or satisfied. An LLM
+judge is a practical version of this graded appearance if its score, rubric,
+model, cited evidence, and rationale are preserved as witness material. It is
+not an oracle. It is an evidence-producing component inside the world.
+
+Construction gates are right for reports, patches, manifests, validator output,
+durable run records, review approvals, generated datasets, and any claim that
+should not pass by absence of disproof.
+
+The third is **containment**. Containment borrows from
+[paraconsistent logic](https://plato.stanford.edu/entries/logic-paraconsistent/)
+in the practical sense that contradiction is treated as local evidence to be
+scoped, not a reason for the whole run to collapse. Real task worlds contain
+contradictions. Source documents conflict. Runtime behavior disagrees with docs.
+Two agents diagnose different harness layers. A score says failure because the
+verifier did not find `report.json`, while the filesystem trace shows the agent
+wrote the required report to a different output path. A policy blocks mutation
+through one channel while another channel permits an equivalent state change.
+
+Containment gates localize contradiction. The world records it with scope,
+source, affected claims, and allowed next actions.
+
+This is the compact logic profile:
+
+```text
+closure: what can be decided cleanly?
+construction: what must be witnessed, and with what strength, before it counts?
+containment: what contradictions can be held without corrupting the run?
+```
+
+That profile is not decorative metadata. It changes the run.
+
+If a task world has no closure gates, it is too vague to score. If it has no
+construction gates, it rewards unsupported claims. If it has no containment
+gates, every contradiction gets flattened into pass, fail, or confusion.
+
+A world card should therefore declare its logic profile:
+
+```yaml
+logic_profile:
+  closure_gates:
+    - proposition: "required artifact exists"
+      authority: "filesystem"
+      failure_effect: "run_invalid"
+    - proposition: "schema validates"
+      authority: "schema_validator"
+      failure_effect: "run_invalid"
+  construction_gates:
+    - proposition: "answer is supported by preserved evidence"
+      required_witnesses: ["artifact", "trace_pointer", "source_span"]
+      acceptance: "all required witnesses present"
+      failure_effect: "claim_unproven"
+    - proposition: "rubric item is satisfied"
+      required_witnesses: ["rubric_score", "judge_rationale", "cited_evidence"]
+      acceptance: "score >= threshold with preserved rationale"
+      failure_effect: "review_required"
+  containment_gates:
+    - contradiction: "source and verifier disagree"
+      required_record: ["sources", "affected_claims", "allowed_next_actions"]
+      failure_effect: "world_needs_repair_if_unscoped"
+    - contradiction: "trace and score disagree"
+      required_record: ["trace_pointer", "score_field", "diagnosis"]
+      failure_effect: "world_needs_repair_if_unscoped"
+  event_triggers:
+    - "unclassifiable failure mode"
+    - "score artifact contradiction"
+    - "side effect through unmodeled channel"
+```
+
+Those entries are not merely prompts to an agent. They are declarations that
+split responsibility. In aec-bench terms, a richer world description would carry
+this profile beside the task-world profile: closure gates become verifier or artifact
+checks, construction gates become required evidence and review packets,
+containment gates become contradiction-ledger records, and event triggers become
+candidates for schema, verifier, evidence, governance, or generator repair.
+
+In code, this deliberately uses plain field names rather than philosophical
+labels. The contract is a `TaskWorldProfile` with `logic_profile` fields such as
+`closure_gates`, `construction_gates`, `containment_gates`, `event_triggers`, and
+`agentic_review`. The same profile also carries an `operation_profile` for
+subset, difference, projection, and product handles. The conceptual terms stay
+in the essay. The execution contract stays reviewable.
+
+Deterministic code should own the parts that can be made mechanical: contract
+validation, hard artifact checks, schema checks, required witness collection,
+ledger recording, and target emission. Agentic orchestration should own the
+parts that remain open-world: interpreting weak evidence, reading judge
+rationales, deciding whether a contradiction matters, proposing a repair, and
+choosing which harness reconfiguration to attempt next.
+
+That is the meta-harness boundary. Code makes the admissible moves explicit but
+agents reason over the evidence and decide which move to try. The goal is not
+to cover every case with heuristics, but to preserve enough structure and
+evidence that open-world judgement can act without becoming invisible.
+
+A task world is not merely a bundle of files and tests. It is structured by
+logic. It says how the world decides, how it proves, how it survives
+contradiction, and how it knows when its own language has failed.
+
+## Failure Is A World Relation
+
+Once the world has logic, failure stops being a single category.
+
+A low score is not automatically a model defect. The same score can come from
+many failures:
+
+- the model used the wrong method;
+- retrieval exposed the wrong source;
+- a unit binding failed;
+- the output contract rejected the shape;
+- the verifier checked the wrong proposition;
+- the task hid a required assumption;
+- the harness failed to preserve the needed evidence;
+- governance blocked a necessary action;
+- the world contained a contradiction the schema failed to represent.
+
+Those failures need different repairs. Model weakness is only one possibility.
+Sometimes the agent needs a better tool. Sometimes the verifier needs a new
+field. Sometimes the task wording needs to expose missing information. Sometimes
+the output contract is too brittle. Sometimes the world itself counted the wrong
+multiplicity.
+
+This is why provenance belongs inside the harness.
+
+Observability is often treated as something added after the run. For task
+worlds, observability is part of the world. The world decides which traces
+exist, which artifacts are durable, which side effects are visible, which claims
+have witnesses, and which authorities inspect which evidence.
+
+Reward has the same problem. A scalar score looks clean, but reward is an
+engineering artifact. It contains assumptions, tolerances, field bindings,
+authority choices, and blind spots.
+
+The diagnostic triangle is:
+
+- raw output: what the model actually wrote;
+- verifier rule: what the scoring code expected;
+- semantic behavior: what the answer means in context.
+
+When those disagree, the repair target is not obvious. Evidence determines
+whether the fault lives in the prompt, task, verifier, schema, evidence rule,
+governance policy, or world shape. Without preserved evidence, every diagnosis
+becomes a story told after the fact.
+
+Task worlds therefore need evidence contracts: rules for what must survive
+before a result can be trusted, debugged, or repaired.
+
+## Events Force New World Language
+
+Ordinary failure is nameable inside the current world.
+
+The schema was malformed. The required file was missing. The test failed. The
+wrong unit was used. The reviewer rejected the output. These failures can be
+serious, but the world already knows how to classify them.
+
+An Event, in this engineering translation of Badiou, is different. A harness
+Event is a trace that the current world cannot adequately name, but that is
+important enough to force a new distinction into the world generator.
+
+Examples:
+
+- the benchmark score says failure because an expected output was missing, but
+  durable artifacts show the agent created the required file in an unmodeled
+  location;
+- the model appears incapable until raw output shows it was trapped by an
+  invisible protocol mismatch;
+- a permission policy forbids shell mutation, but equivalent mutation happens
+  through file-edit affordances;
+- a generated task passes tests while damaging a state dimension the verifier
+  never inspected;
+- a reward rule rejects an answer a domain reviewer would accept, or accepts an
+  answer a domain reviewer would reject.
+
+Each case shows a world whose evaluative language was inadequate.
+
+Fidelity is the repair discipline after such a trace. Do not smooth it away. Do
+not file it under generic model failure. Name the anomaly, decide which layer
+failed, add the missing distinction, rerun the affected world and nearby
+regression worlds, and preserve the lineage.
+
+That gives a stronger interpretation of harness evolution:
+
+> Evental traces force new distinctions into the world generator.
+
+The same trace should also change downstream agentic action. Once the anomaly
+has a name, an agent is not merely asked to try again inside the old world. It
+gets a revised action space: gather missing evidence, route to reviewer, patch a
+verifier, rebind an output path, tighten a permission model, compose a different
+evidence rule, or rerun nearby worlds.
+
+That is a higher bar than "let an agent improve the harness." Fidelity becomes
+an action policy: preserve the trace, act through named repair moves, and make
+the next run test whether the new distinction holds. This protects against the
+lazy improvement loop where every failure becomes a broader prompt, a looser
+verifier, or a special case.
+
+The harder repair question is:
+
+> What did this failure make visible that the previous world could not name?
+
+That question is the beginning of innovation. Not novelty as decoration, but a
+new distinction that changes what future worlds can see, decide, prove, and
+repair.
+
+## Static Harnesses Are Too Rigid
+
+If task worlds vary this much, static harnesses become a bottleneck.
+
+A fixed harness assumes the important parts of the world are already known:
+the input form, tool surface, context policy, output contract, verifier,
+evidence rules, permission model, and repair path. That is fine for a stable
+benchmark family. It is brittle when new problem spaces keep arriving.
+
+Non-IID domains need Plasticity.[^malabou-plasticity] Not chaos. Plasticity.
+
+New problem spaces often need different context loaders, decomposition
+patterns, verifier families, evidence contracts, permission boundaries,
+construction gates, or contradiction policies.
+
+If those choices are hand-built every time, the system does not scale. If those
+choices are hidden inside an agent's free-form reasoning, the system cannot be
+trusted. We need a layer between those extremes: a meta-harness.
+
+A meta-harness does not treat the harness as fixed background machinery. It
+treats harness composition as the task.
+
+Given a new problem space, it asks:
+
+- what kind of world is this?
+- what must appear, and to whom?
+- what can be decided by closure?
+- what requires constructed evidence?
+- what contradictions must be contained?
+- which operations over the world are allowed?
+- which reviewer, governance, and evidence layers are needed?
+- which run surface should materialise the result?
+- which approvals are needed?
+- what evidence must survive for repair?
+
+This is the layer of operational plasticity agents need. It lets the system
+adapt to new worlds while keeping the adaptation legible.
+
+## Meta-Harness As Operational Plasticity
+
+The meta-harness operating principle is compact: AI proposes; contracts
+structure; validators check; diagnostics explain; governance gates;
+emitters write artifacts; execution is explicit; and the ledger remembers.
+
+AI is useful where the world is open-ended: interpreting a messy problem
+brief, finding similar worlds, choosing candidate operation paths, proposing a
+workflow, explaining a compatibility failure, or drafting a scoped repair.
+
+The deterministic layer is useful where the system must not improvise:
+contract validation, schema checks, operation-handle application, evidence
+collection, governance gates, artifact emission, and ledger recording.
+
+The agent and harness have different jobs.
+
+Agents search. Contracts make proposals writable. Harness-owned code checks
+whether the proposed process fits. Diagnostics tell the agent or reviewer why it
+did not fit. Governance decides whether the run can proceed. Emitters produce
+concrete artifacts. Execution happens as a separate act. The ledger preserves
+what happened so failures can become repair material.
+
+The result is a controlled way to compose and configure harness layers on
+demand.
+
+<MetaHarnessFlowDiagram
+	title="Meta-harness composition loop"
+	steps={metaHarnessFlowSteps}
+	caption="The meta-harness turns a problem description into a composed, checked, governed, and recorded harness run. Repair evidence feeds back into future compositions."
+/>
+
+That diagram is the practical form of the philosophical argument. Worlds are not
+static containers. They are structures that can be described, assembled,
+tested, contradicted, repaired, and reused.
+
+## What This Looks Like In aec-bench
+
+The current AEC-Bench implementation is still early, but it is no longer only a
+sketch. The contracts are specific enough to review, and the workflow can be
+driven from the library or CLI.
+
+The core translation is now:
+
+`task prose -> ProblemSpaceBrief -> TaskWorldProfile -> logic and operation profiles -> reviewer/governance packets -> recipe workspace -> run evidence and ledger`.
+
+The input is what someone asks for. The brief names the objective, task request,
+evidence requirements, pressure points, and governance constraints. The
+`TaskWorldProfile` keeps the task unit, logic profile, and operation profile
+together. The reviewer layer inspects run evidence after the verifier. The
+operation orchestrator plans deterministic operations where handles exist and
+records agentic proposals where they do not. Governance decides whether a
+proposal is run-only, a world-schema change, or a world-generator change.
+
+The main recipe command is deliberately script-shaped:
+
+```bash
+aec-bench meta-harness recipe \
+  --task-file task.md \
+  --baseline-world baseline-world.json \
+  --baseline-run baseline-run.json \
+  --candidate-world candidate-world.json \
+  --candidate-run candidate-run.json \
+  --output artefacts/meta-harness/demo
+```
+
+It writes `recipe.json`, `run_recipe.sh`, `compare_candidate.py`, and a README.
+Once baseline and candidate evidence exist, the generated comparison script
+writes `comparison/comparison.json` and `comparison/comparison.md`.
+
+Here is one concrete case. A benchmark run fails. The model may have used the
+wrong method, or the verifier may have looked for `report.json` while the agent
+wrote the required evidence somewhere else. The meta-harness needs a small
+diagnosis world around that run: what evidence can be inspected, what actions
+are allowed, what result should be produced, and what repair evidence must
+survive.
+
+```yaml
+task_world:
+  world_id: benchmark-operations.diagnosis
+  name: Harbor trial diagnosis
+  task_unit: harbor_trial
+  logic_profile:
+    closure_gates:
+      - id: required_agent_output_exists
+        evidence_key: artifacts.agent/output.md
+        authority: filesystem
+        failure_effect: run_invalid
+    construction_gates:
+      - id: repair_plan_has_witnesses
+        construction_required:
+          - trial_record
+          - verifier_artifact
+          - trace_pointer
+        failure_effect: claim_unproven
+    containment_gates:
+      - id: verifier_artifact_disagreement
+        contradiction: "verifier failed but durable artifact exists"
+        required_record:
+          - trace_pointer
+          - score_field
+          - diagnosis
+        failure_effect: governance_review
+    event_triggers:
+      - id: verifier_language_gap
+        repair_targets:
+          - verifier
+          - schema
+          - evidence
+    agentic_review:
+      required: true
+      review_modes:
+        - verifier_result
+        - output_artifacts
+        - trace
+        - contradiction_ledger
+  operation_profile:
+    projection_axes:
+      - artifact_evidence
+      - governance
+    difference_axes:
+      - verifier_surface
+```
+
+In plain terms: this is not "ask a model to debug the run." It is a reusable
+harness for a specific kind of post-run work. It gives an agent the trial
+records and verifier evidence, asks for a failure classification and a scoped
+repair plan, and requires durable artifacts so a reviewer can see why the repair
+was proposed.
+
+The operation orchestrator makes the autonomous part explicit. It gives an agent
+an environment, principles, tools, expected artifacts, and examples. The agent
+may propose a plan, but harness-owned code applies deterministic operations or
+records proposals. If a projection, difference, subset, or product operation
+cannot be applied from declared handles, the result is not hidden mutation. It is
+an orchestration request or a bounded proposal with evidence references.
+
+There is an important negative space here: this is not yet a universal component
+catalogue or harness compiler. The implemented surface is narrower and more
+useful: typed world profiles, deterministic operation handles, reviewer
+artifacts, governance decisions, Harbor import, recipe materialisation, bounded
+autonomy, and a ledger.
+
+A public API can stay small: send task prose, optional attachments, existing
+baseline and candidate evidence, and model endpoint configs; get back a problem
+brief, task-world profile request, reviewer packet, operation plan, governance
+outcome, recipe workspace, comparison result, and ledger reference.
+
+This is what keeps Plasticity from becoming ad hoc generation. The system can
+change shape while preserving a structure that someone can review.
+
+Good diagnostics are what let agents participate without hiding the decision.
+
+## From Run To Certificate
+
+The trusted output of this system is not a leaderboard row.
+
+It is a certificate.
+
+A certificate is a bounded record of what survived the run. It binds three things:
+what was attempted, what evidence was preserved, and what result can be trusted.
+
+For an ordinary task world, that means binding four things:
+
+- task and inputs;
+- agent and tools;
+- output and verifier result;
+- traces, hashes, and review evidence.
+
+A meta-harness run needs a larger certificate because the harness itself was
+composed during the run.
+
+<CertificateStackDiagram
+	title="Meta-harness certificate stack"
+	stack={metaHarnessCertificateStack}
+	caption="A meta-harness certificate records the composition and governance of the harness, then wraps the ordinary task-run evidence produced by the executed or imported run."
+/>
+
+Using the existing Harbor machinery, aec-bench can take a natural-language input
+and stage a problem-space brief task. It can generate or review a task-world
+profile, run post-verifier reviewer layers over workspace or Harbor evidence,
+ask the operation orchestrator for a plan, apply governance, materialise a
+comparison recipe, and import Harbor trial records back into a `task_run`
+evidence object.
+
+The autonomous runner is bounded rather than magical. It stops on max
+iterations, cost, stagnation, governance gates, or missing artifacts. Missing
+inputs pause the process instead of being invented.
+
+This is what makes harness composition reviewable.
+
+The certificate can be a sidecar file, ledger entry, manifest, report, or bundle
+of linked artifacts. The format matters less than reconstruction. A reviewer
+should be able to see what world was built, which harness was composed, why it
+was allowed to run, what happened, and what evidence supports the result.
+
+That evidence can then be reused. A run can become a verifier result, audit
+label, dataset row, training example, recipe update, or repair target. The model
+is not the only thing that learns. The world generator, operation profiles,
+reviewer layer, and ledger also accumulate distinctions that future runs can
+use.
+
+## Conclusion
+
+Put simply:
+
+> Agents need worlds, and worlds need harnesses that can change.
+
+In domains such as engineering and design, this becomes more specific:
+
+> In non-IID domains, capability depends on whether
+> we can compose the right world around the task.
+
+That does not make the model unimportant. The model still matters enormously.
+But the model acts through a world: what it can see, what it can touch, what it
+must prove, what contradictions it can hold, which failures can be named, and
+which evidence survives.
+
+Badiou helps us stop treating "world" as a container. A task world counts a
+multiplicity, regulates appearance, creates decision points, requires witness
+artifacts, contains contradictions, and sometimes encounters traces its current
+language cannot name.
+
+The meta-harness turns that into machinery. It describes the world, evaluates
+profiles, runs review and governance loops, materialises comparison recipes,
+records what happened, and feeds repair evidence back into the next composition.
+
+That is the layer of plasticity I think agent systems need.
+
+Not infinite autonomy. Not static evals. A compositional layer where new task
+worlds can be made legible enough to run, inspect, trust, and change.
+
+The model is not the only thing learning.
+
+The harness now has a place to remember.
+
+[^badiou-situation]: A situation is a structured presentation: a way in which a
+    multiplicity is gathered and made intelligible as a domain. In this essay, a
+    task world is situation-like because it gathers files, tools, rules, traces,
+    evidence, and success criteria into one operational setting.
+
+[^badiou-multiplicity]: Multiplicity names Badiou's refusal to begin from a
+    pre-given One. A task world begins the same way: as many heterogeneous
+    things before the harness gives them boundary, order, and relevance.
+
+[^badiou-count-as-one]: The count-as-one is the operation that lets a
+    multiplicity appear as one situation. For harness design, this is the
+    boundary-making act that says which artifacts, affordances, authorities, and
+    claims belong to this task world.
+
+[^badiou-event]: An event is a rupture that the existing situation cannot fully
+    name using its old categories. In meta-harness terms, an event is the kind
+    of failure or trace that exposes a missing distinction in the world itself,
+    not merely a mistake by the agent.
+
+[^badiou-fidelity]: Fidelity is the continued work of drawing consequences from
+    an event rather than treating it as noise. In this article, fidelity becomes
+    repair discipline: preserving the trace, naming the new distinction, and
+    changing the harness so the world can account for it next time.
+
+[^badiou-appearance]: Appearance is the question of how something shows up in a
+    world, and with what force or consequence. For task worlds, this becomes the
+    split between what appears to the agent, the verifier, the reviewer, and the
+    generator.
+
+[^badiou-object]: An object is not an isolated thing; it appears within a world
+    with identity, difference, and relations. In a harness, an object may be a
+    file, claim, tool, artifact, side effect, or evidence record whose meaning
+    depends on the world that presents it.
+
+[^badiou-relation]: Relation names how objects are connected, compared,
+    distinguished, or made consequential inside a world. In a task world, this
+    includes dependencies, permissions, provenance, authority chains, and the
+    links between evidence and claims.
+
+[^badiou-world-logic]: World logic is the local order that governs appearing:
+    what can show up, how strongly it counts, and how differences matter. In
+    meta-harness terms, it becomes the run logic that decides what can be
+    closed, what must be witnessed, and what contradiction can be contained.
+
+[^badiou-forms-of-change]: Forms of change refer to different ways a world can
+    be modified, from ordinary variation to stronger transformations that alter
+    what the world can recognize. For harnesses, this is the difference between
+    adjusting parameters, repairing a verifier, adding a missing evidence
+    relation, or composing a new world shape.
+
+[^malabou-plasticity]: I am borrowing the capital-P sense of Plasticity from
+    Catherine Malabou's work, especially *The Future of Hegel*, *What Should We
+    Do with Our Brain?*, *The Ontology of the Accident*, and
+    [*Plasticity at the Dusk of Writing*](https://cup.columbia.edu/book/plasticity-at-the-dusk-of-writing/9780231145244).
+    Malabou's plasticity is not mere flexibility. It is the capacity to receive
+    form, give form, and sometimes break or destroy form. In this essay,
+    meta-harness Plasticity means a harness layer that can be shaped by a new
+    task world, actively reshape its own composition, and abandon an old form
+    when an Event shows that the old world language no longer works.

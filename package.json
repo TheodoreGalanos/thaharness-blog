@@ -9,7 +9,7 @@
     "astro": "astro",
     "newsletter:broadcast": "node ./scripts/newsletter-broadcast.mjs",
     "newsletter:sync-segment": "node ./scripts/newsletter-sync-segment.mjs",
-    "test": "node --test ./scripts/lib/newsletter.test.js"
+    "test": "node --test ./tests/*.test.ts ./scripts/lib/*.test.js"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.13",
