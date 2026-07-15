@@ -1,0 +1,161 @@
+<!-- ABOUTME: Ledger figure showing how three task scores were raised to 1.0 by pinning answers into prompts. -->
+<!-- ABOUTME: Each row renders before-score, the pinned text as an exhibit, and the resulting ceiling. -->
+---
+import type { ManufacturedCeilingRow } from '../../data/fluent-but-unsafe-figures';
+
+interface Props {
+	title?: string;
+	rows: ManufacturedCeilingRow[];
+	caption?: string;
+}
+
+const { title, rows, caption } = Astro.props;
+---
+
+<figure class="mcf" aria-label={title ?? 'How 1.0 was manufactured'}>
+	{title && <div class="mcf-title">{title}</div>}
+
+	<div class="mcf-rows">
+		{rows.map((row) => (
+			<div class="mcf-row">
+				<div class="mcf-task">{row.task}</div>
+				<div class="mcf-flow">
+					<div class="mcf-score" data-kind="before">{row.before}</div>
+					<div class="mcf-arrow" aria-hidden="true"></div>
+					<div class="mcf-pinned">
+						<span class="mcf-pinned-kicker">written into the instructions</span>
+						{row.pinned}
+					</div>
+					<div class="mcf-arrow" aria-hidden="true"></div>
+					<div class="mcf-score" data-kind="after">{row.after}</div>
+				</div>
+			</div>
+		))}
+	</div>
+
+	{caption && <figcaption class="mcf-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.mcf {
+		--mcf-bad: #d87b55;
+
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+		container-type: inline-size;
+	}
+
+	.mcf-title {
+		margin: 0 0 1.25rem;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.mcf-rows {
+		display: flex;
+		flex-direction: column;
+		gap: 0.875rem;
+	}
+
+	.mcf-row {
+		padding: 1rem 1.25rem;
+		border: 1px solid var(--color-border);
+		border-radius: 8px;
+		background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+	}
+
+	.mcf-task {
+		margin-bottom: 0.75rem;
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+	}
+
+	.mcf-flow {
+		display: grid;
+		grid-template-columns: auto 1.25rem 1fr 1.25rem auto;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	@container (max-width: 560px) {
+		.mcf-flow {
+			grid-template-columns: auto 1fr auto;
+		}
+
+		.mcf-arrow {
+			display: none;
+		}
+
+		.mcf-pinned {
+			grid-column: 2;
+		}
+	}
+
+	.mcf-score {
+		font-family: var(--font-mono);
+		font-size: 1.25rem;
+		padding: 0.375rem 0.625rem;
+		border-radius: 6px;
+		border: 1px solid var(--color-border);
+		background: var(--color-bg);
+	}
+
+	.mcf-score[data-kind='before'] {
+		color: var(--color-text-secondary);
+	}
+
+	.mcf-score[data-kind='after'] {
+		color: var(--mcf-bad);
+		border-color: color-mix(in srgb, var(--mcf-bad) 45%, var(--color-border));
+	}
+
+	.mcf-arrow {
+		height: 1px;
+		background: var(--color-border);
+		position: relative;
+	}
+
+	.mcf-arrow::after {
+		content: '';
+		position: absolute;
+		right: -1px;
+		top: -3px;
+		border-left: 5px solid var(--color-border);
+		border-top: 3.5px solid transparent;
+		border-bottom: 3.5px solid transparent;
+	}
+
+	.mcf-pinned {
+		padding: 0.625rem 0.875rem;
+		border: 1px dashed color-mix(in srgb, var(--mcf-bad) 55%, var(--color-border));
+		border-radius: 6px;
+		background: color-mix(in srgb, var(--mcf-bad) 6%, var(--color-bg));
+		font-size: 0.8125rem;
+		line-height: 1.5;
+		color: var(--color-text-primary);
+	}
+
+	.mcf-pinned-kicker {
+		display: block;
+		margin-bottom: 0.25rem;
+		font-family: var(--font-mono);
+		font-size: 0.5625rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--mcf-bad);
+	}
+
+	.mcf-caption {
+		margin-top: 1rem;
+		font-size: 0.8125rem;
+		line-height: 1.5;
+		color: var(--color-text-tertiary);
+	}
+</style>

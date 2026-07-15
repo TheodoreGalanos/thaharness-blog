@@ -1,0 +1,26 @@
+{
+  "recorded": {
+    "reward": 0.95,
+    "gates": {
+      "review_matrix": 0.30,
+      "recomputed_evidence": 0.20,
+      "finding_and_action_links": 0.20,
+      "readiness_decision": 0.20,
+      "identity_and_claim_boundary": 0.05
+    },
+    "note": "All engineering checks passed. The original verifier rejected the phrase 'does not constitute' because it expected the equivalent phrase 'does not claim'."
+  },
+  "verifier_only_rescore": {
+    "reward": 1.0,
+    "task_commit": "1e78c3c7ad856a1a9124e737f1f365d5a8616957",
+    "gates": {
+      "review_matrix": 0.30,
+      "recomputed_evidence": 0.20,
+      "finding_and_action_links": 0.20,
+      "readiness_decision": 0.20,
+      "identity_and_claim_boundary": 0.10
+    },
+    "note": "The model response did not change. The corrected verifier accepts both equivalent phrasings."
+  },
+  "hidden_condition_revealed_after_submission": "freeboard_deficient"
+}

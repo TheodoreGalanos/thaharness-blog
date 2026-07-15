@@ -1,0 +1,42 @@
+{
+  "run_id": "lh01-freeboard-sonnet",
+  "task": {
+    "repository": "https://github.com/TheodoreGalanos/aec-bench",
+    "commit": "1e78c3c7ad856a1a9124e737f1f365d5a8616957",
+    "template": "road-low-point-issue-review-package",
+    "template_version": "1.0",
+    "seed": 20260706,
+    "difficulty": "medium",
+    "generated_instance": "urban-arterial-sag-urban-arterial-02",
+    "hidden_condition_revealed_after_submission": "freeboard_deficient"
+  },
+  "model_run": {
+    "status": "completed",
+    "model": "au.anthropic.claude-sonnet-4-6",
+    "adapter": "pydantic_ai",
+    "input_tokens": 164007,
+    "output_tokens": 14518,
+    "output_source": "direct_write",
+    "tool_steps": 16
+  },
+  "scores": {
+    "recorded": 0.95,
+    "verifier_only_rescore": 1.0,
+    "response_changed_for_rescore": false
+  },
+  "published_files": {
+    "trajectory.jsonl": {
+      "sha256": "3bfc047bca0cbb14a0fac35c56f9163671516fb4ec926dcc47cf57d0e2bc9266",
+      "sanitised": true,
+      "note": "Host paths, timestamps, ownership metadata, and duplicated copies of the final review were removed."
+    },
+    "review.md": {
+      "sha256": "4e9852f15d78947903d3d908388ae829cbd8d473d4f886f29c6e7e1498c8e243",
+      "sanitised": false
+    },
+    "verifier.json": {
+      "sha256": "d2916791d9ee2e75b66a3c21ff79d49857e2328648dea59fe8fb914efe61ba44",
+      "sanitised": false
+    }
+  }
+}

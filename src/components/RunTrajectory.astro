@@ -1,0 +1,619 @@
+<!-- ABOUTME: Renders a compact or complete audit spine for one published model run. -->
+<!-- ABOUTME: Connects model actions to evidence, decisions, raw artefacts, and immutable source code. -->
+---
+import {
+	fluentButUnsafeSourceLinks,
+	type PublishedRun,
+} from '../data/fluent-but-unsafe-run';
+
+interface Props {
+	run: PublishedRun;
+	mode?: 'preview' | 'full';
+}
+
+const { run, mode = 'preview' } = Astro.props;
+const moments = mode === 'preview' ? run.moments.filter((moment) => moment.preview) : run.moments;
+const score = (value: number) => value.toFixed(2);
+---
+
+<figure
+	class:list={['run-trajectory', `run-trajectory-${mode}`]}
+	data-run-trajectory
+	data-mode={mode}
+	aria-labelledby={`${run.id}-${mode}-title`}
+>
+	<header class="run-header">
+		<div>
+			<span class="run-kicker">One complete review</span>
+			<h3 id={`${run.id}-${mode}-title`}>{run.title}</h3>
+			<p>{run.deck}</p>
+		</div>
+		<span class="run-decision">{run.receipt.decision}</span>
+	</header>
+
+	<dl class="run-receipt" aria-label="Run receipt">
+		<div>
+			<dt>Model</dt>
+			<dd>{run.receipt.modelLabel}</dd>
+		</div>
+		<div>
+			<dt>Source material</dt>
+			<dd>{run.receipt.documentCount} documents</dd>
+		</div>
+		<div>
+			<dt>Working record</dt>
+			<dd>{run.receipt.toolSteps} steps</dd>
+		</div>
+		<div>
+			<dt>Score receipt</dt>
+			<dd>
+				<del>{score(run.receipt.recordedScore)}</del>
+				<span aria-hidden="true"> → </span>
+				<span class="run-score-final">{score(run.receipt.rescoredScore)}</span>
+			</dd>
+		</div>
+	</dl>
+
+	<p class="run-rescore-note">
+		<strong>Why two scores?</strong> {run.receipt.rescoreNote}
+	</p>
+
+	<ol class="run-spine">
+		{moments.map((moment, index) => (
+			<li id={`run-moment-${moment.id}`} data-moment={moment.id} data-kind={moment.kind}>
+				<div class="run-node" aria-hidden="true">
+					<span>{String(index + 1).padStart(2, '0')}</span>
+				</div>
+				<div class="run-moment">
+					<header>
+						<span>{moment.label}</span>
+						<h4>{moment.title}</h4>
+					</header>
+					<p>{moment.summary}</p>
+
+					{moment.comparisons && (
+						<div class="run-comparison-wrap">
+							<table class="run-comparison">
+								<caption class="sr-only">Design values compared with the model's recomputation</caption>
+								<thead>
+									<tr>
+										<th scope="col">Check</th>
+										<th scope="col">Design</th>
+										<th scope="col">Recomputed</th>
+									</tr>
+								</thead>
+								<tbody>
+									{moment.comparisons.map((comparison) => (
+										<tr>
+											<th scope="row">{comparison.label}</th>
+											<td>{comparison.stated}</td>
+											<td>{comparison.recomputed}</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+					)}
+
+					{moment.evidence && (
+						<dl class="run-evidence">
+							{moment.evidence.map((item) => (
+								<div data-tone={item.tone ?? 'neutral'}>
+									<dt>{item.label}</dt>
+									<dd>{item.value}</dd>
+								</div>
+							))}
+						</dl>
+					)}
+
+					<details open={mode === 'full' && moment.id === 'defect'}>
+						<summary>Read the exact excerpt</summary>
+						<pre><code>{moment.excerpt}</code></pre>
+					</details>
+				</div>
+			</li>
+		))}
+	</ol>
+
+	<footer class="run-footer">
+		{mode === 'preview' ? (
+			<a class="run-primary-link" href="/runs/road-low-point-review/">
+				Read the complete run <span aria-hidden="true">→</span>
+			</a>
+		) : (
+			<nav class="run-artifacts" aria-label="Download run records">
+				<a href={run.artifacts.review}>Final review</a>
+				<a href={run.artifacts.trajectory}>Raw working record</a>
+				<a href={run.artifacts.verifier}>Score breakdown</a>
+				<a href={run.artifacts.receipt}>Reproduction receipt</a>
+			</nav>
+		)}
+
+		<nav class="run-source-links" aria-label="Inspect the aec-bench source">
+			<span>Inspect the machinery</span>
+			{fluentButUnsafeSourceLinks.map((link) => (
+				<a href={link.href} title={link.description}>{link.label}</a>
+			))}
+		</nav>
+	</footer>
+
+	<figcaption>
+		The task documents are synthetic. The model was not told which hidden version it received.
+	</figcaption>
+</figure>
+
+<style>
+	.run-trajectory {
+		--run-finding: #d87b55;
+		--run-line: color-mix(in srgb, var(--color-accent-secondary) 38%, var(--color-border));
+
+		margin: 3.25rem 0;
+		padding: clamp(1.1rem, 3vw, 2rem);
+		border: 1px solid var(--color-border);
+		border-top: 2px solid var(--color-accent-secondary);
+		background: var(--color-surface);
+		color: var(--color-text-primary);
+		text-align: left;
+		container-type: inline-size;
+	}
+
+	.run-header,
+	.run-receipt,
+	.run-rescore-note,
+	.run-moment,
+	.run-footer {
+		text-align: left;
+	}
+
+	.run-header {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 1.5rem;
+		align-items: start;
+	}
+
+	.run-kicker,
+	.run-moment header > span,
+	.run-receipt dt,
+	.run-source-links > span {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.run-header h3 {
+		margin: 0.45rem 0 0;
+		font-family: var(--font-display);
+		font-size: clamp(1.6rem, 4vw, 2.35rem);
+		font-weight: 500;
+		line-height: 1.15;
+		letter-spacing: -0.015em;
+	}
+
+	.run-header p {
+		max-width: 42rem;
+		margin: 0.75rem 0 0;
+		font-family: var(--font-body);
+		font-size: 1rem;
+		line-height: 1.6;
+		color: var(--color-text-secondary);
+	}
+
+	.run-decision {
+		padding: 0.4rem 0.65rem;
+		border: 1px solid color-mix(in srgb, var(--run-finding) 58%, var(--color-border));
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--run-finding);
+		white-space: nowrap;
+	}
+
+	.run-receipt {
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		margin: 1.75rem 0 0;
+		border-top: 1px solid var(--color-border);
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.run-receipt > div {
+		padding: 0.9rem 0.85rem;
+		border-right: 1px solid var(--color-border);
+	}
+
+	.run-receipt > div:first-child {
+		padding-left: 0;
+	}
+
+	.run-receipt > div:last-child {
+		border-right: 0;
+	}
+
+	.run-receipt dt {
+		margin: 0 0 0.3rem;
+	}
+
+	.run-receipt dd {
+		margin: 0;
+		font-family: var(--font-mono);
+		font-size: 0.8rem;
+		line-height: 1.4;
+		color: var(--color-text-primary);
+	}
+
+	.run-receipt del {
+		color: var(--color-text-tertiary);
+		text-decoration-thickness: 1px;
+	}
+
+	.run-score-final {
+		color: var(--color-accent-secondary);
+	}
+
+	.run-rescore-note {
+		margin: 0;
+		padding: 0.75rem 0 0;
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+		line-height: 1.55;
+		color: var(--color-text-tertiary);
+	}
+
+	.run-rescore-note strong {
+		color: var(--color-text-secondary);
+		font-weight: 500;
+	}
+
+	.run-spine {
+		list-style: none;
+		margin: 2rem 0 0;
+		padding: 0;
+	}
+
+	.run-spine > li {
+		position: relative;
+		display: grid;
+		grid-template-columns: 2.5rem minmax(0, 1fr);
+		gap: 1rem;
+		margin: 0;
+		padding: 0 0 1.75rem;
+	}
+
+	.run-spine > li:not(:last-child)::before {
+		content: '';
+		position: absolute;
+		top: 2rem;
+		bottom: 0;
+		left: 0.98rem;
+		width: 1px;
+		background: var(--run-line);
+	}
+
+	.run-node {
+		position: relative;
+		z-index: 1;
+		display: grid;
+		place-items: center;
+		width: 2rem;
+		height: 2rem;
+		border: 1px solid var(--run-line);
+		background: var(--color-surface);
+		font-family: var(--font-mono);
+		font-size: 0.625rem;
+		color: var(--color-accent-secondary);
+	}
+
+	li[data-kind='finding'] .run-node,
+	li[data-kind='decision'] .run-node {
+		border-color: color-mix(in srgb, var(--run-finding) 62%, var(--color-border));
+		color: var(--run-finding);
+	}
+
+	.run-moment {
+		min-width: 0;
+		padding-top: 0.05rem;
+	}
+
+	.run-moment header {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.45rem 0.8rem;
+	}
+
+	.run-moment header > span {
+		color: var(--color-accent-secondary);
+	}
+
+	li[data-kind='finding'] .run-moment header > span,
+	li[data-kind='decision'] .run-moment header > span {
+		color: var(--run-finding);
+	}
+
+	.run-moment h4 {
+		margin: 0;
+		font-family: var(--font-body);
+		font-size: 1.2rem;
+		font-weight: 600;
+		line-height: 1.35;
+		color: var(--color-text-primary);
+	}
+
+	.run-moment > p {
+		max-width: 45rem;
+		margin: 0.5rem 0 0;
+		font-family: var(--font-body);
+		font-size: 0.96rem;
+		line-height: 1.6;
+		color: var(--color-text-secondary);
+	}
+
+	.run-evidence {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0;
+		margin: 0.85rem 0 0;
+		border: 1px solid var(--color-border);
+	}
+
+	.run-evidence > div {
+		padding: 0.65rem 0.75rem;
+		border-right: 1px solid var(--color-border);
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.run-evidence > div:nth-child(2n) {
+		border-right: 0;
+	}
+
+	.run-evidence > div:nth-last-child(-n + 2) {
+		border-bottom: 0;
+	}
+
+	.run-evidence > div:last-child:nth-child(odd) {
+		grid-column: 1 / -1;
+		border-right: 0;
+	}
+
+	.run-evidence > div:nth-last-child(2):nth-child(even) {
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.run-evidence dt {
+		font-family: var(--font-mono);
+		font-size: 0.625rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.run-evidence dd {
+		margin: 0.22rem 0 0;
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		line-height: 1.45;
+		color: var(--color-text-secondary);
+	}
+
+	.run-evidence [data-tone='pass'] dd {
+		color: var(--color-accent-secondary);
+	}
+
+	.run-evidence [data-tone='fail'] dd {
+		color: var(--run-finding);
+	}
+
+	.run-comparison-wrap {
+		overflow-x: auto;
+		margin-top: 0.85rem;
+		border: 1px solid var(--color-border);
+	}
+
+	.run-comparison {
+		width: 100%;
+		min-width: 32rem;
+		margin: 0;
+		border-collapse: collapse;
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+	}
+
+	.run-comparison th,
+	.run-comparison td {
+		padding: 0.55rem 0.7rem;
+		border-bottom: 1px solid var(--color-border);
+		text-align: left;
+		white-space: nowrap;
+	}
+
+	.run-comparison tbody tr:last-child > * {
+		border-bottom: 0;
+	}
+
+	.run-comparison thead th {
+		font-size: 0.625rem;
+		font-weight: 500;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.run-comparison tbody th {
+		font-weight: 500;
+		color: var(--color-text-secondary);
+	}
+
+	.run-comparison td:last-child {
+		color: var(--color-accent-secondary);
+	}
+
+	.run-moment details {
+		margin-top: 0.75rem;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.run-moment summary {
+		width: fit-content;
+		padding: 0.55rem 0;
+		cursor: pointer;
+		font-family: var(--font-mono);
+		font-size: 0.68rem;
+		color: var(--color-text-tertiary);
+	}
+
+	.run-moment summary:hover,
+	.run-moment summary:focus-visible {
+		color: var(--color-accent);
+	}
+
+	.run-moment summary:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 3px;
+	}
+
+	.run-moment pre {
+		margin: 0 0 0.4rem;
+		padding: 0.8rem;
+		border: 1px solid var(--color-border);
+		border-radius: 0;
+		background: var(--color-terminal-bg);
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+	}
+
+	.run-moment code {
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		line-height: 1.55;
+		color: var(--color-text-secondary);
+	}
+
+	.run-footer {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		gap: 1rem 2rem;
+		align-items: center;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.run-primary-link,
+	.run-artifacts a,
+	.run-source-links a {
+		background-image: none !important;
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		text-decoration: none;
+	}
+
+	.run-primary-link {
+		color: var(--color-accent);
+	}
+
+	.run-artifacts,
+	.run-source-links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.45rem 0.9rem;
+		align-items: center;
+	}
+
+	.run-artifacts a,
+	.run-source-links a {
+		color: var(--color-text-secondary);
+	}
+
+	.run-primary-link:hover,
+	.run-artifacts a:hover,
+	.run-source-links a:hover,
+	.run-primary-link:focus-visible,
+	.run-artifacts a:focus-visible,
+	.run-source-links a:focus-visible {
+		color: var(--color-accent);
+	}
+
+	.run-primary-link:focus-visible,
+	.run-artifacts a:focus-visible,
+	.run-source-links a:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 3px;
+	}
+
+	.run-trajectory > figcaption {
+		margin-top: 1rem;
+		font-family: var(--font-mono);
+		font-size: 0.68rem;
+		line-height: 1.5;
+		color: var(--color-text-tertiary);
+		text-align: left;
+	}
+
+	@container (max-width: 44rem) {
+		.run-header {
+			grid-template-columns: 1fr;
+			gap: 0.8rem;
+		}
+
+		.run-decision {
+			width: fit-content;
+		}
+
+		.run-receipt {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.run-receipt > div:nth-child(2) {
+			border-right: 0;
+		}
+
+		.run-receipt > div:nth-child(-n + 2) {
+			border-bottom: 1px solid var(--color-border);
+		}
+
+		.run-receipt > div:nth-child(3) {
+			padding-left: 0;
+		}
+	}
+
+	@container (max-width: 31rem) {
+		.run-trajectory {
+			padding: 1rem;
+		}
+
+		.run-spine > li {
+			grid-template-columns: 2rem minmax(0, 1fr);
+			gap: 0.7rem;
+		}
+
+		.run-node {
+			width: 1.65rem;
+			height: 1.65rem;
+		}
+
+		.run-spine > li:not(:last-child)::before {
+			top: 1.65rem;
+			left: 0.8rem;
+		}
+
+		.run-evidence {
+			grid-template-columns: 1fr;
+		}
+
+		.run-evidence > div,
+		.run-evidence > div:nth-child(2n),
+		.run-evidence > div:nth-last-child(-n + 2) {
+			border-right: 0;
+			border-bottom: 1px solid var(--color-border);
+		}
+
+		.run-evidence > div:last-child {
+			border-bottom: 0;
+		}
+	}
+</style>

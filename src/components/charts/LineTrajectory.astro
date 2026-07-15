@@ -29,6 +29,9 @@ export interface LineTrajectoryMarker {
 	cycle: number;
 	value: number;
 	label: string;
+	labelLines?: string[];
+	labelAnchor?: 'start' | 'middle' | 'end';
+	labelDx?: number;
 	accent?: string;
 	note?: string;
 }
@@ -103,7 +106,17 @@ const dotRows = seriesResolved.flatMap((s) =>
 
 const markerRows = markers.map((m) => ({
 	...m,
+	displayLabel: m.labelLines?.join('\n') ?? m.label,
 	accent: m.accent ?? '#e8a84c',
+}));
+
+// Anchor marker labels away from plot edges or neighbouring curve segments.
+const defaultMarkerAnchor = (cycle: number): 'start' | 'middle' | 'end' =>
+	cycle === xMin ? 'start' : cycle === xMax ? 'end' : 'middle';
+const markerTextGroups = markerRows.map((m) => ({
+	anchor: m.labelAnchor ?? defaultMarkerAnchor(m.cycle),
+	dx: m.labelDx ?? (m.cycle === xMin ? 10 : m.cycle === xMax ? -10 : 0),
+	rows: [m],
 }));
 
 const bandMarks = bandRows.length
@@ -211,16 +224,21 @@ const svg = renderPlot({
 						r: 7,
 						className: 'lt-marker',
 					}),
-					Plot.text(markerRows, {
-						x: 'cycle',
-						y: 'value',
-						text: 'label',
-						dy: -14,
-						textAnchor: 'middle',
-						fontSize: 11,
-						fontFamily: "'JetBrains Mono', ui-monospace, monospace",
-						fill: '#faf9f6',
-					}),
+					...markerTextGroups.map((g) =>
+						Plot.text(g.rows, {
+							x: 'cycle',
+							y: 'value',
+							text: 'displayLabel',
+							dy: -14,
+							dx: g.dx,
+							textAnchor: g.anchor,
+							lineAnchor: 'bottom',
+							lineHeight: 1.15,
+							fontSize: 11,
+							fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+							fill: '#faf9f6',
+						}),
+					),
 				]
 			: []),
 	],

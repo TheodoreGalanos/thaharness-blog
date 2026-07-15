@@ -1,0 +1,199 @@
+<!-- ABOUTME: Two-panel figure contrasting the coverage dashboard with the autopsy of the same artifacts. -->
+<!-- ABOUTME: Left panel renders triumphant stat tiles; right panel renders the coroner's findings. -->
+---
+import type { CoverageAutopsyData } from '../../data/fluent-but-unsafe-figures';
+
+interface Props {
+	title?: string;
+	data: CoverageAutopsyData;
+	caption?: string;
+}
+
+const { title, data, caption } = Astro.props;
+---
+
+<figure class="cva" aria-label={title ?? 'Coverage dashboard versus autopsy'}>
+	{title && <div class="cva-title">{title}</div>}
+
+	<div class="cva-panels">
+		<section class="cva-panel" data-kind="dashboard" aria-label="Coverage dashboard">
+			<div class="cva-kicker">{data.dashboardKicker}</div>
+			<div class="cva-tiles">
+				{data.dashboardTiles.map((tile) => (
+					<div class="cva-tile">
+						<strong>{tile.value}</strong>
+						<span>{tile.label}</span>
+					</div>
+				))}
+			</div>
+			<div class="cva-verdict" data-kind="ok">0 remaining items</div>
+		</section>
+
+		<section class="cva-panel" data-kind="autopsy" aria-label="Autopsy findings">
+			<div class="cva-kicker">{data.autopsyKicker}</div>
+			<div class="cva-findings">
+				{data.autopsyFindings.map((finding) => (
+					<div class="cva-finding">
+						<strong>{finding.stat}</strong>
+						<span>{finding.text}</span>
+					</div>
+				))}
+			</div>
+			<div class="cva-verdict" data-kind="fail">not long-horizon</div>
+		</section>
+	</div>
+
+	{caption && <figcaption class="cva-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.cva,
+	.cva-panels {
+		--cva-good: #6fb88a;
+		--cva-bad: #d87b55;
+	}
+
+	.cva {
+		margin: 3rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+		container-type: inline-size;
+	}
+
+	.cva-title {
+		margin: 0 0 1.25rem;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.cva-panels {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 1rem;
+	}
+
+	@container (max-width: 640px) {
+		.cva-panels {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	.cva-panel {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		gap: 1rem;
+		padding: 1.25rem;
+		border: 1px solid var(--color-border);
+		border-radius: 8px;
+		background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+	}
+
+	.cva-panel[data-kind='dashboard'] {
+		border-top: 2px solid color-mix(in srgb, var(--cva-good) 70%, transparent);
+	}
+
+	.cva-panel[data-kind='autopsy'] {
+		border-top: 2px solid color-mix(in srgb, var(--cva-bad) 70%, transparent);
+	}
+
+	.cva-kicker {
+		font-family: var(--font-mono);
+		font-size: 0.625rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.cva-tiles {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.75rem;
+	}
+
+	.cva-tile {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		padding: 0.875rem;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		background: var(--color-bg);
+	}
+
+	.cva-tile strong {
+		font-family: var(--font-mono);
+		font-size: 1.375rem;
+		color: var(--cva-good);
+	}
+
+	.cva-tile span,
+	.cva-finding span {
+		font-size: 0.8125rem;
+		line-height: 1.45;
+		color: var(--color-text-secondary);
+	}
+
+	.cva-findings {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.cva-finding {
+		display: grid;
+		grid-template-columns: 7.5rem 1fr;
+		gap: 0.75rem;
+		padding: 0.625rem 0.75rem;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		background: var(--color-bg);
+	}
+
+	.cva-finding strong {
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--cva-bad);
+	}
+
+	.cva-verdict {
+		margin-top: auto;
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.cva-verdict[data-kind='ok'] {
+		color: var(--cva-good);
+	}
+
+	.cva-verdict[data-kind='fail'] {
+		color: var(--cva-bad);
+	}
+
+	.cva-caption {
+		margin-top: 1rem;
+		font-size: 0.8125rem;
+		line-height: 1.5;
+		color: var(--color-text-tertiary);
+	}
+
+	@container (max-width: 400px) {
+		.cva-panel {
+			padding: 1rem;
+		}
+
+		.cva-tiles,
+		.cva-finding {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.cva-finding {
+			gap: 0.25rem;
+		}
+	}
+</style>

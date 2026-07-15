@@ -1,0 +1,263 @@
+<!-- ABOUTME: Publishes the complete strong-model road-review run referenced by Fluent, But Unsafe. -->
+<!-- ABOUTME: Shows the audit spine, final review, score history, raw records, and immutable aec-bench source. -->
+---
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import Analytics from '@vercel/analytics/astro';
+import SpeedInsights from '@vercel/speed-insights/astro';
+import MarkdownIt from 'markdown-it';
+import sanitizeHtml from 'sanitize-html';
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import RunTrajectory from '../../components/RunTrajectory.astro';
+import { SITE_TITLE } from '../../consts';
+import { fluentButUnsafeRun } from '../../data/fluent-but-unsafe-run';
+
+const reviewSource = await readFile(
+	resolve(process.cwd(), 'public', 'runs', 'road-low-point-review', 'review.md'),
+	'utf8',
+);
+const parser = new MarkdownIt({ html: false, linkify: false, typographer: false });
+const reviewHtml = sanitizeHtml(parser.render(reviewSource), {
+	allowedTags: sanitizeHtml.defaults.allowedTags.concat(['details', 'summary']),
+	allowedAttributes: {
+		...sanitizeHtml.defaults.allowedAttributes,
+		code: ['class'],
+	},
+});
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+	<head>
+		<BaseHead
+			title={`Inside One Road-Corridor Review | ${SITE_TITLE}`}
+			description="A complete aec-bench road-review run: seven source documents, the model's calculations, one critical finding, its final decision, and the verifier receipt."
+		/>
+	</head>
+	<body>
+		<Header />
+		<main class="run-page" data-pagefind-body>
+			<article>
+				<header class="run-page-header">
+					<a class="run-back" href="/blog/fluent-but-unsafe/">← Back to Fluent, But Unsafe</a>
+					<span class="run-page-kicker">Published run · aec-bench</span>
+					<h1>Inside one road-corridor review</h1>
+					<p>
+						This is the complete working record behind one point in the article’s twenty-one-run figure. The model received seven synthetic project documents, found one critical error, and carried it into a refusal to issue the work.
+					</p>
+				</header>
+
+				<RunTrajectory run={fluentButUnsafeRun} mode="full" />
+
+				<section class="run-report" data-pagefind-ignore>
+					<header>
+						<span>Submitted artefact</span>
+						<h2>The model’s complete review</h2>
+						<p>
+							The audit spine above extracts the decisive moments. This is the full review that the model wrote for the verifier, preserved without editorial rewriting.
+						</p>
+					</header>
+					<details>
+						<summary>Read the complete submitted review</summary>
+						<div class="run-report-body" set:html={reviewHtml} />
+					</details>
+				</section>
+
+				<aside class="run-boundary">
+					<strong>What this run shows.</strong> One model could reconstruct the case, isolate the planted defect, and make a consistent issue decision in a single sitting. It does not demonstrate reliability across new tasks, learning across runs, or continual learning.
+				</aside>
+			</article>
+		</main>
+		<Footer />
+		<Analytics />
+		<SpeedInsights />
+	</body>
+</html>
+
+<style>
+	.run-page {
+		padding: 4rem 1.25rem 6rem;
+	}
+
+	.run-page > article {
+		max-width: 70rem;
+		margin: 0 auto;
+	}
+
+	.run-page-header {
+		max-width: 47rem;
+		margin: 0 auto 3rem;
+	}
+
+	.run-back {
+		display: block;
+		width: fit-content;
+		margin-bottom: 2.5rem;
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		color: var(--color-text-tertiary);
+	}
+
+	.run-back:hover,
+	.run-back:focus-visible {
+		color: var(--color-accent);
+	}
+
+	.run-back:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 3px;
+	}
+
+	.run-page-kicker,
+	.run-report header > span {
+		display: block;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-accent-secondary);
+	}
+
+	.run-page-header h1 {
+		margin: 0.8rem 0 0;
+		font-family: var(--font-display);
+		font-size: clamp(2.35rem, 6vw, 4.5rem);
+		font-weight: 500;
+		line-height: 1.04;
+		letter-spacing: -0.025em;
+	}
+
+	.run-page-header p {
+		max-width: 42rem;
+		margin: 1.2rem 0 0;
+		font-family: var(--font-body);
+		font-size: 1.2rem;
+		line-height: 1.65;
+		color: var(--color-text-secondary);
+	}
+
+	.run-report {
+		max-width: 58rem;
+		margin: 4rem auto 0;
+		padding-top: 2rem;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.run-report header {
+		max-width: 42rem;
+	}
+
+	.run-report h2 {
+		margin: 0.55rem 0 0;
+		font-family: var(--font-display);
+		font-size: clamp(1.8rem, 4vw, 2.6rem);
+		font-weight: 500;
+		letter-spacing: -0.015em;
+	}
+
+	.run-report header p {
+		margin: 0.8rem 0 0;
+		font-size: 1rem;
+		line-height: 1.65;
+		color: var(--color-text-secondary);
+	}
+
+	.run-report > details {
+		margin-top: 1.5rem;
+		border: 1px solid var(--color-border);
+		background: var(--color-surface);
+	}
+
+	.run-report > details > summary {
+		padding: 1rem 1.15rem;
+		cursor: pointer;
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		color: var(--color-text-secondary);
+	}
+
+	.run-report > details > summary:hover,
+	.run-report > details > summary:focus-visible {
+		color: var(--color-accent);
+	}
+
+	.run-report > details > summary:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: -4px;
+	}
+
+	.run-report-body {
+		padding: clamp(1rem, 4vw, 2.25rem);
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-body);
+		font-size: 1rem;
+		line-height: 1.7;
+		color: var(--color-text-primary);
+	}
+
+	.run-report-body :global(h1),
+	.run-report-body :global(h2),
+	.run-report-body :global(h3) {
+		margin-top: 1.8em;
+		font-family: var(--font-display);
+		font-weight: 500;
+	}
+
+	.run-report-body :global(h1:first-child) {
+		margin-top: 0;
+	}
+
+	.run-report-body :global(table) {
+		display: block;
+		width: 100%;
+		overflow-x: auto;
+		border-collapse: collapse;
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+	}
+
+	.run-report-body :global(th),
+	.run-report-body :global(td) {
+		padding: 0.55rem 0.65rem;
+		border-bottom: 1px solid var(--color-border);
+		text-align: left;
+		vertical-align: top;
+	}
+
+	.run-report-body :global(pre) {
+		overflow-x: auto;
+		padding: 1rem;
+		background: var(--color-terminal-bg);
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		line-height: 1.55;
+	}
+
+	.run-boundary {
+		max-width: 42rem;
+		margin: 3rem auto 0;
+		padding: 1.1rem 1.25rem;
+		border-left: 2px solid var(--color-accent-secondary);
+		font-family: var(--font-body);
+		font-size: 1rem;
+		line-height: 1.65;
+		color: var(--color-text-secondary);
+	}
+
+	.run-boundary strong {
+		color: var(--color-text-primary);
+	}
+
+	@media (max-width: 768px) {
+		.run-page {
+			padding-top: 2.5rem;
+		}
+
+		.run-page-header p {
+			font-size: 1.05rem;
+		}
+	}
+</style>
