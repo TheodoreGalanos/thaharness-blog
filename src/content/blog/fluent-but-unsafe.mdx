@@ -1,0 +1,295 @@
+---
+title: "Fluent, But Unsafe"
+description: "How 150 supposedly finished tasks and perfect model scores hid a weak engineering benchmark—and how auditable reviews exposed what the numbers missed."
+author: "Theodoros Galanos"
+category: "Engineering"
+draft: false
+pubDate: 2026-07-15
+updatedDate: 2026-07-15
+tags: ["harness-engineering", "agent-evaluation", "aec-bench", "task-worlds", "ai-in-aec"]
+featured: false
+---
+
+import CoverageAutopsyFigure from '../../components/charts/CoverageAutopsyFigure.astro';
+import ManufacturedCeilingFigure from '../../components/charts/ManufacturedCeilingFigure.astro';
+import ReviewTaskAnatomyFigure from '../../components/charts/ReviewTaskAnatomyFigure.astro';
+import LineTrajectory from '../../components/charts/LineTrajectory.astro';
+import GroupedBars from '../../components/charts/GroupedBars.astro';
+import StaticReviewProbeMap from '../../components/charts/StaticReviewProbeMap.astro';
+import RunTrajectory from '../../components/RunTrajectory.astro';
+import {
+	coverageAutopsy,
+	manufacturedCeilingRows,
+	reviewTaskAnatomy,
+	leakTrajectorySeries,
+	leakTrajectoryBaseline,
+	leakTrajectoryMarkers,
+	triageSplitCategories,
+	triageSplitSeries,
+	triageSplitValues,
+	staticReviewProbeMap,
+} from '../../data/fluent-but-unsafe-figures';
+import { fluentButUnsafeRun } from '../../data/fluent-but-unsafe-run';
+
+Estimated reading time: 22 minutes
+
+## TL;DR
+
+I set out to build long-horizon engineering tasks for aec-bench: tasks where an agent had to preserve engineering meaning across documents, decisions, and revisions. In hindsight, the work had reached an earlier milestone: a static world in which agents could work this way and, for the first time, produce a review state worth carrying into a later interaction. I built this first world wrong twice.
+
+The first mistake was scale. In the first pass, I produced 150 working "long-horizon" tasks across 152 engineering packages[^package], with perfect completion numbers and almost none of the judgment that makes engineering work difficult. The second mistake was subtler. After I rebuilt the tasks around design review, the agent in charge of iterating on the tasks to improve their design (and harness) ended up writing the hidden defects' expected answers into the instructions, one model run at a time, until the scores returned to 1.00.
+
+The first useful review design appeared when I stopped that loop: keep the model blind to which version it received[^blindness], grade the evidence behind its review rather than only its conclusion, and treat universal perfect scores as a warning rather than completion.
+
+> A benchmark task is not finished because models score perfectly. A perfect score is a reason to inspect the task.
+
+Once the answers stopped leaking, the first results showed models that were unsafe in both directions: they missed real defects and invented defects in clean packages. One of the strongest small models passed a defect-free review only once in five attempts.
+
+This article is the story of how the benchmark manufactured success, how expected answers leaked into the instructions, and which permanent construction rules now stop model failures from being edited away. It ends with a complete review performed in a single sitting. The next article in this series begins when that review record has to survive time.
+
+## The Starting Point
+
+[Task Worlds and Meta-Harnesses](/blog/task-worlds-meta-harness/) argued that agent tasks are worlds, not prompts: they decide what the agent sees, which rules have authority, what counts as evidence, and which failures can even be named. It also argued that failures serious enough to break the world's language — Events, in that essay's vocabulary — should force new distinctions into the machinery that generates worlds.
+
+This post applies that theory — and reports what it cost to apply it.
+
+I catalogued 184 calculation tasks across civil, structural, mechanical, electrical, and ground engineering, clustered them into nineteen families, each built around a shared physical system — a road corridor, a pump station, a coastal boundary, or a fire-water system — and added one overlay for standards and approval authorities. Constructing tasks within each family, piece by piece, quickly revealed something that, in hindsight, might be obvious:
+
+> Long-horizon difficulty in engineering is not simply adding more steps. It is preserving engineering meaning across time: source values, unit conventions, case selections, handoffs between disciplines, contradictions, and a final artifact for someone to audit.
+
+The underlying idea was right: related engineering tasks should form a connected world rather than a collection of isolated questions. But the first implementation gave the model every document and earlier decision at once, in a single bundle, instead of letting that history unfold over time. We also lacked a rigorous record of how the task had been assembled—where each piece of evidence came from, which version was used, and when it became available.
+
+## The Coverage Illusion
+
+The first build reached full coverage on its own terms: all nineteen families were represented, all 152 engineering packages were covered, and 150 generated long-horizon tasks were working. Every known-correct answer scored 1.0 against its own verifier. The tracking documents recorded zero remaining items.
+
+<CoverageAutopsyFigure
+	title="The dashboard vs. the autopsy"
+	data={coverageAutopsy}
+	caption="Two readings of the same body of work. The coverage dashboard reports completeness; rereading the tasks reports what was actually built."
+/>
+
+The finding that matters most is the rule for calling a task finished: tasks were debugged until two models used during construction — one strong, one small — both scored 1.0. The build log entries below show what that rule did in practice. When a model stumbled over an engineering choice, that choice was moved into the instructions until the score reached 1.0.
+
+<ManufacturedCeilingFigure
+	title="How 1.0 was manufactured"
+	rows={manufacturedCeilingRows}
+	caption="Three entries from the build log. In each case the score gap was closed by writing the resolution of an engineering ambiguity into the instructions."
+/>
+
+Auto-research is fun, but be careful when it happens during task design!
+
+In my previous post, the flagship example of what makes engineering tasks hard was a bearing-capacity problem where a strong model had every input and still failed — because it reached for the textbook factor convention when the project used a different one. Same inputs, roughly twenty percent difference in allowable capacity. That choice — *which convention, standard, rule, or specification has authority here* — is one of the engineering judgments a long-horizon task must preserve.
+
+So what did the agent do when the model chose the wrong convention? It changed the task. The project-specific factors were printed in the instructions, and the judgment disappeared from the test.
+That was the metric doing exactly what we asked of it. If “done” means both models score 1.0, every difficult engineering choice starts to look like a bug during task design rather than the thing the task should measure. The simple lesson here was:
+
+> Task counts measure how quickly tasks were produced. If model success is your rule for accepting a task, you will create a benchmark that is saturated at birth.
+
+Goodhart's Law is undefeated.
+
+## How Engineers Review Each Other's Work
+
+To redesign these tasks properly, I turned to the procedures senior engineers use to review one another’s work — the documents that decide whether someone else's work is safe to accept. Across disciplines, these procedures share a spine.
+
+- Inventory exactly what documents you were given.
+- Extract the design basis.
+- Work through a checklist.
+- Give every item exactly one status — pass, fail, not applicable, or insufficient data.
+- Cite evidence for every failure.
+- Name the exact missing information.
+- Convert everything unresolved into findings and actions.
+- Then, and only then, decide whether the package is ready to issue.
+
+Two things about this spine changed how I approached building these tasks.
+
+First: before an interaction can become long-running, it needs a state worth preserving. Most senior engineering work is *reviewing* things other people computed, assembled, revised, and (sometimes) half-updated. A review record supplies that state: findings, requests, accepted decisions, and readiness. The first task we designed gave the model all documents at once; it did not yet test whether the review record survived later evidence.
+
+Second: missing data is a first-class outcome. A reviewer who invents a missing value is a dangerous reviewer.
+
+This was exactly my point in [Plausible Answers, Failed Workflows](/blog/plausible-answers-failed-workflows/), but now promoted to a task-design principle: engineering benchmarks cannot be designed to measure prose.
+
+## Building A State Worth Preserving
+
+The first rebuilt task is small enough to describe completely.
+
+The task centres on a sag point in a road — the low spot where water ponds during a storm — alongside a roadside equipment cabinet, a variable message sign, and their supporting power and communications systems. The agent is the independent reviewing engineer. In its sandbox it finds seven project documents: a document register, road geometry, the drainage design package, the equipment layout, the power and network schedule, the traffic operations case, and a criteria memo with the review comments. The instruction contains no numbers at all. Every value, and every assessment method, lives in the documents — the criteria memo states which formulas and conventions govern, which is exactly what a real design-criteria document is for.
+
+Each generated task uses one of eight versions of the review material: one clean and seven with a single planted change.
+
+The agent must produce the full review record: which documents it received; a cross-check that they all refer to the same road, location, equipment, and design scenario; one status for each review item; its own recomputed evidence; findings and requests for missing information; actions with owners; and a final decision on whether the work is ready to issue.
+
+<ReviewTaskAnatomyFigure
+	title="A state worth preserving"
+	data={reviewTaskAnatomy}
+	caption="The task turns documents into a review record whose parts must support one another: sources, evidence, findings, actions, and a final issue decision that a later interaction can test."
+/>
+
+Three design rules mattered here.
+
+**The verifier checks the review in stages**. A checklist status earns credit only when the agent supplies the correct calculation or source evidence behind it. The final issue decision earns credit only when that evidence supports it and the decision agrees with the checklist and unresolved findings. If every fragment earned points independently, a fluent guesser could assemble a good score from an incoherent review. The stages force the parts to agree.[^tripwire-memo]
+
+**The task must be solvable from the documents alone**. A separate test reads the finished documents exactly as the model receives them, recalculates every expected result from scratch, and confirms that those results match the answer key.
+
+**A perfect model score is a warning, not the goal**. The known-correct answer must score exactly 1.0. If a strong model also scores 1.0 on every version, I inspect the task: the defect may be too easy to spot, or the instructions may be giving the answer away.
+
+## The Leak
+
+With the reference task built and the pattern documented in an authoring guide, I assigned a team of agents to extend it across the rest of the road-corridor family: seven more review tasks — intersections, lighting and CCTV, detour operations, bus priority, driveway access, cabinet serviceability, and design-review response — each based on an earlier calculation task kept for comparison.
+
+The software quality looked good. Thirty-plus tests per task. Each document clearly stated what it did not establish. A detailed log linked every model run to the edit that followed. That log is the only reason what happened next was catchable.
+
+The log records this sequence for a small model on one version containing a planted defect: 0.78 → 0.70 → 0.56 → 0.81 → 0.85 → 1.00 across five successive “hardenings.” Each hardening edits the prompt. Each edit is documented as an improvement. And by the fifth, the instruction for the design-review response task contains a paragraph that (with document names generalized) reads:
+
+> "A pending revised chainage is a missing-data case, not a failed calculation. Keep the design-basis item as *pass*; set the adequacy item to *insufficient data*; omit the changed-chainage value from your evidence; and raise an information request for the missing chainage against the marked-up plan."
+
+That is one hidden version's complete expected answer — item, status, evidence field to leave blank, document to cite — printed in the task prompt. Sibling tasks received equivalent paragraphs pre-emptively, for planted defects no model had ever attempted. The judgment the planted change was meant to test had been converted into a reading-comprehension exercise, eight tasks wide.
+
+<LineTrajectory
+	title="The leak, as a trajectory"
+	series={leakTrajectorySeries}
+	baseline={leakTrajectoryBaseline}
+	markers={leakTrajectoryMarkers}
+	yDomain={[0.5, 1.0]}
+	yLabel="score"
+	xLabel="instruction-edit round"
+	caption="One version with a planted defect, five instruction edits. The rising score looked like progress; the notes reveal that the expected answer was gradually being written into the instructions."
+/>
+
+I want to be precise about what this was: the agent was not cheating. It followed the goal it had been given: treat every score below 1.0 as a task bug and revise until the score reached 1.0. It even wrote careful notes about residual concerns. The previous essay warned that systems which revise their own tasks can hide every failure by adding more hints or relaxing the verifier. Here it happened in the real building process, wrapped in the same careful caveats I had written to prevent it.
+
+The detection test that now guards against it is very simple:
+
+> Variant-blindness: a reader of the task instructions alone must not be able to list the hidden versions or their expected statuses. If they can, the task is leaking.
+
+The fix was equally unglamorous: remove every passage that linked a planted defect to its expected answer. Keep only changes that clarified the required answer format, moved engineering conventions into the project documents, or allowed equivalent wording to receive the same score. The automated checks now search for the leaked phrases and fail if any reappear.
+
+## When Is a Low Score the Task's Fault?
+
+Stripping the leak reopened a question the leak had been suppressing: when a model scores below 1.0, what are you allowed to fix?
+
+I settled on a two-part rule for deciding the cause, and it is the most reusable thing in this whole story.
+
+First, failures in the task or its grading. The known-correct answer cannot earn full marks. The verifier crashes. Two answers say the same thing in different words but one receives zero. Seven correct pieces of evidence are discarded because an eighth is missing. These are fairness problems. Fix the verifier, required answer format, or criteria documents — never by telling the model what defect to find.
+
+A failure belongs here when the model followed the stated instructions but was penalized by an unstated rule. Only once the written instructions match what the verifier actually requires can a failure tell us something about the model.
+
+Second, failures that belong to the model's review. The model wrongly turns one defect into five failed checklist items. It invents a value a document marks as pending. It declares a package ready while its own checklist shows an unresolved failure. These are results, not task bugs. Record them and leave the task unchanged.
+
+> The dividing line: a fair-grading fix does not change what a competent reviewer must work out. If an edit gives away anything about the planted defect, it is giving away the answer.
+
+This distinction helped immediately. Both models had turned one missing survey measurement into three separate failures. The checklist had not made the boundary clear enough, so I added the same rule to every task: missing information is not a conflict. Mark only the check that depends on it as insufficient data; leave the others unchanged.
+
+Then I ran the models again.
+
+<GroupedBars
+	title="One definition, two models, split verdict"
+	categories={triageSplitCategories}
+	series={triageSplitSeries}
+	values={triageSplitValues}
+	domain={[0, 1]}
+	valueFormat="decimal-2"
+	caption="The same clarification stopped the strong model from spreading one defect across several checklist items, but the small model still did so. Unclear task rules no longer explained the small model's remaining errors."
+/>
+
+The split was now clear. The strong model applied the definition and confined the defect to the correct item, showing that the revised wording was usable by at least one capable reader. The small model still spread it across several items. The remaining error was therefore less likely to come from unclear instructions. One general sentence made the comparison fairer and the difference between the models easier to see.
+
+For this first set of model runs, each summary recorded the random seed and exact code version, so I could recreate the task; I stored the full model responses separately. That was enough to debug these tasks. Later experiments (part 2 of this series), where evidence will arrive over time, need permanent records of exactly how every run was produced, plus a clear separation between runs used to tune the setup and unseen tasks used only for final evaluation.
+
+## What The Single-Pass Reviews Revealed
+
+With the tasks clean again, I ran the models twenty-one times. Eleven runs covered all eight road-corridor review tasks. The other ten formed the first reliability check: five fresh versions of one task with no planted defect, and five with a genuine defect. Most runs used the small model; three used the strong one. Each was scored independently.
+
+These runs were exploratory. I had not used one set of tasks to choose how the models would run and then tested that choice on a separate, unseen task. The results could diagnose the tasks and model behaviour, but not yet demonstrate performance on new work.
+
+Three main findings came out of this:
+
+### Defect localisation
+
+**Models spread one defect too far.** Given one planted defect, the small model routinely fails adjacent checklist items that are independently fine — turning one finding into four. The strong model usually confines the failure to the correct checklist item. In review work, over-flagging buries the real finding in noise and makes the review record less credible.
+
+### Decision consistency
+
+**Final decisions contradict the analysis.** The most persistent failure is a contradiction between the checklist and the final issue decision: the checklist shows an unresolved critical failure, and the final decision says ready anyway — or the inverse. One run scored 0.97 with this as its *only* loss. The final judgment is the easiest sentence to produce and the most expensive one to get wrong.
+
+### False-positive control
+
+**Models invent findings when no defect is present.** Every run used the same issue-readiness brief, and the model was not told whether a defect was present. The brief did ask it to look first for conflicts, stale revisions, contradictory datums, and missing evidence, so this measures false positives inside a realistic review setting. Across five fresh clean packages, the small model produced scores of 0.59, 0.63, 0.94, 0.95, and 1.00. It raised unsupported identity conflicts and adequacy failures in two of them. Across five fresh packages containing a real defect, it never scored 1.0.
+
+<StaticReviewProbeMap
+	title="Twenty-one model runs, mapped"
+	data={staticReviewProbeMap}
+	caption="Each mark is one model run. Circles show the small model, diamonds the strong model, and horizontal position shows the score. Rings label only failure patterns recorded in the run notes. The final ten marks show five fresh versions of one task with no planted defect and five with a genuine defect."
+/>
+
+Across these runs, the models produced fluent, professionally worded review records with safety-relevant failures in both directions: missed defects and false findings. The ten repeated runs showed both within one task family. The difference between those failure modes is invisible to any evaluation that reads the final memo and checks the final number. It takes a verifier that checks every status against its evidence, traces findings into actions, and confirms that the final decision agrees with the review to see it. That is what a human review process is for.
+
+## Run The Review Yourself
+
+This example is not a reconstruction made for the article. It is a live [aec-bench](https://github.com/TheodoreGalanos/aec-bench) task. The commands below check out the public version used here, generate the same freeboard-deficient road review, and run it with the strong model shown in the figure.
+
+```bash
+git clone https://github.com/TheodoreGalanos/aec-bench.git
+cd aec-bench
+git checkout 1e78c3c
+uv sync --extra pydantic-ai
+
+uv run aec-bench generate task road-low-point-issue-review-package \
+  --instances 3 --difficulty medium --seed 20260706 \
+  --output demo-tasks
+
+TASK=demo-tasks/civil/road-review/road-low-point-issue-review-package
+uv run aec-bench run-local \
+  "$TASK/urban-arterial-sag-urban-arterial-02" \
+  --model "au.anthropic.claude-sonnet-4-6" \
+  --adapter pydantic_ai --output demo-run --no-import
+```
+
+Generating the documents is local. The final command calls a model and therefore needs credentials for that provider.[^run-credentials] Its output directory contains the model’s review, the step-by-step working record, and the verifier’s itemised score.
+
+The panel below follows four decisive moments from one completed run. Its footer links to the exact review instructions, document generator, verifier, and tests on GitHub, all pinned to the public code version above.
+
+<RunTrajectory run={fluentButUnsafeRun} mode="preview" />
+
+## The Messy Surface, The Structured World
+
+You could fairly object to the world these tasks reproduce. It is the world as engineers actually receive it — values scattered across seven documents, methods buried in a criteria memo, revisions that half-agree — and building agents that merely cope with that world risks accepting its dysfunctions as inevitable. A benchmark does more than measure performance: it rewards a particular way of working. The world it rewards is the world it helps entrench. Train document archaeologists and the documents stay.
+
+Meeting the work where it is remains the floor. An agent that only works once its inputs have been neatly structured avoids the hard part. Engineering evidence is messy, and errors in interpreting it have real consequences. That is where measurement has to begin.
+
+But [Executable Standards](/blog/executable-standards/) argued that the deeper harness boundary is the clause itself: criteria should stop living only as prose and become rules whose changes are tracked and that software can check. Look closely at these review tasks and that future is already inside them. The agent sees the messy surface: documents, a pending survey level, a stale revision. The verifier sees the structured one: precisely defined statuses, named pieces of evidence, and criteria expressed as rules it can run. The gap between those two surfaces is precisely what the benchmark measures.
+
+That reframes the long game. Measure agents in the world as it is; use the same machinery to pull the world toward what it could be. Every criteria memo in these tasks is one step from a criteria database, every checklist one step from a standard review format, and every verifier an early version of project software that could make half of these planted defects impossible to write in the first place. The grading machinery should handle the messy documents — and make the structured world the easier one to build in.
+
+## The Task-Building Process Needs Its Own Checks
+
+The construction process needs the same kind of fixed rules as the task.
+
+Documentation was not the problem. The coverage illusion passed every test; the leak appeared in meticulous diagnostic notes. What the task-building process lacked were checks that could stop a failure from being mistaken for progress:
+
+- **A menu, not a queue.** The catalogue grew to 152 possible review tasks across all nineteen worlds; I sorted them into three groups: roughly a third were worth building, a third were saved for later, and a third were cut because they repeated judgments already tested elsewhere. Building one of everything is how quantity becomes the goal again.
+- **One owner per judgment.** When two worlds claim the same physical product — a battery system that is both an energy asset and a fire hazard — one task gets built, owned by whichever discipline owns the *judgment*, and the other world references it. Twins drift.
+- **Record temporary decisions instead of waiting.** Domain experts are scarce. Each open engineering question gets a clearly marked, reversible interim answer, collected for experts to confirm against completed tasks and actual model results. Experts can give much better feedback on a completed review task than on a list of possible ones.
+- **Stop and review after every task.** Agents build one task at a time, then pause for review before marking it finished. The detailed edit log caught the leak; the planned pause makes that review routine.
+- **Model runs diagnose; they do not teach.** During task construction, model runs reveal unfair instructions or record model behaviour; they never justify teaching the task the observed answer. A later, pre-planned experiment may compare different ways of running the model and choose one, but it must not rewrite the task around the results.
+
+The previous essay argued that when a failure breaks a world's language, the world generator must gain the missing distinction. The leak required changing how tasks are built, not merely repairing one prompt. It gave us four permanent rules: hide the planted version and expected answer; test that leaked phrases stay absent; separate grading bugs from model failures; and stop for review after every task.
+
+> When agents build the benchmark, the building process needs to be checked as carefully as the tasks.
+
+## Where This First Build Stops
+
+At this point, the documents are fictional and every review happens once, with all the material provided together. The tasks do not claim to use accepted project evidence, have approval from authorities, comply with standards, or be ready as a public benchmark. The scores come from a small set of runs across two models, not a broad model comparison.
+
+Within those limits, the result matters. I built a review task that can distinguish missing information from failed checks, unfair grading from model mistakes, and fluent but unsupported conclusions from judgments backed by evidence. The same review structure now exists beyond the road corridor — in pump suction, fire classification, product certification, ground engineering, and coastal elevation — using documented temporary engineering decisions rather than claims of expert approval.
+
+That completes the first part of the story. It does not complete the long-horizon work. These first review tasks still collapse the whole history into one sitting: every revision arrives at once, the agent reconstructs the history retrospectively, and the review ends after one submission. They did, however, produce a review record worth preserving. Each finding can be tracked. Missing information becomes a specific request. Accepted decisions point back to evidence. The final decision follows from everything recorded so far.
+
+Part 2 of the series will begin there. Later evidence arrives only after the model has committed, and the audit trail has to survive what changes next.
+
+Before the work could unfold over time, the review had to produce a record worth preserving.
+
+[^tripwire-memo]: Every task includes a deliberately bad memo that marks every item as passing, provides no evidence, and declares the work ready. An automated check runs that memo through the verifier every time. If a later change makes the verifier too lenient, the bad memo's score rises and the test fails.
+[^package]: A self-contained bundle of files representing a piece of engineering work: its inputs, calculations, and supporting material. A review package adds what is needed to inspect that work and record a decision.
+[^blindness]: The model is not told which version of the task it received — for example, whether the files contain no planted defect or one particular defect. It sees only the engineering documents and must work out what happened from the evidence, without labels or expected answers.
+[^run-credentials]: aec-bench reads provider settings from a local `.env` file. To reproduce this Bedrock run, configure AWS credentials, a region, and access to the named model. You can substitute another supported model; its response and score may differ.
