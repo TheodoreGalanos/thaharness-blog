@@ -156,6 +156,7 @@ const { title, columns, caption } = Astro.props;
 		display: flex;
 		flex-direction: column;
 		gap: 0.1rem;
+		flex: 1 1 auto;
 	}
 
 	.pc-step {
@@ -163,12 +164,13 @@ const { title, columns, caption } = Astro.props;
 		display: grid;
 		grid-template-columns: 1fr auto;
 		gap: 0.5rem 0.75rem;
-		align-items: start;
+		align-items: center;
 		padding: 0.75rem 0.9rem;
 		border: 1px solid var(--pc-border);
 		border-radius: 4px;
 		background: var(--color-surface);
 		overflow: hidden;
+		flex: 1 1 auto;
 	}
 
 	.pc-step::before {
@@ -217,6 +219,7 @@ const { title, columns, caption } = Astro.props;
 	.pc-arrow {
 		list-style: none;
 		text-align: center;
+		flex: 0 0 auto;
 		font-family: var(--font-mono);
 		font-size: 0.875rem;
 		line-height: 1;
@@ -244,12 +247,13 @@ const { title, columns, caption } = Astro.props;
 	}
 
 	.pc-stats {
-		margin-top: 1rem;
-		padding-top: 0.75rem;
+		margin-top: auto;
+		padding-top: 1rem;
 		border-top: 1px dashed var(--color-border);
 		display: flex;
 		flex-direction: column;
 		gap: 0.3rem;
+		min-height: 3.25rem;
 	}
 
 	.pc-stat {

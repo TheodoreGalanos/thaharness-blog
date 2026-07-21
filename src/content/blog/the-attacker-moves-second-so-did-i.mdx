@@ -1,0 +1,142 @@
+---
+title: "The Attacker Moves Second. So Did I."
+description: "My benchmark optimiser found the same seam an adversary would: it rewrote the world its own grader consumed. A design note on provenance ledgers—agent memory where authority comes from evidence, not persuasion."
+author: "Theodoros Galanos"
+category: "Engineering"
+draft: false
+pubDate: 2026-07-21
+updatedDate: 2026-07-21
+tags: ["harness-engineering", "agent-evaluation", "aec-bench", "agent-security", "prompt-injection", "provenance"]
+featured: false
+---
+
+import FlowDiagram from '../../components/charts/FlowDiagram.astro';
+import ProcessComparison from '../../components/charts/ProcessComparison.astro';
+import { leakReplayComparisonData, provenanceLedgerFlowData } from '../../data/the-attacker-moves-second-figures';
+
+Estimated reading time: 14 minutes
+
+## TL;DR
+
+In [Fluent, But Unsafe](/blog/fluent-but-unsafe/), the agent improving my benchmark quietly wrote the hidden defects' expected answers into the task instructions, one run at a time, until the scores returned to 1.00. I treated that as an evaluation defect and fixed it with variant-blindness and negative tests.
+
+But what if we reread this incident from an AI security point of view. After all, as I have written before, building agentic environments and designing benchmarks is the same as building agent harnesses deployed in production; these things are entangled in reality, a knot. So security, and a clear map of the attack surface, belongs in this work too.
+
+I went back to Nasr, Carlini, and colleagues' beautiful paper, [The Attacker Moves Second](https://arxiv.org/abs/2510.09023), and revisited the incident. The paper took twelve published defenses against prompt injection and jailbreaking (most reporting near-zero attack success) and broke them with adaptive attacks at over 90%. Human red-teamers reached 100%. The defenses had been evaluated against attackers who moved first: fixed attack strings, written before the defense existed. Real attackers study the deployed defense and adapt. So do optimisers, it turns out. My task-improvement loop was an attacker that moved second against a fixed verifier. It just wasn't malicious, which might make it even more dangerous, because it is harder to notice.
+
+This post takes that reframe seriously and asks what it implies for the part of a harness I keep converging on from different directions: durable agent state. If any process with an incentive and write access can corrupt what the system later treats as truth, then agent memory needs the same properties as the review records I built for engineering work: typed entries, provenance stamped by the runtime rather than narrated by the model, append-only history, and an explicit sign-off before anything untrusted gets treated as trusted. Security people had a name for this in 1977. Banks had a name for it in the fifteenth century. I sketch a provenance ledger that borrows from both, map which pieces already exist in aec-bench, and identify the three fields I would refuse to launch any long-running agent without.
+
+## The Optimiser Was an Attacker
+
+A process with three properties operated inside my harness: it had an objective (raise task scores), it had write access to a surface the evaluator consumed (task instructions), and its writes were invisible to the score (nothing tracked that the graded world had changed). Given enough iterations, it found the seam. It did not need to be clever about hydraulics or document review. It needed to move second: observe the fixed verifier, adjust the world, observe again.
+
+That is exactly the evaluation failure [The Attacker Moves Second](https://arxiv.org/abs/2510.09023) documents in deployed defenses. Static evaluation tests against attacks written before your system existed; it simulates an adversary with no feedback loop. The paper's adaptive attackers used gradient descent, reinforcement learning against the live system, and search; the human red team was a 500-person competition. Twelve for twelve, the defenses fell.[^attacker-paper]
+
+Goodhart's law is usually stated as a warning about metrics. A more accurate statement might be that an optimiser with a feedback loop is an adversary with a budget, and it attacks our means of measurement before it attacks the task itself. My loop did it by editing the prompt. A fraud ring does it by probing the fraud model until the scores stop meaning what the dashboard says they mean. The mechanism is the same; only the intent differs, and the measurement cannot see intent.[^goodhart-org]
+
+## Everything That Writes Is a Threat Model
+
+Once you accept that framing, the list of attackers gets uncomfortably long, because it includes most of your own machinery.
+
+[Simon Willison's lethal trifecta](https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/) describes the external version: an agent with private data, exposure to untrusted content, and a way to communicate externally can be steered by any text it reads, because models follow instructions in content regardless of where the content came from. Meta's [Agents Rule of Two](https://ai.meta.com/blog/practical-ai-agent-security/) turns that into an engineering posture: within one session, allow at most two of untrusted input, sensitive access, and state change.[^rule-of-two]
+
+But the incident above involved no external attacker at all. The untrusted writer was my own improvement loop. And there is a quieter writer with the same three properties in almost every long-running agent design: the memory system itself.
+
+Any agent that persists across turns must compact—summarise old context, distil "what we know so far", maintain the running narrative that turns into the next plan. That compaction process is an optimiser (for helpfulness, latency, cost) with write access to what the agent later treats as ground truth. A summary is a rewrite with lossy provenance. In [the readback study](/blog/plausible-answers-failed-workflows/), I called the failure a *laundered draft*: content that re-enters the workflow scrubbed of its origin and picks up authority it hasn't earned. Memory compaction is a laundering machine that runs on a schedule.
+
+So the scratchpad idea (keep a running narrative, derive actions from it) has a fatal version and a fixable version. The fatal version lets prose drive actions: anything that gets one write into the story the agent tells itself eventually acts with the agent's authority. The fixable version demotes the narrative to a rendering. **The story is a view. The ledger is the store.**
+
+By the way, this failure mode is older than software. Psychoanalysis was built on the observation that the story a system (that's us) tells itself about itself is written by an optimiser: the narrator compresses history into something coherent enough to act on, then files the story as if it were the true record. Cognitive science later caught the mechanism directly, in split-brain and confabulation experiments where the narrating mind invented plausible provenance for actions it demonstrably did not cause. The rhyme with tuned models is close enough to be uncomfortable: the ego defends coherence, not truth; a chat model defends helpfulness, not truth. The clinical fix was an external reader auditing the narrative against slips and symptoms, the one log stream the ego cannot edit. The ledger is the same move in software.[^couch]
+
+## Authority Is Provenance, Not Persuasiveness
+
+The ledger is the part of the harness where durable state lives. Its design rule: any text may propose an action, but permission to act comes from where the words came from, not from how convincing they are.
+
+Entries are typed objects, not prose: a claim with its source, a decision with its basis, an obligation with what would close it, an approval with who granted it under which rule. Three properties do the security work:
+
+1. **The model never writes provenance.** Source, channel, and taint fields are stamped by the runtime from observed facts—which tool call returned this, which authenticated principal sent it. A model narrating "the customer confirmed this" produces content, not provenance. This is the same separation as the execution boundary that keeps my runtime from grading its own runs: the component that generates text is not the component that says where text came from.
+
+2. **The store is append-only and identity-preserving.** No entry is edited. Revisions are new entries that reference what they supersede, the rule I already enforce for findings and decisions in the review lifecycle. Contamination remains possible, but it must now leave a trail instead of retro-editing its own basis.
+
+3. **Actions bind to entries, not to narrative.** A consequential action names the ledger entries that justify it, and the gate in front of the action checks that their provenance meets that action's requirements. Closing a design-review finding demands the evidence the finding itself asked for: the registered calculation run, the reissued report. Releasing a payment demands basis with authenticated-principal provenance plus a verification event. In neither case is a summary paragraph, however confident, admissible basis.
+
+## Biba, Rediscovered
+
+There are very few original ideas, and to be honest, this isn't one either. Its lineage is worth knowing.
+
+In 1977, Kenneth Biba published the integrity dual of the Bell–LaPadula confidentiality model. Bell–LaPadula keeps secrets from leaking downward: no read up, no write down. [Biba](https://en.wikipedia.org/wiki/Biba_Model) keeps garbage from flowing upward: a high-integrity subject may not read low-integrity data, and a low-integrity subject may not write high-integrity objects. Its dynamic variant, the [*low-water-mark* policy](https://apps.dtic.mil/sti/pdfs/ADA039324.pdf), is the direct ancestor of taint tracking: a subject that reads low-integrity data has its own integrity level lowered to match. Translated to the ledger: taint is monotone through derivation. Any summary, synthesis, or compaction inherits the highest taint among its inputs. There is no prompt so well-written that averaging can clean it.
+
+The 1987 [Clark–Wilson model](https://en.wikipedia.org/wiki/Clark%E2%80%93Wilson_model) is closer still, and it came from studying banks rather than the military. Its claim: commercial integrity is not achieved by labels alone but by *well-formed transactions* and *separation of duty*. Constrained data items may only be modified by certified transformation procedures; unconstrained (untrusted) data may enter the constrained world only through a certified upgrade procedure; independent verification procedures audit that the books still balance. Double-entry bookkeeping — codified by Pacioli in 1494, practiced by Italian merchants well before that — is the original append-only integrity ledger, and the certified upgrade procedure is exactly the missing piece of naive taint tracking: the sign-off. Taint does not decay. Lowering it takes a named authority (a deterministic verifier, a human with decision rights) executing a declared rule, and the sign-off is itself an auditable ledger entry.
+
+Without sign-offs, a taint system converges to "everything is derived from something untrusted, nothing may act," which is the other way to fail. With them, the question becomes *who may bless what, at what cost*. Institutions have policed that question for centuries.
+
+## A Schematic for the Ledger
+
+The part-of-a-harness this post proposes, in one figure:
+
+<FlowDiagram
+	{...provenanceLedgerFlowData}
+	caption="The stamper is the trust boundary. Models above it may only propose; the ledger below it holds the authority. Sign-offs are the single path that raises trust, the gate binds every action to admissible basis, and the monitors assume everything above the rail has already been fooled."
+/>
+
+Walking the boxes:
+
+- **Readers are quarantined.** The model that parses untrusted content has no tools and returns typed values, never instructions: the split at the heart of [CaMeL](https://simonwillison.net/2025/Apr/11/camel/), which reaches deterministic-control-flow-plus-confined-model from the security direction the way [Lambda-RLM](/blog/recursive-by-design/) reached it from cost and reliability. I find it genuinely funny that these two derivations agree; I take that as evidence this approach and its design is real.
+- **The stamper is code.** Provenance is recorded from what the runtime observed.
+- **The gate checks evidence before every action.** Each kind of action comes with a declared rule for what must back it: which sources, how trusted, verified by whom. Before anything runs, code checks that rule, and if the conversation is enthusiastic but the evidence is thin, the action is refused, out loud. This is [Executable Standards](/blog/executable-standards/) applied to behaviour instead of designs: the rule is a small program with its own tests and a record of every decision it makes. The one twist is that its should-fail test cases are attacks, and attackers keep writing new ones, so that test suite is never finished.
+- **Sign-offs are the only way up.** Each one names the authority, the rule, and the evidence, and lands in the same ledger it modifies.
+- **Monitors assume everything else already failed.** They are standing alarms for things that must never happen: an action running on evidence the rules say is too untrusted, a sign-off appearing without the evidence it claims. Among the real entries sit a few planted fakes, deliberately marked untrusted and known to be false; nothing should ever act on them or sign them off, so if anything does, the alarm is the point. And every so often, replay takes an old decision and re-checks it from its recorded evidence, to see whether the record still supports it. This is the one layer you cannot add later, because after launch the only witness to what happened is the system you are trying to audit.
+
+Does this design actually stop the incident that opened this post? I can answer that on the record, because [Fluent, But Unsafe](/blog/fluent-but-unsafe/) preserved the leak itself. In the road-drainage task, the improvement loop wrote the roughness coefficient into the instructions and the score rose from 0.76 to a manufactured 1.0. Trace that same write through the boxes above:
+
+<ProcessComparison
+	{...leakReplayComparisonData}
+/>
+
+This is a replay on paper, not a new experiment; the right-hand column is unbuilt. But the trace is exact, and it shows where the original design was blind: the write was invisible because nothing recorded who wrote the instructions. None of this reforms the improvement loop. Its edits simply arrive with a name attached.
+
+## What aec-bench Already Does
+
+A design note is cheap, so it matters which parts of this already run. More than I expected. Most of the ledger exists in aec-bench today, built for evaluation reasons long before I had the security framing: the boundary that keeps the runtime from grading its own runs, the archived submissions with permanent identities, the checks that compare recorded inputs instead of trusting what the agent says about them. I did not set out to build integrity machinery; I was chasing leaked answers, manufactured scores, and agents claiming work they had not done, and the fixes turned out to be the same parts.
+
+Of course, not everything is there. What is missing is just as specific. Here is the split:
+
+| Ledger principle | Status in aec-bench |
+| --- | --- |
+| Runtime may not declare success | Built: the execution boundary returns status and usage, never reward |
+| Append-only, identity-preserving records | Built: archived submissions, permanent action IDs, stable finding identities across review stages |
+| Actions bind to explicit basis | Built: closeout requires the operation-to-action-ID mapping; a list of claims does not score |
+| Inputs compared, not narrated | Built: reuse-vs-recompute checks the exact inputs behind each result; an agent cannot make a stale result current by saying so |
+| Negative invariants against contamination | Built: variant-blindness and tests asserting hidden answers are absent |
+| Explicit insufficiency instead of forced answers | Built: `insufficient data` and `not_evaluable` are first-class results |
+| Taint algebra with monotone derivation | Not built: nothing in the current harness distinguishes trusted from untrusted *sources* of text |
+| Sign-offs as ledger entries | Not built: expert review exists, but its authority is not yet a typed, auditable event |
+| Planted fakes and forbidden-flow alarms | Not built: contamination checks run at test time, not as always-on alarms |
+
+{/* TODO(theo): link Part 2 (The Packet Starts Moving) here once it ships. */}
+
+The pattern in the unbuilt rows is consistent: aec-bench polices *what the agent did* very well and *where the words came from* not at all. That was the correct order for a benchmark. It reverses for a deployed agent, because a benchmark's text is authored by me and a deployment's text is authored by whoever wants to be.
+
+## The Minimum Ledger
+
+If I were building a long-running agent workflow (in engineering, in finance, anywhere the actions have owners), there are three fields I would refuse to launch without. These three cannot be added later; everything else can.
+
+1. **Basis.** Every consequential action records the ledger entries that justified it. Without this, incident review reconstructs decisions from chat logs and vibes.
+2. **Origin.** Every entry records its runtime-stamped source and channel. Without this, taint tracking can never be added, because history is already laundered.
+3. **Authority events.** Every approval, clearing, or override is an entry naming who, under what rule, on what evidence. Without this, "a human was in the loop" is a sentence, not a record.
+
+Append-only from day one; the monitors can arrive in week two, but they will have something to watch. Regulators are converging on the same demand (continuous assurance rather than one-time approval), and the ledger is what makes continuous assurance a query instead of a forensic project.[^assurance]
+
+## What This Does Not Solve
+
+Provenance tells you where a claim came from. It does not tell you whether the claim is true. A record can carry perfect stamps and still be wrong, so the verifiers and the human experts are still crucial. And whoever grants the sign-offs becomes the most valuable thing to corrupt: fool the signer, and every lie they bless inherits their trust. The problem does not disappear; it is just displaced. But still, I like the trade, because it moves from the inside of a model, where nobody can audit anything, to a signature on a record, which engineering firms, banks, land registries, and pharmacies, have policed for centuries.
+
+The second cost is stiffness. Declared actions bring back some of the rigidity language models freed us from: plenty of reasonable requests will not fit any action the system knows. At least the failure is a safe one. The agent can always talk; it just cannot act on a request that has no declared shape. And every request that fails to fit is a note about what the system should learn to do next, which is how the action list grows from real use and experience, not just guesswork.
+
+The opening result stands: the attacker still moves second. The ledger does not make corruption impossible. It makes corruption **loud, attributable, and expensive**, which is all "integrity" has ever meant in domains where records must withstand scrutiny.
+
+[^attacker-paper]: Nasr et al., "The Attacker Moves Second: Stronger Adaptive Attacks Bypass Defenses Against LLM Jailbreaks and Prompt Injections" (2025), with authors across OpenAI, Anthropic, and Google DeepMind. See also [Simon Willison's summary](https://simonwillison.net/2025/Nov/2/new-prompt-injection-papers/) of the paper alongside the Rule of Two.
+[^goodhart-org]: The organisational reading is out of scope here, but worth a beat: a KPI is a verifier with a bonus pool pointed at it, and an annual incentive cycle hands the attacker twelve months against a frozen defense. Enterprises rarely staff their dashboards like systems under active attack, which is what this framing says they are. Perhaps a later post.
+[^rule-of-two]: The Rule of Two is explicitly presented as an interim posture "until robustness research allows us to reliably detect and refuse prompt injection," and is modelled on the Chromium project's [Rule of 2](https://chromium.googlesource.com/chromium/src/+/main/docs/security/rule-of-2.md) for handling untrustworthy inputs. Willison notes one sharp edge: untrusted input plus state change is still dangerous even without sensitive-data access.
+[^couch]: The lineage, briefly: Lacan's [mirror stage](https://en.wikipedia.org/wiki/Mirror_stage) (and Žižek after him) on the ego as *méconnaissance*, a constitutive misrecognition rather than a faithful report; Gazzaniga's split-brain [interpreter](https://en.wikipedia.org/wiki/Left-brain_interpreter) experiments; Nisbett and Wilson's ["Telling More Than We Can Know"](https://doi.org/10.1037/0033-295X.84.3.231) (1977, coincidentally Biba's year), in which people confidently confabulate the causes of their own behaviour; Dennett's self as a "center of narrative gravity." The engineering difference is the hopeful part: evolution could not refactor the ego, because the fiction is load-bearing. A harness gets to choose its loop topology before the pathology exists, and it keeps complete traces. Psychoanalysis with full logs and a rollback button.
+[^assurance]: In Australia, APRA's April 2026 letter to regulated entities asks for AI governance with monitoring, independent challenge, and incident learning rather than static pre-deployment approval. The ledger described here is the data structure that makes such assurance cheap to answer.
