@@ -132,6 +132,7 @@ const bottomLayersWithAccent = bottomLayers.map((l, i) => ({
 		border-radius: 4px;
 		background: var(--color-surface);
 		overflow: hidden;
+		text-align: left;
 	}
 
 	.fd-layer::before {
@@ -150,6 +151,7 @@ const bottomLayersWithAccent = bottomLayers.map((l, i) => ({
 		letter-spacing: 0.08em;
 		color: var(--fd-accent);
 		margin-bottom: 0.35rem;
+		text-align: center;
 	}
 
 	.fd-layer-label {
@@ -159,6 +161,7 @@ const bottomLayersWithAccent = bottomLayers.map((l, i) => ({
 		text-transform: lowercase;
 		color: var(--color-text-primary);
 		margin-bottom: 0.7rem;
+		text-align: center;
 	}
 
 	.fd-items {
@@ -254,6 +257,11 @@ const bottomLayersWithAccent = bottomLayers.map((l, i) => ({
 			grid-template-columns: repeat(2, minmax(0, 1fr));
 			gap: 1rem;
 		}
+
+		.fd-bottom-3 {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 0.75rem;
+		}
 	}
 
 	.fd-caption {
@@ -265,5 +273,6 @@ const bottomLayersWithAccent = bottomLayers.map((l, i) => ({
 		color: var(--color-text-tertiary);
 		line-height: 1.55;
 		font-style: normal;
+		text-align: left;
 	}
 </style>
