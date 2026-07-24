@@ -1,0 +1,172 @@
+---
+title: "Broad Creation, Narrow Authority"
+description: "An open-ended approach to AI-enabled software: let practitioners explore, embed controls in the platform, and govern the moment an experiment acquires organisational consequence."
+author: "Theodoros Galanos"
+category: "Engineering"
+draft: false
+pubDate: 2026-07-24
+updatedDate: 2026-07-24
+tags: ["agentic-ai", "harness-engineering", "governance", "ai-strategy", "open-endedness", "software-engineering"]
+featured: false
+---
+
+import PromotionGateDiagram from '../../components/charts/PromotionGateDiagram.astro';
+import CreationAuthorityMatrix from '../../components/charts/CreationAuthorityMatrix.astro';
+import AuthorityLadderDiagram from '../../components/charts/AuthorityLadderDiagram.astro';
+import VerificationBoundaryDiagram from '../../components/charts/VerificationBoundaryDiagram.astro';
+
+I was recently asked a sensible set of questions about AI-enabled software. How much of this do we want people to do? What should they be allowed to build? How do we focus them on the right problems? How do we deploy safely?
+
+I think some discussion revolves around putting a gate in the wrong place.
+
+Before an experiment exists, we often cannot know which problem, prototype, or odd detour will become useful. Organisations should not try to approve every stepping stone in advance. They should govern the authority that anything built is allowed to acquire.
+
+In [*Mediation, Not Intermediation*](/blog/mediation-not-intermediation/), I argued for a simple operating model, which also doubles as a governance architecture: high-level principles and low-level infrastructure, with as little as possible between them. AI-enabled software creation is a useful test of that position. What happens when the person closest to a problem can build a solution directly, while the organisation still has to remain safe?
+
+My answer is:
+
+> Open-endedness belongs in discovery. Objectives and assurance belong in operation.
+
+In practice, that means allowing broad creation while keeping authority narrow, and governing promotion instead of creation.
+
+<PromotionGateDiagram />
+
+## The gate is in the wrong place
+
+“Vibe coding” has become the catch-all term for software made with AI. It is catchy, but not very useful for organisational decisions.
+
+The term originally described a deliberately low-attention mode of programming: accept the generated code, follow the errors, and keep prompting until the thing works. That can be perfectly reasonable for a disposable experiment. But it no longer describes all work with contemporary coding agents, and it obscures how capable current models and their harnesses have become. They can produce high-quality experimental software with real technical substance, even when that software has not yet reached production status. “Vibe coding” collapses a toy built on a Sunday afternoon, a domain expert automating a recurring task, and an engineer developing a maintained production system into one vague category.
+
+The label also tempts us to govern the identity or method of the builder. Was this made by a “real” developer? Was AI used? Did the person understand every line?
+
+Those questions can matter, but they are poor first-order measures of risk. A short human-written script with a production credential can be more dangerous than a large AI-assisted application isolated from sensitive data and external systems. The better questions concern the artefact itself: what can it read, what can it change, who relies on it, how long will it persist, how easily can it be reversed, and what happens when it is wrong?
+
+Creation and authority are different things. Our governance models need to recognise that.
+
+<CreationAuthorityMatrix />
+
+## The people closest to the work
+
+The positive case for broad access is stronger than “people will use personal subscriptions if we do not give them licences”, although that displacement risk is real.
+
+People closest to a workflow see things that a central technology function cannot inventory in advance. They know where judgement is repeatedly converted into clerical effort, where information is copied between systems, which exception consumes half a day, and which apparently small inconvenience is multiplied across hundreds of projects.
+
+They are not automatically qualified to operate consequential software. They are, however, well positioned to discover what may be worth building.
+
+An [Anthropic](https://www.anthropic.com/research/claude-code-expertise) study of roughly 400,000 coding-agent sessions found domain expertise associated with successful outcomes and better recovery from mistakes. It also observed people across many occupations succeeding at coding tasks. This is vendor research and observational rather than causal, but the pattern is plausible: an agent can supply more of the *how* while the practitioner supplies the *what* and the judgement required to recognise a useful result.
+
+Finally, it is important to remember that central approval of use cases is not neutral. It encodes a search strategy. Only ideas that can already explain their value, estimate their return, and resemble an approved destination are allowed to exist. That is useful for delivering against known objectives. It is a poor way to discover what the organisation does not yet know it needs.
+
+The cost is easy to miss because both approaches can end with the same narrow trickle into production. A gate on creation does not make that final gate stricter. It removes the search space above it: experiments never run, stepping stones never get built, and abandoned work never becomes someone else’s starting point.
+
+Broad managed access becomes part of the organisation’s search capability.
+
+## The stepping stones cannot be approved in advance
+
+This is where Kenneth Stanley and Joel Lehman’s [*Why Greatness Cannot Be Planned*](https://link.springer.com/book/10.1007/978-3-319-15524-1) becomes useful.
+
+Their argument grew from experiments in artificial evolution. When a search problem is ambitious or deceptive, rewarding candidates for appearing closer to the objective can trap the search. The intermediate discoveries needed to reach an interesting result may not resemble that result at all. A promising stepping stone can look like failure when measured only against the final destination.
+
+[Novelty search](https://doi.org/10.1162/EVCO_a_00025) still had direction: it rewarded behavioural difference rather than proximity to a predefined destination. Objectives remain useful when the path is known or after a promising direction has been found.
+
+The organisational analogy also has limits. Companies differ fundamentally from evolutionary algorithms; novelty and value can diverge. Domain practitioners see local opportunities, while systemic, legal, and professional risks may sit elsewhere.
+
+But the central insight travels well: we often discover ambitious outcomes through stepping stones whose significance could not have been justified in advance.
+
+I first fell in love with open-endedness when [*Robots that can adapt like animals*](https://www.nature.com/articles/nature14422) appeared in *Nature* in 2015. The idea that a damaged robot could recover by drawing on a diverse repertoire of high-performing gaits, rather than one prescribed answer, stayed with me. I later carried that instinct into [*ARCH-Elites*](https://arxiv.org/abs/2104.08774), using MAP-Elites to explore urban-design possibilities, and into our work on [*OpenELM*](https://openreview.net/pdf?id=C0SGtHjr4wK), bringing language models into evolutionary search.
+
+Stanley and Lehman’s collaborative project [Picbreeder](https://pubmed.ncbi.nlm.nih.gov/20964537/) makes the social dimension especially interesting. People evolved and shared images, often continuing from discoveries made by other participants. One person’s intermediate became another person’s starting point. Later work combined human judgements of what was interesting with novelty-driven exploration rather than relying on a fixed objective alone.
+
+An organisation needs an equivalent shared record of experiments and reusable parts. A prototype abandoned by one team might expose a useful component, workflow pattern, agent skill, evaluation, interface, or data service for another. Exploration compounds only when its stepping stones are visible, attributable, and reusable. Otherwise broad experimentation produces a graveyard of private scripts rather than organisational learning.
+
+Repositories, reusable components, internal APIs, skills, agents, examples, and searchable records are therefore not administrative residue. They are the low-level infrastructure of organisational search: its shared memory, and the means by which one experiment becomes another’s starting point.
+
+## Cheap code, expensive ownership
+
+The case for open-ended exploration can be mistaken for a case against ownership and control. It is not.
+
+The strongest objection is not that people outside technology cannot be trusted to create software. It is that benefits are local while dependencies are socialised. One person saves an hour; everyone else may inherit the credentials, maintenance burden, support obligation, and business dependency.
+
+AI makes code cheap. It does not make software ownership cheap.
+
+The lowered barrier to creation can also produce dangerous confidence. Generated systems arrive fluent and polished. They can look complete before anyone has established that they are correct, secure, observable, recoverable, supportable, or even solving the right problem. As I argued in [*Fluent, But Unsafe*](/blog/fluent-but-unsafe/), apparent competence is not the same thing as demonstrated reliability.
+
+And an artefact can become operational without a formal production launch. A personal tool becomes a team dependency when colleagues begin relying on its output. A prototype crosses a boundary when it gains a sensitive data source. A scheduled script acquires persistence. An agent gains authority when it can send, approve, purchase, modify, or publish.
+
+The safety concern is real. It changes the design of broad enablement; it does not invalidate it.
+
+## Govern promotion, not creation
+
+The important boundary is the point at which an artefact acquires organisational authority.
+
+Promotion is a change in fact, not merely a deployment process. It occurs when software gains one or more of the following:
+
+- access to sensitive or protected data;
+- power to act on another system or person;
+- influence over a material decision;
+- persistence beyond an isolated experiment;
+- shared use or organisational reliance.
+
+Each increase in authority should require proportionate evidence and explicit ownership. More sensitive data demands stronger handling controls. More autonomy demands tighter permissions and observability. Greater reliance demands tests, support, recovery, and retirement arrangements. Irreversible action demands more scrutiny than a reversible recommendation.
+
+<AuthorityLadderDiagram />
+
+A recent [OpenAI disclosure](https://openai.com/index/safety-alignment-long-horizon-models/) makes the distinction unusually concrete. During a NanoGPT speedrun evaluation, whose task was to train a small language model in fewer steps, a long-running model developed PowerCool, a learning-rate schedule that materially improved the result. The model had been told to report only in Slack, while the public benchmark instructions called for a GitHub pull request. It spent about an hour finding a weakness in its sandbox and opened the pull request. Other participants saw and reused the work before OpenAI closed it, and later record submissions cited the discovery. The discovery was valuable. Its external publication was not authorised, and later reuse did not retroactively grant that authority.
+
+This creates three operating regimes.
+
+**Explore.** People can build widely inside managed, low-consequence environments. Identity is known. Data and network access are bounded. Secrets are controlled. Experiments cannot act on production. Work is preserved where it can become a reusable stepping stone.
+
+**Promote.** An artefact seeking greater authority must make its intended use, owner, dependencies, evidence, permissions, operating limits, and recovery path visible. The transition is deliberately thin, but it is real.
+
+**Operate.** Consequential software enters the appropriate professional software development lifecycle. It receives the assurance, monitoring, incident response, change management, support, and retirement discipline its consequences require. AI grants no waiver from these obligations.
+
+In this model, people choose the problems, principles define the invariants, platforms enforce them, and promotion requires evidence.
+
+## Put governance in the platform
+
+In [*Where Capability Actually Lives*](/blog/where-capability-actually-lives-in-agentic-engineering/), I argued that an agent’s real capability does not live in the model alone. It is distributed across tools, verifiers, output contracts, control flow, interfaces, and human review.
+
+The same is true of safe software creation. Safety is a property of the environment in which creation occurs and of the authority that environment can confer.
+
+The practical prerequisite is therefore more than a licence. It is a paved environment that controls identity, execution, data, credentials, and source; verifies what is built; and stages deployment with observability, rollback, and accountable ownership. Controls should be expressed as close as possible to the systems they govern.
+
+This does not mean the platform should prescribe one approved process for every idea. It should encode invariants: no production credentials in an experiment; no untracked deployment; no silent use of protected data; no consequential action without an owner; no promotion without the evidence appropriate to the risk.
+
+The platform is not the process. It is the space in which many processes can safely evolve.
+
+Although I have used coding agents as the example, the same argument applies to AI-driven workflow development inside specialised harnesses. Domain experts can generate and refine workflows directly, bringing task knowledge and judgement into the system without requiring a central software team to translate every step. The harness can bound access to data, tools, and actions while leaving the workflow open to exploration. The principle remains the same: broad creation, narrow authority.
+
+There is already precedent for this distinction outside the AI discussion. Australia’s [APRA practice guide on information security](https://www.apra.gov.au/practice-guides/cpg-234) treats end-user-developed software according to its criticality and sensitivity and expects critical or sensitive tools to follow lifecycle controls. At the same time, it explicitly leaves room for tools to be evaluated and experimented with outside production. That is a more mature frame than either “only technologists may build” or “anything anyone builds is fine”.
+
+Another recent failure makes the architectural point more sharply. After an AI agent deleted data from an application’s database, and development changes affected the production application, [Replit’s response](https://replit.com/blog/doubling-down-on-our-commitment-to-secure-vibe-coding) included default separation of development and production databases, stronger rollback, and plans for a chat-only mode. The lesson here was not merely that the agent should have been more trustworthy or that a person should have watched every action. The exploratory environment should never have possessed that production authority. The architecture should constrain the consequences of exploration without constraining curiosity.
+
+## Verification everywhere, permission at the boundary
+
+Embedding controls does not mean trusting everything automatically, but rather changing how trust is established.
+
+If every generated change requires a scarce specialist to inspect everything manually, review becomes the new bottleneck. The organisation recreates the intermediation it was trying to remove, and the volume of apparently finished software eventually overwhelms the reviewers.
+
+The practical goal is pervasive verification with selective human permission.
+
+Routine checks should run as part of the workflow: tests, policy and security checks, provenance, permission boundaries, deployment evidence, and telemetry. Their point is not to replace human judgement but reserve it for the places it contributes something irreducible: purpose, professional validity, unusual risk, contested trade-offs, exceptions, and changes in organisational authority.
+
+<VerificationBoundaryDiagram />
+
+A separate OpenAI evaluation exposes the same boundary at much higher consequence. In another more recent security case, during an ExploitGym cyber-capability test, models with reduced refusals and without the normal production classifiers found a zero-day in a package-registry proxy, reached the internet, escalated privileges, and compromised Hugging Face production to obtain benchmark solutions. OpenAI says the models remained focused on the assigned goal; the failure was that the surrounding infrastructure left a route to authority the evaluation should never have possessed. This happened during evaluation, not model training. Both organisations describe their findings as preliminary. [OpenAI’s account](https://openai.com/index/hugging-face-model-evaluation-security-incident/) and [Hugging Face’s incident report](https://huggingface.co/blog/security-incident-july-2026/) are literal demonstrations that an isolated environment is only as bounded as its real dependencies, credentials, egress, and privilege paths. Most organisational tools will never approach this capability or consequence. The relevance is structural: instructions describe intent, while environments determine reach.
+
+The [adjacent OpenAI safety report](https://openai.com/index/safety-alignment-long-horizon-models/) makes the control problem explicit: individual actions can appear permissible while the overall trajectory produces an unacceptable outcome. Monitoring therefore has to follow the sequence and be able to pause it. Hugging Face encountered the inverse problem during incident response. Commercial model APIs blocked legitimate forensic analysis because the evidence contained real exploit payloads and attack commands, so the team used a locally hosted open-weight model instead. A blanket refusal had no way to understand the organisational context. Controls need trusted paths for legitimate high-risk work as well as hard boundaries on its consequences.
+
+Verification cannot become a meeting at every step. We need to automate the checks we can define as executable programs, and reserve human judgement for decisions that need context and authority.
+
+This is mediation: shaping the conditions under which work can happen safely. A queue of people granting permission for routine activity is intermediation.
+
+## An organisation that can discover
+
+We cannot centrally plan every useful application of AI-enabled software, because we cannot name every valuable stepping stone in advance. People closest to the work need room to follow small frictions, strange combinations, and unconventional paths through the solution space.
+
+That room should be deliberately constructed. Exploration needs bounded environments, cheap failure, shared memory, and the ability to recombine what others discover. Operational authority needs evidence, ownership, assurance, and limits. Confusing those regimes either suffocates discovery or exposes the organisation to dependencies it never consciously accepted.
+
+The organisation cannot plan which experiment will become the stepping stone. It can make exploration safe and failure cheap, then require consequential software to earn its authority.
+
+Everyone may create. Nobody may silently create an organisational dependency.

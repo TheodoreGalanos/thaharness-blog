@@ -1,0 +1,780 @@
+<!-- ABOUTME: Compares creation-gated and promotion-gated paths to the same operating authority. -->
+<!-- ABOUTME: Shows the search space and reusable stepping stones lost when permission arrives too early. -->
+---
+import { promotionGateFigure } from '../../data/broad-creation-narrow-authority-figures';
+
+const titleId = 'promotion-gate-title';
+const descriptionId = 'promotion-gate-description';
+---
+
+<figure class="pgd" aria-labelledby={titleId} aria-describedby={descriptionId}>
+	<header class="pgd-header">
+		<span class="pgd-kicker">Architecture comparison</span>
+		<span class="pgd-thesis">
+			Same authority
+			<i aria-hidden="true"></i>
+			Different search cost
+		</span>
+	</header>
+
+	<div class="pgd-title" id={titleId}>{promotionGateFigure.title}</div>
+	<p class="pgd-description visually-hidden" id={descriptionId}>
+		{promotionGateFigure.description}
+	</p>
+
+	<div class="pgd-canvas" aria-hidden="true">
+		<div class="pgd-panels">
+			{promotionGateFigure.placements.map((placement) => (
+				<section class:list={['pgd-panel', `is-${placement.id}`]}>
+					<header class="pgd-panel-header">
+						<span class="pgd-panel-number">{placement.number}</span>
+						<div>
+							<span class="pgd-panel-eyebrow">Gate placement</span>
+							<h3>{placement.label}</h3>
+						</div>
+					</header>
+
+					<div class="pgd-architecture">
+						{placement.id === 'creation' ? (
+							<>
+								<div class="pgd-ideas">
+									<div class="pgd-section-label">
+										<span>Proposed ideas</span>
+										<small>untested</small>
+									</div>
+									<div class="pgd-idea-row">
+										{promotionGateFigure.lostIdeas.map((idea) => (
+											<i class="pgd-idea" data-idea={idea}></i>
+										))}
+									</div>
+								</div>
+
+								<div class="pgd-gate">
+									<div class="pgd-gate-track">
+										<span class="pgd-gate-rail"></span>
+										<span class="pgd-aperture"></span>
+										<span class="pgd-gate-rail"></span>
+									</div>
+									<div class="pgd-gate-copy">
+										<strong>{placement.gateLabel}</strong>
+										<span>{placement.gateDetail}</span>
+									</div>
+								</div>
+
+								<div class="pgd-approved-path">
+									<div class="pgd-approved">
+										{promotionGateFigure.approvedExperiments.map((experiment) => (
+											<i data-experiment={experiment}></i>
+										))}
+									</div>
+									<span>Approved experiments</span>
+									<div class="pgd-flow-line"></div>
+								</div>
+							</>
+						) : (
+							<>
+								<div class="pgd-exploration">
+									<div class="pgd-section-label">
+										<span>Bounded exploration</span>
+										<small>no operating authority</small>
+									</div>
+
+									<div class="pgd-field">
+										<svg
+											class="pgd-links"
+											viewBox="0 0 100 100"
+											preserveAspectRatio="none"
+										>
+											<defs>
+												<marker
+													id="pgd-link-arrow"
+													viewBox="0 0 10 10"
+													refX="8"
+													refY="5"
+													markerWidth="5"
+													markerHeight="5"
+													orient="auto-start-reverse"
+												>
+													<path d="M 0 0 L 10 5 L 0 10 z"></path>
+												</marker>
+											</defs>
+											{promotionGateFigure.connections.map((connection) => (
+												<path d={connection} marker-end="url(#pgd-link-arrow)"></path>
+											))}
+										</svg>
+
+										{promotionGateFigure.experiments.map((experiment) => (
+											<i
+												class:list={['pgd-experiment', `is-${experiment.tone}`]}
+												style={`--pgd-x: ${experiment.x}%; --pgd-y: ${experiment.y}%;`}
+											></i>
+										))}
+
+										<span class="pgd-field-note">branch · fail · reuse · recombine</span>
+									</div>
+								</div>
+
+								<div class="pgd-candidate-flow">
+									<span>Candidate</span>
+									<div class="pgd-flow-line"></div>
+								</div>
+
+								<div class="pgd-gate">
+									<div class="pgd-gate-track">
+										<span class="pgd-gate-rail"></span>
+										<span class="pgd-aperture"></span>
+										<span class="pgd-gate-rail"></span>
+									</div>
+									<div class="pgd-gate-copy">
+										<strong>{placement.gateLabel}</strong>
+										<span>{placement.gateDetail}</span>
+									</div>
+								</div>
+							</>
+						)}
+
+						<div class="pgd-outcome">
+							<div class="pgd-outcome-flow"></div>
+							<div class="pgd-outcome-box">
+								<span>Same narrow authority</span>
+								<strong>{placement.outcome}</strong>
+								<small>owned · monitored · reversible</small>
+							</div>
+						</div>
+					</div>
+
+					<p class="pgd-panel-note">
+						<span>{placement.id === 'creation' ? 'What is lost' : 'What is preserved'}</span>
+						{placement.note}
+					</p>
+				</section>
+			))}
+		</div>
+
+		<div class="pgd-equivalence">
+			<span class="pgd-equivalence-mark" aria-hidden="true">=</span>
+			<p>
+				<strong>Equally strict at the boundary.</strong>
+				The difference is the search space allowed to exist before it.
+			</p>
+			<ul>
+				{promotionGateFigure.promotionCriteria.map((criterion) => (
+					<li>{criterion}</li>
+				))}
+			</ul>
+		</div>
+	</div>
+
+	<figcaption class="pgd-caption">{promotionGateFigure.caption}</figcaption>
+</figure>
+
+<style>
+	.pgd {
+		--pgd-accent: var(--color-accent);
+		--pgd-secondary: var(--color-accent-secondary);
+		--pgd-aperture-width: 3.25rem;
+		--pgd-line: color-mix(in srgb, var(--color-text-tertiary) 72%, transparent);
+		--pgd-soft-line: color-mix(in srgb, var(--color-border) 84%, transparent);
+		--pgd-field: color-mix(in srgb, var(--color-surface) 82%, transparent);
+
+		margin: 3.25rem 0 4rem;
+		color: var(--color-text-primary);
+		font-family: var(--font-body);
+		text-align: left;
+		container-type: inline-size;
+	}
+
+	.pgd-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding-bottom: 0.75rem;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.pgd-kicker,
+	.pgd-thesis,
+	.pgd-panel-number,
+	.pgd-panel-eyebrow,
+	.pgd-section-label,
+	.pgd-gate-copy,
+	.pgd-approved-path,
+	.pgd-candidate-flow,
+	.pgd-outcome-box,
+	.pgd-panel-note,
+	.pgd-equivalence {
+		font-family: var(--font-mono);
+	}
+
+	.pgd-kicker {
+		font-size: 0.625rem;
+		font-weight: 600;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--pgd-accent);
+	}
+
+	.pgd-thesis {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.55rem;
+		font-size: 0.625rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.pgd-thesis i {
+		width: 1.75rem;
+		height: 1px;
+		background: linear-gradient(90deg, var(--pgd-secondary), var(--pgd-accent));
+	}
+
+	.pgd-title {
+		margin: 0.9rem 0 1.35rem;
+		font-family: var(--font-display);
+		font-size: clamp(1.35rem, 3vw, 1.75rem);
+		font-weight: 500;
+		line-height: 1.2;
+		letter-spacing: -0.01em;
+	}
+
+	.pgd-canvas {
+		border-block: 1px solid var(--color-border);
+		background:
+			linear-gradient(var(--color-bg-grid) 1px, transparent 1px),
+			linear-gradient(90deg, var(--color-bg-grid) 1px, transparent 1px);
+		background-size: 2rem 2rem;
+	}
+
+	.pgd-panels {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.pgd-panel {
+		min-width: 0;
+		padding: 1.15rem 1.15rem 1.25rem;
+		background: color-mix(in srgb, var(--color-bg) 78%, transparent);
+	}
+
+	.pgd-panel + .pgd-panel {
+		border-left: 1px solid var(--color-border);
+	}
+
+	.pgd-panel-header {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		min-height: 3.25rem;
+		padding-bottom: 0.9rem;
+		border-bottom: 1px solid var(--pgd-soft-line);
+	}
+
+	.pgd-panel-number {
+		display: grid;
+		flex: 0 0 auto;
+		width: 1.75rem;
+		height: 1.75rem;
+		place-items: center;
+		border: 1px solid var(--pgd-line);
+		border-radius: 50%;
+		font-size: 0.625rem;
+		font-weight: 600;
+		color: var(--color-text-secondary);
+	}
+
+	.is-promotion .pgd-panel-number {
+		border-color: color-mix(in srgb, var(--pgd-secondary) 60%, var(--color-border));
+		color: var(--pgd-secondary);
+	}
+
+	.pgd-panel-eyebrow {
+		display: block;
+		margin-bottom: 0.13rem;
+		font-size: 0.5rem;
+		letter-spacing: 0.13em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.pgd-panel h3 {
+		margin: 0;
+		font-family: var(--font-heading);
+		font-size: 0.9375rem;
+		font-weight: 500;
+		line-height: 1.2;
+		color: var(--color-text-primary);
+	}
+
+	.pgd-architecture {
+		display: flex;
+		flex-direction: column;
+		min-height: 30rem;
+		padding-top: 1rem;
+	}
+
+	.pgd-section-label {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.75rem;
+		font-size: 0.5625rem;
+		letter-spacing: 0.09em;
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+	}
+
+	.pgd-section-label small {
+		font-size: 0.5rem;
+		letter-spacing: 0;
+		text-transform: none;
+		color: var(--color-text-tertiary);
+	}
+
+	.pgd-ideas {
+		height: 6.15rem;
+		padding: 0.7rem 0.7rem 0.8rem;
+		border: 1px dashed var(--pgd-soft-line);
+		border-radius: 4px;
+		background: color-mix(in srgb, var(--color-surface) 56%, transparent);
+	}
+
+	.pgd-idea-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.25rem;
+		height: 3.4rem;
+	}
+
+	.pgd-idea {
+		display: block;
+		width: 0.7rem;
+		height: 0.7rem;
+		border: 1.5px dashed var(--pgd-line);
+		border-radius: 50%;
+		opacity: 0.78;
+	}
+
+	.pgd-gate {
+		position: relative;
+		padding-top: 1.05rem;
+	}
+
+	.pgd-gate-track {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) var(--pgd-aperture-width) minmax(0, 1fr);
+		align-items: center;
+		width: 100%;
+	}
+
+	.pgd-gate-rail {
+		height: 0.55rem;
+		border: 1px solid var(--pgd-line);
+		background:
+			repeating-linear-gradient(
+				-45deg,
+				transparent 0,
+				transparent 3px,
+				color-mix(in srgb, var(--pgd-line) 26%, transparent) 3px,
+				color-mix(in srgb, var(--pgd-line) 26%, transparent) 4px
+			),
+			var(--pgd-field);
+	}
+
+	.pgd-gate-rail:first-child {
+		border-radius: 2px 0 0 2px;
+	}
+
+	.pgd-gate-rail:last-child {
+		border-radius: 0 2px 2px 0;
+	}
+
+	.pgd-aperture {
+		position: relative;
+		height: 1.05rem;
+		border-inline: 2px solid var(--pgd-accent);
+		background:
+			linear-gradient(135deg, transparent 45%, var(--pgd-accent) 46% 54%, transparent 55%)
+				left 0.2rem center / 0.45rem 0.45rem no-repeat,
+			linear-gradient(315deg, transparent 45%, var(--pgd-accent) 46% 54%, transparent 55%)
+				right 0.2rem center / 0.45rem 0.45rem no-repeat;
+	}
+
+	.pgd-gate-copy {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		justify-content: center;
+		gap: 0.25rem 0.45rem;
+		min-height: 2.45rem;
+		padding: 0.45rem 0.25rem 0;
+		text-align: center;
+	}
+
+	.pgd-gate-copy strong {
+		font-size: 0.5625rem;
+		font-weight: 600;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--pgd-accent);
+	}
+
+	.pgd-gate-copy span {
+		font-size: 0.5rem;
+		line-height: 1.4;
+		color: var(--color-text-tertiary);
+	}
+
+	.pgd-approved-path {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		align-items: center;
+		min-height: 6.75rem;
+		padding-top: 0.55rem;
+		font-size: 0.5rem;
+		letter-spacing: 0.04em;
+		color: var(--color-text-tertiary);
+	}
+
+	.pgd-approved {
+		display: flex;
+		gap: 0.5rem;
+		margin-bottom: 0.35rem;
+	}
+
+	.pgd-approved i {
+		width: 0.65rem;
+		height: 0.65rem;
+		border-radius: 50%;
+		background: var(--pgd-line);
+	}
+
+	.pgd-flow-line,
+	.pgd-outcome-flow {
+		position: relative;
+		width: 1px;
+		background: var(--pgd-line);
+	}
+
+	.pgd-flow-line::after,
+	.pgd-outcome-flow::after {
+		position: absolute;
+		bottom: -1px;
+		left: 50%;
+		width: 0.36rem;
+		height: 0.36rem;
+		content: '';
+		border-right: 1px solid var(--pgd-line);
+		border-bottom: 1px solid var(--pgd-line);
+		transform: translateX(-50%) rotate(45deg);
+	}
+
+	.pgd-approved-path .pgd-flow-line {
+		flex: 1;
+		min-height: 2.4rem;
+		margin-top: 0.55rem;
+	}
+
+	.pgd-exploration {
+		height: 15.25rem;
+		padding: 0.7rem;
+		border: 1px dashed color-mix(in srgb, var(--pgd-secondary) 58%, var(--color-border));
+		border-radius: 4px;
+		background: color-mix(in srgb, var(--pgd-secondary) 4%, var(--color-surface));
+	}
+
+	.pgd-field {
+		position: relative;
+		height: 12.55rem;
+		overflow: hidden;
+	}
+
+	.pgd-links {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		overflow: visible;
+	}
+
+	.pgd-links path {
+		fill: none;
+		stroke: color-mix(in srgb, var(--pgd-secondary) 70%, var(--color-text-tertiary));
+		stroke-width: 1.3;
+		vector-effect: non-scaling-stroke;
+	}
+
+	.pgd-links marker path {
+		fill: color-mix(in srgb, var(--pgd-secondary) 70%, var(--color-text-tertiary));
+		stroke: none;
+	}
+
+	.pgd-experiment {
+		position: absolute;
+		left: var(--pgd-x);
+		top: var(--pgd-y);
+		display: block;
+		width: 0.65rem;
+		height: 0.65rem;
+		border: 1px solid var(--pgd-line);
+		border-radius: 50%;
+		background: var(--color-surface);
+		transform: translate(-50%, -50%);
+	}
+
+	.pgd-experiment.is-linked {
+		border-color: var(--pgd-secondary);
+		background: var(--pgd-secondary);
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--pgd-secondary) 14%, transparent);
+	}
+
+	.pgd-experiment.is-candidate {
+		width: 0.78rem;
+		height: 0.78rem;
+		border-color: var(--pgd-accent);
+		background: var(--pgd-accent);
+		box-shadow: 0 0 0 4px color-mix(in srgb, var(--pgd-accent) 15%, transparent);
+	}
+
+	.pgd-field-note {
+		position: absolute;
+		right: 0.15rem;
+		bottom: 0.15rem;
+		font-family: var(--font-mono);
+		font-size: 0.46rem;
+		letter-spacing: 0.06em;
+		color: var(--color-text-tertiary);
+	}
+
+	.pgd-candidate-flow {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		height: 2.45rem;
+		padding-top: 0.35rem;
+		font-size: 0.48rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--pgd-accent);
+	}
+
+	.pgd-candidate-flow .pgd-flow-line {
+		flex: 1;
+		min-height: 1rem;
+		margin-top: 0.25rem;
+	}
+
+	.pgd-outcome {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		margin-top: auto;
+	}
+
+	.pgd-outcome-flow {
+		height: 1.35rem;
+		margin-bottom: 0.15rem;
+	}
+
+	.pgd-outcome-box {
+		display: grid;
+		width: min(100%, 12.5rem);
+		min-height: 4.3rem;
+		place-items: center;
+		align-content: center;
+		gap: 0.12rem;
+		border: 1px solid var(--pgd-line);
+		border-top: 2px solid var(--pgd-accent);
+		border-radius: 3px;
+		background: var(--pgd-field);
+		text-align: center;
+	}
+
+	.pgd-outcome-box span {
+		font-size: 0.47rem;
+		letter-spacing: 0.09em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.pgd-outcome-box strong {
+		font-family: var(--font-heading);
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--color-text-primary);
+	}
+
+	.pgd-outcome-box small {
+		font-size: 0.45rem;
+		color: var(--color-text-tertiary);
+	}
+
+	.pgd-panel-note {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr);
+		gap: 0.55rem;
+		min-height: 3.2rem;
+		margin: 0.85rem 0 0;
+		padding-top: 0.75rem;
+		border-top: 1px solid var(--pgd-soft-line);
+		font-size: 0.52rem;
+		line-height: 1.55;
+		color: var(--color-text-tertiary);
+	}
+
+	.pgd-panel-note span {
+		font-weight: 600;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+	}
+
+	.is-promotion .pgd-panel-note span {
+		color: var(--pgd-secondary);
+	}
+
+	.pgd-equivalence {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 0.85rem;
+		padding: 0.9rem 1.15rem;
+		border-top: 1px solid var(--color-border);
+		background: color-mix(in srgb, var(--color-surface) 78%, transparent);
+	}
+
+	.pgd-equivalence-mark {
+		display: grid;
+		width: 1.65rem;
+		height: 1.65rem;
+		place-items: center;
+		border: 1px solid var(--pgd-accent);
+		border-radius: 50%;
+		font-size: 0.75rem;
+		color: var(--pgd-accent);
+	}
+
+	.pgd-equivalence p {
+		margin: 0;
+		font-size: 0.5625rem;
+		line-height: 1.55;
+		color: var(--color-text-tertiary);
+	}
+
+	.pgd-equivalence strong {
+		color: var(--color-text-primary);
+	}
+
+	.pgd-equivalence ul {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		gap: 0.28rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.pgd-equivalence li {
+		padding: 0.22rem 0.34rem;
+		border: 1px solid var(--pgd-soft-line);
+		border-radius: 2px;
+		font-size: 0.45rem;
+		line-height: 1;
+		color: var(--color-text-tertiary);
+		background: var(--color-bg);
+	}
+
+	.pgd-caption {
+		margin-top: 0.8rem;
+		padding-left: 0.85rem;
+		border-left: 2px solid var(--pgd-accent);
+		font-family: var(--font-body);
+		font-size: 0.75rem;
+		font-style: italic;
+		line-height: 1.6;
+		color: var(--color-text-secondary);
+	}
+
+	.visually-hidden {
+		position: absolute !important;
+		width: 1px !important;
+		height: 1px !important;
+		padding: 0 !important;
+		margin: -1px !important;
+		overflow: hidden !important;
+		clip: rect(0, 0, 0, 0) !important;
+		white-space: nowrap !important;
+		border: 0 !important;
+	}
+
+	@container (max-width: 48rem) {
+		.pgd-panel {
+			padding-inline: 0.9rem;
+		}
+
+		.pgd-equivalence {
+			grid-template-columns: auto minmax(0, 1fr);
+		}
+
+		.pgd-equivalence ul {
+			grid-column: 2;
+			justify-content: flex-start;
+		}
+	}
+
+	@container (max-width: 34rem) {
+		.pgd-header {
+			align-items: flex-start;
+			flex-direction: column;
+			gap: 0.45rem;
+		}
+
+		.pgd-title {
+			margin-bottom: 1rem;
+		}
+
+		.pgd-panels {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.pgd-panel {
+			padding: 1rem 0.85rem 1.1rem;
+		}
+
+		.pgd-panel + .pgd-panel {
+			border-top: 1px solid var(--color-border);
+			border-left: 0;
+		}
+
+		.pgd-architecture {
+			min-height: 27.5rem;
+		}
+
+		.pgd-panel-note {
+			min-height: auto;
+		}
+
+		.pgd-equivalence {
+			grid-template-columns: auto minmax(0, 1fr);
+			padding-inline: 0.85rem;
+		}
+
+		.pgd-equivalence ul {
+			grid-column: 1 / -1;
+			justify-content: flex-start;
+			padding-left: 2.5rem;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.pgd * {
+			animation: none !important;
+			transition: none !important;
+		}
+	}
+</style>
