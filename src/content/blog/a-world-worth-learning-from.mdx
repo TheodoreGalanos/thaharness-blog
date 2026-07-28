@@ -1,0 +1,191 @@
+---
+title: "A World Worth Learning From"
+description: "Before an agent can learn from experience, its environment has to produce experience worth learning from. A sixteen-run engineering study tested what survives after the agent commits."
+author: "Theodoros Galanos"
+category: "Engineering"
+draft: false
+pubDate: 2026-07-28
+updatedDate: 2026-07-28
+tags: ["harness-engineering", "agent-evaluation", "aec-bench", "task-worlds", "reinforcement-learning", "continual-learning", "ai-in-aec"]
+featured: false
+---
+
+import RewardHeatmap from '../../components/charts/RewardHeatmap.astro';
+import CheckpointTurnProfile from '../../components/charts/CheckpointTurnProfile.astro';
+import EnvironmentLearnerAxes from '../../components/charts/EnvironmentLearnerAxes.astro';
+import ReviewReleaseSequence from '../../components/charts/ReviewReleaseSequence.astro';
+import {
+	campaignRewardHeatmapData,
+	checkpointTurnProfileData,
+	environmentLearnerAxesData,
+	reviewReleaseSequenceData,
+} from '../../data/the-packet-starts-moving-figures';
+
+Estimated reading time: 16 minutes
+
+## TL;DR
+
+[Part 1](/blog/fluent-but-unsafe/) ended with a review record worth preserving. Findings had stable identities, evidence requests stated what is needed to close them, and accepted decisions pointed back to their basis. But, just as it is common in most agentic environments, the agent still saw every revision at once. It reconstructed the history with hindsight, submitted one polished answer, and stopped.
+
+This time, in this environment design approach, we changed this: evidence arrived in three releases. The agent had to make a decision and commit before seeing what comes next, it had to preserve decisions that remained valid after that, and revise only those undermined by new evidence. Finally, it had to leave a record behind that another reviewer, human or agent, could continue.
+
+To do this, I redesigned the hydraulic review task from Part 1 and ran it sixteen times: four versions of the task, each tested with four ways of carrying the past. The pattern was clearer than the scores make it sound. Letting the agent continue in the same model session—with its earlier conversation and submitted reviews still available—finished with the highest overall score. A written handover came close behind. Giving the agent all the files again, but none of its earlier decisions, worked much worse. Giving it only the newest material was worse still: one run did not finish. Since I tested each combination only once, and always in the same order, this is a useful signal, not proof that conversation continuity caused the difference.
+
+Model weights never changed in this setup, this isn't continual learning yet (although next steps will work on that!). It was work focused on what I think is a prerequisite of designing and constructing agentic environments: before an agent can learn from experience, the environment has to produce experience worth learning from.
+
+## The Review Had To Survive Time
+
+[Fluent, But Unsafe](/blog/fluent-but-unsafe/) addressed record keeping but didn't yet solve time.
+
+Those first tasks contained conclusions that later evidence could confirm, overturn, or leave unchanged. Yet the agent never experienced that sequence or passage of time. The original package, the response, the revised report, and the closeout material were all present in one prompt. The task was larger, but the interaction was not longer, and certainly not richer.
+
+I was trying to design long horizon tasks but I think by giving the correction up front I just disguised hindsight as long horizon.
+
+The missing layer of interaction actually starts after the agent commits its response, just as it would in the real world. A reviewer raises a finding, asks for evidence, receives a response, and decides what changed. Some earlier decisions survive. Others must be changed. The final decision is defensible only if the record remains consistent across the whole history.
+
+So I made the environment enforce that sequence: the next batch of evidence stayed hidden until the agent submitted its review of the current one.
+
+## Sutton's Missing Half
+
+This practical problem changed how I read Richard Sutton's [conversation with Dwarkesh Patel](https://www.dwarkesh.com/p/richard-sutton).
+
+Sutton's point, as I understand it, is simple. A language model can be useful without learning from what happens while it is in use. An agent can act, see the result, and still start the next interaction unchanged. Predicting likely text is not the same as learning how a world reacts to your choices.
+
+Dwarkesh's [follow-up reflection](https://www.dwarkesh.com/p/thoughts-on-sutton) adds the other half. Pretraining can give a model the knowledge it needs to start. Learning from experience can then build on that base. These ideas do not have to compete. But the learner still needs a world that gives useful results after it acts.
+
+A prompt and one final score provide little experience. They do not show when the agent formed a conclusion, what changed when new evidence arrived, which earlier decisions still held, or what happened after the agent acted. An engineering environment can answer in several ways. It can reveal a revised report, return a measurement, run a calculation, or apply a permitted action to the asset.
+
+This gives us two different directions of progress:
+
+<EnvironmentLearnerAxes
+	data={environmentLearnerAxesData}
+	caption="The orange path changes the world around a fixed model. This article reached the solid part of that path. Our asset-stewardship work extends it through an asset life. The blue path is different: it changes the model."
+/>
+
+The orange line is the path in this article. The environment revealed new information and returned calculated results, but the model stayed fixed.
+
+The asset-stewardship worlds we are building take the next step along that same line. An asset has a life, not one task. Time passes, equipment deteriorates, duties remain open, and earlier actions affect what happens later. The world continues across inspections, repairs, handovers, and quiet periods when no agent is present. The model can remain fixed through all of this.
+
+That makes the world more alive and continuous. It still does not make the learner continual. That would require movement up the blue line too.
+
+## One Review, Three Releases
+
+The [staged lifecycle](https://github.com/TheodoreGalanos/aec-bench/pull/10) uses a drainage review built around one mundane but dangerous question: Which hydraulic calculation actually supports the design claim, and can we trace it back to the inputs that produced it?
+
+The first set of documents has a traceability gap. A hydraulic report exists, but its result cannot be followed cleanly back to the governing inputs. The agent must distinguish between evidence that exists and evidence that can support a decision. It records the review, opens a finding, states what would close it, and commits the current readiness decision.
+
+After the agent submits its first review, the environment reveals the engineer’s response. The new calculation record and updated hydraulic report now agree and can be traced back to the correct inputs. But the design memo still quotes the old result. The calculation trail has been repaired, but the review issue cannot be fully closed until the design memo is updated too.
+
+The third review contains the revised design memo and formal response. The agent must decide whether the accumulated evidence now supports closeout of the issue.
+
+<ReviewReleaseSequence data={reviewReleaseSequenceData} />
+
+Across these review stages, the agent has to keep the same finding and evidence-request identities, close findings only when the requested evidence exists, preserve decisions whose prior basis has not changed, and replace only what later evidence invalidates.
+
+A fluent summary of the latest files is not enough. History is part of the answer.
+
+## Four Ways To Carry The Past
+
+To understand the impact of history in task execution, and task design in how it handles and uses historical information, I designed four different history carriers:
+
+| Setup | What remains visible |
+| --- | --- |
+| Continuous conversation | The same conversation and the permanent submissions |
+| Written handover | A fresh conversation plus the earlier submissions |
+| All review evidence | A fresh conversation plus every file released so far |
+| Latest review only | A fresh conversation plus only the newest material |
+
+The problem itself, and the correct resolution did not change. Only the information carried from one checkpoint to the next changes.
+
+In the continuous setup, the agent starts with the first review. Once its submission passes the structural checks, the harness archives it and reveals the next review to the same conversation. Each stage in the other setups begins with a fresh conversation, while the harness controls which part of the earlier record remains visible.
+
+This does not create four different agents. It does not turn the continuous conversation into a continual learner. Instead, we are asking a narrower question: what must persist inside one task execution for this agent to maintain an engineering judgment over time?
+
+## The Agent Was Right. The Task Was Wrong.
+
+An early test with Claude Sonnet exposed a problem in the task itself. The agent reached the correct engineering decision, but the scoring system gave it zero.
+
+The agent had done what the review required. It kept the calculations whose inputs had not changed. It repeated the calculations affected by the new rainfall information. It then replaced the old conclusion and made the correct final decision.
+
+The problem was the required answer format. The instructions made information needed only for the final review appear necessary at every review stage. The scoring system also used different names for two parts of the review record. The instructions and the scoring rules did not agree.
+
+To confirm the cause, I took the saved answer and changed only those conflicting parts. I used the names that the scoring system expected. I also removed the final-review information from the earlier stages. The engineering work did not change. The answer then passed every check.
+
+I then fixed the task. Each review stage now states exactly what information the agent must submit. The environment reports missing or extra information at once, while the agent can still correct its answer. A second Sonnet test completed all three reviews and passed every check.
+
+This is an important distinction I come back to often. An agent can fail because its judgment is wrong. A task can fail because its instructions and scoring rules do not agree. If a benchmark cannot separate these causes, it measures its own defects together with the agent's performance.
+
+The system that runs the model must also not decide whether the engineering is correct. It can show documents, accept the agent's answer, and record whether the process finished. Only the separate scoring rules can judge the engineering result. Otherwise, the system that runs the test could also declare itself successful. In Part 1, [that same conflict of authority let expected answers leak into the task instructions](/blog/fluent-but-unsafe/#the-leak).
+
+## What Survived Across Sixteen Runs
+
+Of course, a single trace doesn't prove anything. We need larger experiments if we hope to find useful patterns, or hidden issues.
+
+To look for patterns, I tested four versions of the hydraulic review with four ways of carrying earlier information. Before I started, I fixed the model, the number of allowed turns, the test order, and the rule for choosing the strongest method. I kept every result, including failures.
+
+| Task version | What changes |
+| --- | --- |
+| Administrative update | New evidence arrives, but the engineering decision should not move |
+| Larger-storm rainfall | One governing input changes and invalidates the affected calculation chain |
+| Outlet size | A physical parameter changes |
+| Downstream water level | A downstream boundary condition changes |
+
+The main score showed whether the final review was correct. I also tracked how the agent changed its work. Did it add conclusions supported by new evidence? Did it keep decisions that were still valid? Did it change only the parts affected by the new evidence?
+
+I used Claude Sonnet for all sixteen tests. Fifteen reached the final review. In one test, the agent received only the newest documents. It used all its allowed turns and did not finish. I kept that failed test in the results.
+
+<RewardHeatmap
+	{...campaignRewardHeatmapData}
+	caption="In this comparison, carrying earlier decisions mattered more than receiving the files again. The same model session averaged 77%, written handover 70%, and all documents without earlier decisions 25%. Newest documents only produced three 0% scores and one unfinished run."
+/>
+
+No setup succeeded uniformly.
+
+The agent completed the calculations, but it did not link each calculation to its saved record in the required format. Without those links, the review could not show which calculation supported each decision. Three completed tests received zero. A fourth test did not finish.
+
+The four methods required similar effort during the first review. The differences appeared during the second and third reviews, after the agent had more evidence and earlier decisions to manage. Keeping one model session open required fewer later steps. A written handover used less old conversation text, but the agent needed more steps to rebuild the history.
+
+<CheckpointTurnProfile
+	{...checkpointTurnProfileData}
+	title="The reconstruction burden appears after baseline"
+	subtitle="agent turns per review stage"
+	caption="Four public task versions per setup; the line marks the setup mean. The cross is the incomplete latest-release closeout. Continuous conversation carried more accumulated input text even while using fewer turns after baseline."
+/>
+
+The result gives us a useful question for the next experiment. Does one continuing model session help an agent keep clear links between evidence, calculations, and decisions? Can a good written handover provide most of that benefit with less conversation history?
+
+That is interesting enough to test again.
+
+## The World Begins To Answer Back
+
+The staged review still revealed most evidence on a fixed schedule. The agent had to stand by its earlier conclusions, but it could not yet choose the physical change that produced the next state.
+
+The next task design introduced a small action-dependent world: two catchments, a detention basin, a controlled outlet, an emergency weir, downstream water, and a downstream pipe network. A deterministic engine calculates discharge, velocity, storage, freeboard, and hydraulic grade line.
+
+The agent can request calculations from the deterministic engine for the design storm and a larger storm. When a source revision changes only the larger storm's rainfall, the correct response is selective. The design-storm chain remains current; the larger-storm chain must be recalculated.
+
+Then a further adjustment to the task offers two more interventions to the agent: enlarge the controlled outlet or enlarge the emergency weir. The first brings both storms inside the declared screening criteria. The second clears the local freeboard threshold but leaves the downstream pipe over capacity. Both are plausible local changes; only one resolves the coupled system.
+
+I then ran Claude Sonnet through this world. It found the two problems in the larger storm and, before seeing the calculated result, it chose to enlarge the controlled outlet. Its reasoning was simple: enlarging the emergency weir could send more water into an already constrained pipe, while enlarging the controlled outlet could lower the basin level and reduce the emergency overflow.
+
+The environment saved that choice and applied it. Sonnet kept the rainfall calculations that had not changed, repeated the affected basin and pipe calculations, and updated its decision. In the larger storm, freeboard rose from `0.289 m` to `0.303 m`, above the `0.300 m` minimum. Peak flow fell from `1.620 m³/s` to `1.618 m³/s`, below the pipe capacity of `1.619 m³/s`. Sonnet closed the review as ready.
+
+This was one run, so it does not tell us how reliable models would be on other problems. But it showed the loop working: the model made a choice, the environment changed the asset, and the calculations determined whether the choice worked. The model itself still did not change.
+
+## Where This Leaves Us
+
+We now have an environment that can remember what happened, change when the agent acts, and show what happened next. In the staged review, Sonnet had to keep or revise earlier decisions as new evidence arrived. In the drainage world, its physical choice changed the asset and produced a result it had not seen in advance.
+
+The same model was used from beginning to end. Keeping one conversation open gave it access to its earlier work, but it did not teach the model anything it could carry into a new run.
+
+What we have built is the base needed before learning can be tested. The environment can start from the same state, record what the agent saw and did, judge the result, and reset. A future training system could update the model between runs and then test whether it improves without forgetting what it could already do.
+
+Continual learning would go further: the model would carry changes from one real encounter to the next. We would need to know exactly which model was used, reverse bad updates, and measure what it learned and forgot.
+
+The next step is to make these worlds behave more like real environments. To do that, I will be designing asset-stewardship worlds in which time keeps moving. Equipment deteriorates. Work remains open, and earlier choices shape what can happen later. The first will follow a wastewater pumping station through part of its operating life. The asset, and the world around it, will continue when one task, one conversation, or one evaluation window ends.
+
+That is where the three articles meet. [Part 1](/blog/fluent-but-unsafe/) asked whether an agent could leave behind a trustworthy review. Part 2, this article, asked whether that review could survive new evidence, and whether an agent's action could change the world while the model stayed fixed. Part 3 asks what happens when the harness itself can change, while still being unable to alter its own definition of success.
+
+The engineering is specific, but the attitude is general. If we want agents to learn from experience, we should be as demanding about the experience as we are about the learner. What does the world remember? What can the agent change? Who decides whether the change worked? What remains after the conversation ends?
+
+Before we can ask an agent to learn from experience, we have to build a world whose experience deserves to survive.

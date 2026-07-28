@@ -26,9 +26,10 @@ interface Props {
 	columns: RewardHeatmapColumn[];
 	rows: RewardHeatmapRow[];
 	caption?: string;
+	valueFormat?: 'decimal' | 'percent';
 }
 
-const { title, subtitle, columns, rows, caption } = Astro.props;
+const { title, subtitle, columns, rows, caption, valueFormat = 'decimal' } = Astro.props;
 
 function cellFor(row: RewardHeatmapRow, columnKey: string): RewardHeatmapCell | null {
 	return row.cells.find((c) => c.column === columnKey) ?? null;
@@ -36,7 +37,9 @@ function cellFor(row: RewardHeatmapRow, columnKey: string): RewardHeatmapCell | 
 
 // Reward bands → tone class. A failed status (or absent reward) is the hard zero.
 function cellTone(cell: RewardHeatmapCell | null): string {
-	if (!cell || cell.failed || cell.reward <= 0) return 'fail';
+	if (!cell) return 'fail';
+	if (cell.failed) return 'incomplete';
+	if (cell.reward <= 0) return 'fail';
 	if (cell.reward >= 1) return 'full';
 	if (cell.reward >= 0.75) return 'strong';
 	if (cell.reward >= 0.4) return 'partial';
@@ -45,7 +48,8 @@ function cellTone(cell: RewardHeatmapCell | null): string {
 
 function cellText(cell: RewardHeatmapCell | null): string {
 	if (!cell) return '—';
-	if (cell.failed) return 'fail';
+	if (cell.failed) return 'No result';
+	if (valueFormat === 'percent') return `${Math.round(cell.reward * 100)}%`;
 	return cell.reward.toFixed(2);
 }
 
@@ -75,7 +79,7 @@ const rowsWithDivider = rows.map((r, i) => ({
 
 		<div
 			class="rh-grid"
-			style={`grid-template-columns: minmax(8rem, 13rem) repeat(${columns.length}, minmax(3.6rem, 1fr));`}
+			style={`--rh-column-count: ${columns.length}; grid-template-columns: minmax(8rem, 13rem) repeat(${columns.length}, minmax(3.6rem, 1fr));`}
 		>
 			<div class="rh-header-label" aria-hidden="true"></div>
 			{columns.map((col) => (
@@ -85,16 +89,16 @@ const rowsWithDivider = rows.map((r, i) => ({
 			{rowsWithDivider.map(({ row, dividerBefore }) => (
 				<Fragment>
 					{dividerBefore && <div class="rh-row-divider" aria-hidden="true"></div>}
-					<button
-						type="button"
+					<div
 						class="rh-row-label"
 						data-rh-row-label
 						data-row={row.key}
 						data-row-label={row.label}
 						data-description={row.note ?? ''}
+						tabindex="0"
 					>
 						{row.label}
-					</button>
+					</div>
 					{columns.map((col) => {
 						const cell = cellFor(row, col.key);
 						const tone = cellTone(cell);
@@ -106,10 +110,11 @@ const rowsWithDivider = rows.map((r, i) => ({
 								data-row-label={row.label}
 								data-column-label={col.label}
 								data-reward={cell ? cell.reward.toFixed(3) : ''}
+								data-score={cellText(cell)}
 								data-failed={cell?.failed ? '1' : '0'}
 								tabindex="0"
-								role="button"
-								aria-label={`${row.label}, ${col.label}: ${cell?.failed ? 'failed run' : `reward ${cellText(cell)}`}`}
+								role="img"
+								aria-label={`${row.label}, ${col.label}: ${cell?.failed ? 'test did not finish' : `review score ${cellText(cell)}`}`}
 							>
 								<span class="rh-cell-value">{cellText(cell)}</span>
 							</div>
@@ -198,7 +203,7 @@ const rowsWithDivider = rows.map((r, i) => ({
 		font-size: 0.75rem;
 		letter-spacing: 0.02em;
 		color: var(--color-text-secondary);
-		cursor: pointer;
+		cursor: default;
 		transition: color 0.2s var(--ease-standard);
 	}
 
@@ -216,7 +221,7 @@ const rowsWithDivider = rows.map((r, i) => ({
 		min-height: 2.7rem;
 		padding: 0.4rem 0.3rem;
 		border: 1px solid var(--color-border);
-		cursor: pointer;
+		cursor: default;
 		transition:
 			filter 0.18s var(--ease-standard),
 			opacity 0.18s var(--ease-standard),
@@ -226,6 +231,11 @@ const rowsWithDivider = rows.map((r, i) => ({
 	.rh-cell-fail {
 		background: color-mix(in srgb, var(--rh-fail) 78%, transparent);
 		border-color: color-mix(in srgb, var(--rh-fail) 60%, var(--color-border));
+	}
+	.rh-cell-incomplete {
+		background: color-mix(in srgb, var(--color-text-tertiary) 16%, transparent);
+		border-color: var(--color-text-tertiary);
+		border-style: dashed;
 	}
 	.rh-cell-low {
 		background: color-mix(in srgb, var(--rh-low) 55%, transparent);
@@ -286,6 +296,10 @@ const rowsWithDivider = rows.map((r, i) => ({
 	}
 
 	@media (max-width: 640px) {
+		.rh-grid {
+			grid-template-columns: minmax(4.75rem, 1.4fr) repeat(var(--rh-column-count), minmax(0, 1fr)) !important;
+			column-gap: 0.25rem;
+		}
 		.rh-cell {
 			min-height: 2.1rem;
 			padding: 0.3rem 0.15rem;
@@ -298,6 +312,7 @@ const rowsWithDivider = rows.map((r, i) => ({
 		}
 		.rh-col-label {
 			font-size: 0.56rem;
+			overflow-wrap: anywhere;
 		}
 	}
 </style>
@@ -331,10 +346,10 @@ const rowsWithDivider = rows.map((r, i) => ({
 					const rowLabel = cell.dataset.rowLabel ?? '';
 					const colLabel = cell.dataset.columnLabel ?? '';
 					const failed = cell.dataset.failed === '1';
-					const reward = cell.dataset.reward ?? '';
+					const score = cell.dataset.score ?? '';
 					panel.set(
 						`${rowLabel} · ${colLabel}`,
-						failed ? 'failed status · no completed trial' : `reward ${reward}`,
+						failed ? 'The agent did not finish this test.' : `Review score: ${score}`,
 					);
 					activateRow(cell.dataset.row ?? null);
 				};
