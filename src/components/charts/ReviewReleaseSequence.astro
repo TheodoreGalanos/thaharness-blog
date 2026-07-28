@@ -1,0 +1,367 @@
+<!-- ABOUTME: Shows how one engineering review changes across three ordered evidence releases. -->
+<!-- ABOUTME: Separates newly visible evidence from the review record that persists between commitments. -->
+---
+import type { ReviewReleaseSequenceData } from '../../data/the-packet-starts-moving-figures';
+
+interface Props {
+	data: ReviewReleaseSequenceData;
+}
+
+const { data } = Astro.props;
+const titleId = `review-release-sequence-${data.releases.length}`;
+---
+
+<figure class="rrs" aria-labelledby={titleId}>
+	<div class="rrs-topline">
+		<div class="rrs-title" id={titleId}>{data.title}</div>
+		<div class="rrs-time" aria-hidden="true">time <span class="rrs-time-wide">→</span><span class="rrs-time-narrow">↓</span></div>
+	</div>
+
+	<div class="rrs-data">
+		<table>
+			<caption>{data.title}. {data.subtitle}</caption>
+			<thead>
+				<tr>
+					<th scope="col">Release</th>
+					<th scope="col">New evidence</th>
+					<th scope="col">Agent commitment</th>
+					<th scope="col">Record after commitment</th>
+				</tr>
+			</thead>
+			<tbody>
+				{data.releases.map((release) => (
+					<tr>
+						<th scope="row">{release.label}</th>
+						<td>{release.evidence}</td>
+						<td>{release.commitment}</td>
+						<td>{release.state}</td>
+					</tr>
+				))}
+			</tbody>
+			<tfoot>
+				<tr>
+					<th scope="row">{data.continuityLabel}</th>
+					<td colspan="3">{data.continuityItems.join('; ')}</td>
+				</tr>
+			</tfoot>
+		</table>
+	</div>
+
+	<div class="rrs-sequence" aria-hidden="true">
+		{data.releases.map((release, index) => (
+			<article class="rrs-release">
+				<header class="rrs-release-header">
+					<span class="rrs-marker">{String(index + 1).padStart(2, '0')}</span>
+					<strong>{release.label}</strong>
+				</header>
+
+				<div class="rrs-card">
+					<div class="rrs-field rrs-evidence">
+						<span class="rrs-field-label">new evidence</span>
+						<p>{release.evidence}</p>
+					</div>
+					<div class="rrs-state">
+						<span>agent commits</span>
+						<strong>{release.state}</strong>
+					</div>
+				</div>
+			</article>
+		))}
+	</div>
+
+	<div class="rrs-continuity" aria-hidden="true">
+		<div class="rrs-continuity-label">{data.continuityLabel}</div>
+		<div class="rrs-continuity-items">
+			{data.continuityItems.map((item) => (
+				<span><i></i>{item}</span>
+			))}
+		</div>
+	</div>
+
+</figure>
+
+<style>
+	.rrs {
+		--rrs-record: var(--color-accent);
+		--rrs-new: var(--color-accent-secondary);
+		margin: 2.75rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+		container-type: inline-size;
+		text-align: left;
+	}
+
+	.rrs-topline {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		margin-bottom: 0.75rem;
+	}
+
+	.rrs-title,
+	.rrs-time {
+		font-family: var(--font-mono);
+		font-size: 0.625rem;
+		font-weight: 500;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+	}
+
+	.rrs-title {
+		color: var(--rrs-record);
+	}
+
+	.rrs-time {
+		color: var(--color-text-tertiary);
+	}
+
+	.rrs-data {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	.rrs-time-narrow {
+		display: none;
+	}
+
+	.rrs-sequence {
+		position: relative;
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 1rem;
+	}
+
+	.rrs-release:not(:last-child)::after {
+		content: '';
+		position: absolute;
+		top: 1.05rem;
+		left: 50%;
+		width: calc(100% + 1rem);
+		height: 1px;
+		background: var(--rrs-record);
+	}
+
+	.rrs-release {
+		position: relative;
+		display: grid;
+		grid-template-rows: auto 1fr;
+		min-width: 0;
+	}
+
+	.rrs-release-header {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.45rem;
+		min-width: 0;
+		margin-bottom: 0.6rem;
+	}
+
+	.rrs-marker {
+		display: inline-grid;
+		width: 2.1rem;
+		height: 2.1rem;
+		border: 1px solid var(--rrs-record);
+		border-radius: 50%;
+		place-items: center;
+		flex: 0 0 auto;
+		background: var(--color-bg);
+		box-shadow: 0 0 0 4px var(--color-bg);
+		font-family: var(--font-mono);
+		font-size: 0.625rem;
+		font-weight: 500;
+		color: var(--rrs-record);
+	}
+
+	.rrs-release-header strong {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		font-weight: 500;
+		line-height: 1.25;
+		text-align: center;
+		color: var(--color-text-primary);
+	}
+
+	.rrs-card {
+		display: grid;
+		grid-template-rows: 1fr auto;
+		min-height: 10.5rem;
+		border: 1px solid var(--color-border);
+		border-radius: 3px;
+		background: var(--color-surface);
+		overflow: hidden;
+	}
+
+	.rrs-field {
+		padding: 0.9rem;
+	}
+
+	.rrs-evidence {
+		border-top: 2px solid var(--rrs-new);
+		border-bottom: 1px solid var(--color-border);
+		background: color-mix(in srgb, var(--rrs-new) 4%, var(--color-surface));
+	}
+
+	.rrs-field-label,
+	.rrs-state span {
+		display: block;
+		margin-bottom: 0.4rem;
+		font-family: var(--font-mono);
+		font-size: 0.5625rem;
+		font-weight: 500;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.rrs-evidence .rrs-field-label {
+		color: var(--rrs-new);
+	}
+
+	.rrs-field p {
+		margin: 0;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		line-height: 1.48;
+		color: var(--color-text-secondary);
+	}
+
+	.rrs-state {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.65rem;
+		padding: 0.7rem 0.9rem;
+		border-top: 1px dashed var(--color-border);
+	}
+
+	.rrs-state span {
+		margin: 0;
+	}
+
+	.rrs-state strong {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-align: right;
+		color: var(--rrs-record);
+	}
+
+	.rrs-continuity {
+		display: grid;
+		grid-template-columns: 10rem minmax(0, 1fr);
+		margin-top: 1.1rem;
+		border-top: 1px solid var(--rrs-record);
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.rrs-continuity-label {
+		padding: 0.85rem 1rem 0.85rem 0;
+		font-family: var(--font-mono);
+		font-size: 0.625rem;
+		font-weight: 500;
+		line-height: 1.4;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--rrs-record);
+	}
+
+	.rrs-continuity-items {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		border-left: 1px solid var(--color-border);
+	}
+
+	.rrs-continuity-items span {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.75rem;
+		border-right: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.625rem;
+		line-height: 1.4;
+		color: var(--color-text-secondary);
+	}
+
+	.rrs-continuity-items i {
+		display: block;
+		width: 0.38rem;
+		height: 0.38rem;
+		border: 1px solid var(--rrs-record);
+		transform: rotate(45deg);
+		flex: 0 0 auto;
+	}
+
+	@container (max-width: 700px) {
+		.rrs-time-wide {
+			display: none;
+		}
+
+		.rrs-time-narrow {
+			display: inline;
+		}
+
+		.rrs-sequence {
+			grid-template-columns: 1fr;
+			gap: 1.35rem;
+			padding-left: 2.75rem;
+		}
+
+		.rrs-release:not(:last-child)::after {
+			top: 1.05rem;
+			left: -1.7rem;
+			width: 1px;
+			height: calc(100% + 1.35rem);
+		}
+
+		.rrs-release-header {
+			align-items: flex-start;
+			justify-content: center;
+			min-height: 2.1rem;
+		}
+
+		.rrs-release-header strong {
+			text-align: left;
+		}
+
+		.rrs-marker {
+			position: absolute;
+			left: -2.75rem;
+			top: 0;
+		}
+
+		.rrs-card {
+			min-height: 0;
+		}
+
+		.rrs-continuity {
+			grid-template-columns: 1fr;
+		}
+
+		.rrs-continuity-label {
+			padding: 0.75rem 0;
+		}
+
+		.rrs-continuity-items {
+			grid-template-columns: 1fr;
+			border-top: 1px solid var(--color-border);
+			border-left: 0;
+		}
+
+		.rrs-continuity-items span {
+			border-right: 0;
+			border-bottom: 1px solid var(--color-border);
+		}
+	}
+</style>

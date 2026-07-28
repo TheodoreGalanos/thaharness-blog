@@ -1,0 +1,712 @@
+<!-- ABOUTME: Maps environment responsiveness against how persistently the learner itself updates. -->
+<!-- ABOUTME: Separates the article's completed horizontal path from future training and memory carriers. -->
+---
+import type {
+	EnvironmentLearnerAxesData,
+	LearnerUpdateLevel,
+} from '../../data/the-packet-starts-moving-figures';
+
+interface Props {
+	data: EnvironmentLearnerAxesData;
+	caption?: string;
+}
+
+const { data, caption } = Astro.props;
+const titleId = `environment-learner-axes-${data.actualMilestones.length}`;
+const currentWorldStage = Math.max(
+	...data.actualMilestones.map((milestone) => milestone.worldStage),
+);
+
+const STAGE_START = 8;
+const STAGE_SPAN = 84;
+const learnerPosition: Record<LearnerUpdateLevel, number> = {
+	continual: 15,
+	'between-runs': 47.5,
+	fixed: 80,
+};
+
+function stagePosition(stage: number): number {
+	return STAGE_START + (stage / (data.worldStages.length - 1)) * STAGE_SPAN;
+}
+
+function pointStyle(worldStage: number, learnerLevel: LearnerUpdateLevel): string {
+	return `--ela-x: ${stagePosition(worldStage)}%; --ela-y: ${learnerPosition[learnerLevel]}%;`;
+}
+---
+
+<figure class="ela" aria-labelledby={titleId}>
+	<header class="ela-header">
+		<div class="ela-kicker">environment × learner</div>
+		<div class="ela-title" id={titleId}>{data.title}</div>
+		<p class="ela-subtitle">{data.subtitle}</p>
+	</header>
+
+	<div class="ela-data">
+		<table>
+			<caption>{data.title}. {data.subtitle}</caption>
+			<thead>
+				<tr>
+					<th scope="col">Milestone</th>
+					<th scope="col">World response</th>
+					<th scope="col">Learner change</th>
+					<th scope="col">Status</th>
+				</tr>
+			</thead>
+			<tbody>
+				{data.actualMilestones.map((milestone) => (
+					<tr>
+						<th scope="row">{milestone.label}: {milestone.detail}</th>
+						<td>{data.worldStages[milestone.worldStage]}</td>
+						<td>{data.learnerLevels.find((level) => level.key === milestone.learnerLevel)?.label}</td>
+						<td>Completed in this article</td>
+					</tr>
+				))}
+				{data.futureMilestones.map((milestone) => (
+					<tr>
+						<th scope="row">{milestone.label}: {milestone.detail}</th>
+						<td>{data.worldStages[milestone.worldStage]}</td>
+						<td>{data.learnerLevels.find((level) => level.key === milestone.learnerLevel)?.label}</td>
+						<td>
+							{milestone.learnerLevel === 'fixed'
+								? 'Current asset-stewardship work'
+								: 'Future work'}
+						</td>
+					</tr>
+				))}
+			</tbody>
+		</table>
+	</div>
+
+	<div class="ela-frame">
+		<div
+			class="ela-canvas"
+			aria-hidden="true"
+			style={`--ela-stage-count: ${data.worldStages.length};`}
+		>
+			<div class="ela-y-axis-title">{data.learnerAxisLabel} <span>↑</span></div>
+
+			<div class="ela-y-labels">
+				{data.learnerLevels.map((level) => (
+					<div
+						class="ela-y-label"
+						data-level={level.key}
+						style={`--ela-y: ${learnerPosition[level.key]}%;`}
+					>
+						{level.label}
+					</div>
+				))}
+			</div>
+
+			<div class="ela-plot">
+				<svg class="ela-lines" viewBox="0 0 100 100" preserveAspectRatio="none">
+					{data.learnerLevels.map((level) => (
+						<line
+							class="ela-grid-line"
+							x1="0"
+							y1={learnerPosition[level.key]}
+							x2="100"
+							y2={learnerPosition[level.key]}
+						></line>
+					))}
+					{data.worldStages.map((_, index) => (
+						<line
+							class="ela-grid-line ela-grid-line-vertical"
+							x1={stagePosition(index)}
+							y1="0"
+							x2={stagePosition(index)}
+							y2="100"
+						></line>
+					))}
+					<line
+						class="ela-actual-path"
+						x1={stagePosition(0)}
+						y1={learnerPosition.fixed}
+						x2={stagePosition(currentWorldStage)}
+						y2={learnerPosition.fixed}
+					></line>
+					<line
+						class="ela-next-world-path"
+						x1={stagePosition(currentWorldStage)}
+						y1={learnerPosition.fixed}
+						x2={stagePosition(data.worldStages.length - 1)}
+						y2={learnerPosition.fixed}
+					></line>
+					<line
+						class="ela-future-learner-path"
+						x1={stagePosition(data.worldStages.length - 1)}
+						y1={learnerPosition.fixed}
+						x2={stagePosition(data.worldStages.length - 1)}
+						y2={learnerPosition.continual}
+					></line>
+				</svg>
+
+				<div class="ela-direction ela-direction-horizontal">world changes</div>
+				<div class="ela-direction ela-direction-vertical">model changes</div>
+
+				{data.actualMilestones.map((milestone, index) => (
+					<div
+						class="ela-milestone ela-milestone-actual"
+						data-label-row={index % 2 === 0 ? 'near' : 'high'}
+						data-current={index === data.actualMilestones.length - 1 ? 'true' : undefined}
+						style={pointStyle(milestone.worldStage, milestone.learnerLevel)}
+					>
+						<div class="ela-milestone-copy">
+							{index === data.actualMilestones.length - 1 && <span class="ela-now">article ends here</span>}
+							<strong>{milestone.label}</strong>
+							<span>{milestone.detail}</span>
+						</div>
+						<i class="ela-point"></i>
+					</div>
+				))}
+
+				{data.futureMilestones.map((milestone) => (
+					<div
+						class="ela-milestone ela-milestone-future"
+						data-level={milestone.learnerLevel}
+						data-track={milestone.learnerLevel === 'fixed' ? 'world' : 'learner'}
+						style={pointStyle(milestone.worldStage, milestone.learnerLevel)}
+					>
+						<div class="ela-milestone-copy">
+							<strong>{milestone.label}</strong>
+							<span>{milestone.detail}</span>
+						</div>
+						<i class="ela-point"></i>
+					</div>
+				))}
+			</div>
+
+			<div class="ela-x-labels">
+				{data.worldStages.map((stage, index) => (
+					<div>
+						<span class="ela-x-milestone">
+							{
+								[
+									...data.actualMilestones,
+									...data.futureMilestones,
+								].find((milestone) => milestone.worldStage === index)?.label
+							}
+						</span>
+						<span class="ela-x-stage">{stage}</span>
+					</div>
+				))}
+			</div>
+			<div class="ela-x-axis-title">{data.worldAxisLabel} <span>→</span></div>
+		</div>
+	</div>
+
+	<div class="ela-history">
+		<div class="ela-history-label">{data.historyLabel}</div>
+		<div class="ela-history-items">
+			{data.historyCarriers.map((carrier) => <span>{carrier}</span>)}
+		</div>
+	</div>
+
+	{caption && <figcaption class="ela-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.ela {
+		--ela-actual: var(--color-accent);
+		--ela-future: var(--color-accent-secondary);
+		margin: 3.25rem 0;
+		font-family: var(--font-body);
+		color: var(--color-text-primary);
+		container-type: inline-size;
+		text-align: left;
+	}
+
+	.ela-header {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 0.25rem 2rem;
+		align-items: end;
+		margin-bottom: 1.4rem;
+	}
+
+	.ela-kicker {
+		grid-column: 1 / -1;
+		font-family: var(--font-mono);
+		font-size: 0.625rem;
+		font-weight: 500;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+		color: var(--ela-actual);
+	}
+
+	.ela-title {
+		margin: 0;
+		font-family: var(--font-display);
+		font-size: clamp(1.25rem, 2.1vw, 1.65rem);
+		font-weight: 500;
+		line-height: 1.18;
+		letter-spacing: -0.015em;
+		color: var(--color-text-primary);
+		text-wrap: balance;
+	}
+
+	.ela-subtitle {
+		max-width: 19rem;
+		margin: 0;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		line-height: 1.5;
+		text-align: right;
+		color: var(--color-text-tertiary);
+		text-wrap: balance;
+	}
+
+	.ela-data {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	.ela-frame {
+		overflow: hidden;
+	}
+
+	.ela-canvas {
+		display: grid;
+		grid-template-columns: minmax(7.5rem, 9.5rem) minmax(0, 1fr);
+		grid-template-rows: 1.6rem 27rem 5.4rem 1.6rem;
+		min-width: 0;
+	}
+
+	.ela-y-axis-title {
+		grid-column: 1 / -1;
+		grid-row: 1;
+		align-self: start;
+		font-family: var(--font-mono);
+		font-size: 0.625rem;
+		font-weight: 500;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.ela-y-axis-title span,
+	.ela-x-axis-title span {
+		color: var(--ela-future);
+	}
+
+	.ela-y-labels {
+		position: relative;
+		grid-column: 1;
+		grid-row: 2;
+		border-right: 1px solid var(--color-border);
+	}
+
+	.ela-y-label {
+		position: absolute;
+		top: var(--ela-y);
+		right: 1rem;
+		max-width: 8rem;
+		transform: translateY(-50%);
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		line-height: 1.35;
+		text-align: right;
+		color: var(--color-text-tertiary);
+	}
+
+	.ela-y-label[data-level='fixed'] {
+		color: var(--ela-actual);
+	}
+
+	.ela-plot {
+		position: relative;
+		grid-column: 2;
+		grid-row: 2;
+		min-width: 0;
+		overflow: hidden;
+		border-top: 1px solid var(--color-border);
+		border-bottom: 1px solid var(--color-border);
+		background:
+			linear-gradient(90deg, color-mix(in srgb, var(--color-surface) 68%, transparent), transparent 35%),
+			var(--color-bg);
+	}
+
+	.ela-lines {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		overflow: visible;
+	}
+
+	.ela-lines line {
+		vector-effect: non-scaling-stroke;
+	}
+
+	.ela-grid-line {
+		stroke: color-mix(in srgb, var(--color-border) 78%, transparent);
+		stroke-width: 1;
+	}
+
+	.ela-grid-line-vertical {
+		stroke-dasharray: 2 5;
+		opacity: 0.72;
+	}
+
+	.ela-actual-path {
+		stroke: var(--ela-actual);
+		stroke-width: 2.5;
+	}
+
+	.ela-next-world-path {
+		stroke: var(--ela-actual);
+		stroke-width: 2;
+		stroke-dasharray: 5 5;
+	}
+
+	.ela-future-learner-path {
+		stroke: var(--ela-future);
+		stroke-width: 2;
+		stroke-dasharray: 5 5;
+	}
+
+	.ela-direction {
+		position: absolute;
+		font-family: var(--font-mono);
+		font-size: 0.625rem;
+		font-weight: 500;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.ela-direction-horizontal {
+		left: 39%;
+		top: calc(80% + 0.8rem);
+		padding: 0 0.45rem;
+		background: var(--color-bg);
+		color: var(--ela-actual);
+	}
+
+	.ela-direction-vertical {
+		right: 0.8rem;
+		top: 31%;
+		padding: 0.25rem 0;
+		background: var(--color-bg);
+		color: var(--ela-future);
+		writing-mode: vertical-rl;
+		transform: rotate(180deg);
+	}
+
+	.ela-milestone {
+		position: absolute;
+		left: var(--ela-x);
+		top: var(--ela-y);
+		z-index: 2;
+	}
+
+	.ela-point {
+		position: absolute;
+		left: 0;
+		top: 0;
+		display: block;
+		width: 0.72rem;
+		height: 0.72rem;
+		border: 2px solid var(--color-bg);
+		border-radius: 50%;
+		transform: translate(-50%, -50%);
+		background: var(--ela-actual);
+		box-shadow: 0 0 0 1px var(--ela-actual);
+	}
+
+	.ela-milestone-copy {
+		position: absolute;
+		bottom: 1.05rem;
+		left: 0;
+		display: flex;
+		width: 8.4rem;
+		transform: translateX(-50%);
+		flex-direction: column;
+		gap: 0.2rem;
+		overflow-wrap: anywhere;
+		text-wrap: balance;
+	}
+
+	.ela-milestone-actual[data-label-row='high'] .ela-milestone-copy {
+		bottom: 4.2rem;
+	}
+
+	.ela-milestone-actual[data-label-row='high']::before {
+		position: absolute;
+		left: 0;
+		bottom: 0.6rem;
+		width: 1px;
+		height: 2.95rem;
+		content: '';
+		transform: translateX(-50%);
+		background: repeating-linear-gradient(
+			to top,
+			color-mix(in srgb, var(--color-text-tertiary) 42%, transparent) 0 2px,
+			transparent 2px 6px
+		);
+		pointer-events: none;
+	}
+
+	.ela-milestone-copy strong {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		font-weight: 500;
+		line-height: 1.25;
+		color: var(--color-text-primary);
+	}
+
+	.ela-milestone-copy > span:last-child {
+		font-family: var(--font-mono);
+		font-size: 0.625rem;
+		line-height: 1.4;
+		color: var(--color-text-tertiary);
+	}
+
+	.ela-now {
+		font-family: var(--font-mono);
+		font-size: 0.5625rem;
+		font-weight: 500;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--ela-actual);
+	}
+
+	.ela-milestone[data-current='true'] .ela-point {
+		width: 0.92rem;
+		height: 0.92rem;
+		box-shadow: 0 0 0 1px var(--ela-actual), 0 0 0 5px color-mix(in srgb, var(--ela-actual) 14%, transparent);
+	}
+
+	.ela-milestone-future .ela-point {
+		background: var(--color-bg);
+		box-shadow: 0 0 0 1px var(--ela-future);
+		border-color: var(--color-bg);
+	}
+
+	.ela-milestone-future .ela-milestone-copy {
+		right: 1.35rem;
+		bottom: auto;
+		left: auto;
+		top: 0;
+		width: 10.5rem;
+		transform: translateY(-50%);
+		align-items: flex-end;
+		text-align: right;
+	}
+
+	.ela-milestone-future[data-track='world'] .ela-milestone-copy {
+		top: 1.15rem;
+		bottom: auto;
+		transform: none;
+	}
+
+	.ela-milestone-future .ela-milestone-copy strong {
+		color: var(--ela-future);
+	}
+
+	.ela-milestone-future[data-track='world'] .ela-milestone-copy strong {
+		color: var(--ela-actual);
+	}
+
+	.ela-milestone-future[data-track='world'] .ela-point {
+		box-shadow: 0 0 0 1px var(--ela-actual);
+	}
+
+	.ela-x-labels {
+		display: grid;
+		grid-column: 2;
+		grid-row: 3;
+		grid-template-columns: repeat(var(--ela-stage-count), minmax(0, 1fr));
+		padding: 0.75rem 0 0;
+	}
+
+	.ela-x-labels div {
+		padding: 0 0.35rem;
+		font-family: var(--font-mono);
+		font-size: 0.625rem;
+		line-height: 1.35;
+		text-align: center;
+		color: var(--color-text-tertiary);
+		overflow-wrap: anywhere;
+		text-wrap: balance;
+	}
+
+	.ela-x-milestone {
+		display: none;
+	}
+
+	.ela-x-labels div:first-child {
+		padding-left: 0;
+		text-align: left;
+	}
+
+	.ela-x-labels div:last-child {
+		padding-right: 0;
+		text-align: right;
+	}
+
+	.ela-x-axis-title {
+		grid-column: 2;
+		grid-row: 4;
+		align-self: end;
+		font-family: var(--font-mono);
+		font-size: 0.625rem;
+		font-weight: 500;
+		letter-spacing: 0.12em;
+		text-align: right;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.ela-history {
+		display: grid;
+		grid-template-columns: 9.5rem minmax(0, 1fr);
+		margin-top: 1.4rem;
+		padding-top: 0.8rem;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.ela-history-label {
+		padding-right: 1rem;
+		font-family: var(--font-mono);
+		font-size: 0.625rem;
+		font-weight: 500;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.ela-history-items {
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		border-left: 1px solid var(--color-border);
+	}
+
+	.ela-history-items span {
+		padding: 0.15rem 0.7rem;
+		border-right: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		line-height: 1.35;
+		color: var(--color-text-secondary);
+		overflow-wrap: anywhere;
+		text-wrap: balance;
+	}
+
+	.ela-caption {
+		margin-top: 1.5rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		font-style: normal;
+		line-height: 1.55;
+		color: var(--color-text-tertiary);
+	}
+
+	@container (max-width: 700px) {
+		.ela-header {
+			grid-template-columns: 1fr;
+		}
+
+		.ela-subtitle {
+			max-width: none;
+			text-align: left;
+		}
+
+		.ela-canvas {
+			grid-template-columns: 5.25rem minmax(0, 1fr);
+			grid-template-rows: 1.6rem 22rem auto 1.6rem;
+		}
+
+		.ela-y-label {
+			right: 0.45rem;
+			max-width: 4.4rem;
+			font-size: 0.5625rem;
+			line-height: 1.25;
+		}
+
+		.ela-milestone-actual .ela-milestone-copy,
+		.ela-direction {
+			display: none;
+		}
+
+		.ela-milestone-actual[data-label-row='high']::before {
+			display: none;
+		}
+
+		.ela-milestone-future .ela-milestone-copy {
+			right: 0.55rem;
+			width: 7.2rem;
+		}
+
+		.ela-milestone-future .ela-milestone-copy strong {
+			font-size: 0.625rem;
+		}
+
+		.ela-milestone-future .ela-milestone-copy > span:last-child {
+			font-size: 0.5625rem;
+		}
+
+		.ela-x-labels {
+			grid-column: 1 / -1;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 0;
+			padding-top: 0.75rem;
+			border-bottom: 1px solid var(--color-border);
+		}
+
+		.ela-x-labels div {
+			min-height: 3.7rem;
+			padding: 0.55rem 0.65rem;
+			border-top: 1px solid var(--color-border);
+			font-size: 0.5625rem;
+			line-height: 1.3;
+			text-align: left;
+		}
+
+		.ela-x-labels div:nth-child(odd) {
+			border-right: 1px solid var(--color-border);
+		}
+
+		.ela-x-milestone {
+			display: block;
+			margin-bottom: 0.3rem;
+			font-size: 0.625rem;
+			font-weight: 500;
+			line-height: 1.2;
+			color: var(--color-text-secondary);
+		}
+
+		.ela-x-stage {
+			display: block;
+		}
+
+		.ela-x-labels div:first-child,
+		.ela-x-labels div:last-child {
+			padding: 0.55rem 0.65rem;
+			text-align: left;
+		}
+
+		.ela-history {
+			grid-template-columns: 1fr;
+			gap: 0.65rem;
+		}
+
+		.ela-history-items {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			border-top: 1px solid var(--color-border);
+		}
+
+		.ela-history-items span {
+			padding: 0.55rem 0.65rem;
+			border-bottom: 1px solid var(--color-border);
+		}
+	}
+
+</style>
