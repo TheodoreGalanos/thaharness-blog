@@ -26,6 +26,7 @@ describe('The Distance to the Edge publication contract', () => {
 	});
 
 	it('retains the supporting governance and authority references', () => {
+		assert.match(article, /\[Nomic\.ai\]\(https:\/\/www\.nomic\.ai\/\)/);
 		assert.match(
 			article,
 			/\[governance expressed in the systems where work happens\]\(\/blog\/mediation-not-intermediation\/\)/,
