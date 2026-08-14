@@ -24,6 +24,17 @@ describe('The Distance to the Edge publication contract', () => {
 		assert.match(article, /^pubDate: 2026-08-14$/m);
 		assert.match(article, /^updatedDate: 2026-08-14$/m);
 	});
+
+	it('retains the supporting governance and authority references', () => {
+		assert.match(
+			article,
+			/\[governance expressed in the systems where work happens\]\(\/blog\/mediation-not-intermediation\/\)/,
+		);
+		assert.match(
+			article,
+			/\[discovering, testing, promoting, and learning from them\]\(\/blog\/broad-creation-narrow-authority\/\)/,
+		);
+	});
 });
 
 describe('The Distance to the Edge axis figure', () => {
@@ -56,10 +67,10 @@ describe('The Distance to the Edge axis figure', () => {
 });
 
 describe('The Distance to the Edge threshold figure', () => {
-	it('places the conceptual curve before the threshold explanation', () => {
+	it('places the conceptual curve before the platform-ceiling explanation', () => {
 		assert.match(article, /import LearningThresholdCurve/);
 		assert.ok(
-			article.indexOf('<LearningThresholdCurve />') < article.indexOf('### The threshold'),
+			article.indexOf('<LearningThresholdCurve />') < article.indexOf('### The platform ceiling'),
 			'the figure should preview the three nonlinear effects before the threshold subsection',
 		);
 	});
