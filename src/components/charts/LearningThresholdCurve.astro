@@ -1,0 +1,537 @@
+<!-- ABOUTME: Shows the conceptual phase transition from disconnected AI experiments to a compounding learning system. -->
+<!-- ABOUTME: Emphasises that a small set of changes near the threshold can sharply increase organisational learning rate. -->
+---
+const titleId = 'learning-threshold-curve-title';
+const descriptionId = 'learning-threshold-curve-description';
+
+const thresholdConditions = [
+	'direct access',
+	'real domain problems',
+	'permission to experiment',
+	'credible evaluation',
+	'reusable infrastructure and memory',
+];
+---
+
+<figure class="ltc" aria-labelledby={titleId} aria-describedby={descriptionId}>
+	<header class="ltc-header">
+		<span class="ltc-kicker">Conceptual phase transition</span>
+		<div class="ltc-title" id={titleId}>Nonlinearity cuts both ways</div>
+		<p class="ltc-subtitle">Small horizontal change. Large vertical effect.</p>
+	</header>
+
+	<p class="visually-hidden" id={descriptionId}>
+		A conceptual S-curve relates the strength of an organisation's learning system to
+		its adaptation velocity. The curve remains low through disconnected experiments,
+		rises sharply through a threshold formed by direct access, real domain problems,
+		permission to experiment, credible evaluation, and reusable infrastructure and
+		memory, then levels into a compounding frontier-learning system. The diagram has no
+		numeric scale and does not represent a measured mathematical function.
+	</p>
+
+	<div class="ltc-canvas" aria-hidden="true">
+		<svg class="ltc-plot" viewBox="0 0 100 100" preserveAspectRatio="none">
+			<defs>
+				<linearGradient id="ltc-threshold-fill" x1="0" y1="0" x2="1" y2="0">
+					<stop offset="0" stop-color="var(--ltc-accent)" stop-opacity="0.03"></stop>
+					<stop offset="0.5" stop-color="var(--ltc-accent)" stop-opacity="0.13"></stop>
+					<stop offset="1" stop-color="var(--ltc-accent)" stop-opacity="0.03"></stop>
+				</linearGradient>
+				<marker
+					id="ltc-axis-arrow"
+					viewBox="0 0 10 10"
+					refX="8"
+					refY="5"
+					markerWidth="5"
+					markerHeight="5"
+					orient="auto"
+				>
+					<path d="M 0 0 L 10 5 L 0 10 z"></path>
+				</marker>
+			</defs>
+
+			<rect class="ltc-threshold-band" x="38" y="9" width="25" height="70"></rect>
+			<line class="ltc-threshold-edge" x1="38" y1="9" x2="38" y2="79"></line>
+			<line class="ltc-threshold-edge" x1="63" y1="9" x2="63" y2="79"></line>
+
+			<line
+				class="ltc-axis"
+				x1="8"
+				y1="79"
+				x2="97"
+				y2="79"
+				marker-end="url(#ltc-axis-arrow)"
+			></line>
+			<line
+				class="ltc-axis"
+				x1="8"
+				y1="79"
+				x2="8"
+				y2="7"
+				marker-end="url(#ltc-axis-arrow)"
+			></line>
+
+			<path
+				class="ltc-curve-shadow"
+				d="M 9 74 C 23 74 31 73.5 37 69 C 44 64 43 47 52 34 C 61 20 71 15 96 15"
+			></path>
+			<path
+				class="ltc-curve"
+				d="M 9 74 C 23 74 31 73.5 37 69 C 44 64 43 47 52 34 C 61 20 71 15 96 15"
+			></path>
+		</svg>
+
+		<div class="ltc-y-axis-label">
+			<span>Adaptation velocity</span>
+			<strong>Organisational learning rate</strong>
+		</div>
+
+		<div class="ltc-conditions">
+			<span>Threshold conditions</span>
+			<ul>
+				{thresholdConditions.map((condition) => <li>{condition}</li>)}
+			</ul>
+		</div>
+
+		<div class="ltc-compounding">
+			<span>Compounding</span>
+			<strong>Each experiment improves the next experiment</strong>
+		</div>
+
+		<div class="ltc-intervention">
+			<span>Small number of<br />well-chosen changes</span>
+			<i></i>
+			<strong>Different learning regime</strong>
+		</div>
+
+		<div class="ltc-regimes">
+			<span>Disconnected<br />experiments</span>
+			<strong>Threshold</strong>
+			<span>Frontier-learning<br />system</span>
+		</div>
+
+		<div class="ltc-x-axis-label">Strength of the organisation's learning system <span>→</span></div>
+	</div>
+
+	<div class="ltc-claim">
+		<span>The hopeful implication</span>
+		<strong>
+			Nonlinearity allows distance to compound, but it also allows distance to be closed
+			surprisingly quickly.
+		</strong>
+	</div>
+
+	<figcaption class="ltc-caption">
+		Nonlinearity cuts both ways. Small changes may produce little while an organisation
+		remains below the threshold—but crossing the threshold can alter the rate at which
+		every later advance is absorbed.
+	</figcaption>
+</figure>
+
+<style>
+	.ltc {
+		--ltc-accent: var(--color-accent);
+		--ltc-secondary: var(--color-accent-secondary);
+		--ltc-axis: color-mix(in srgb, var(--color-text-tertiary) 82%, transparent);
+
+		margin: 3.25rem 0 4rem;
+		color: var(--color-text-primary);
+		font-family: var(--font-body);
+		text-align: left;
+		container-type: inline-size;
+	}
+
+	.ltc-header {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 0.25rem 2rem;
+		align-items: end;
+		margin-bottom: 1.15rem;
+		padding-bottom: 0.85rem;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.ltc-kicker,
+	.ltc-subtitle,
+	.ltc-y-axis-label,
+	.ltc-conditions,
+	.ltc-compounding,
+	.ltc-intervention,
+	.ltc-regimes,
+	.ltc-x-axis-label,
+	.ltc-claim span {
+		font-family: var(--font-mono);
+	}
+
+	.ltc-kicker {
+		grid-column: 1 / -1;
+		font-size: 0.625rem;
+		font-weight: 600;
+		letter-spacing: 0.15em;
+		text-transform: uppercase;
+		color: var(--ltc-accent);
+	}
+
+	.ltc-title {
+		font-family: var(--font-display);
+		font-size: clamp(1.35rem, 3vw, 1.75rem);
+		font-weight: 500;
+		line-height: 1.18;
+		letter-spacing: -0.015em;
+	}
+
+	.ltc-subtitle {
+		max-width: 15rem;
+		margin: 0;
+		font-size: 0.625rem;
+		line-height: 1.45;
+		letter-spacing: 0.05em;
+		text-align: right;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.ltc-canvas {
+		position: relative;
+		min-height: 31rem;
+		border: 1px solid var(--color-border);
+		background:
+			linear-gradient(var(--color-bg-grid) 1px, transparent 1px),
+			linear-gradient(90deg, var(--color-bg-grid) 1px, transparent 1px),
+			color-mix(in srgb, var(--color-surface) 72%, transparent);
+		background-size: 2rem 2rem;
+		overflow: hidden;
+	}
+
+	.ltc-plot {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+	}
+
+	.ltc-axis {
+		stroke: var(--ltc-axis);
+		stroke-width: 1.1;
+		vector-effect: non-scaling-stroke;
+	}
+
+	.ltc-axis + .ltc-axis {
+		stroke-width: 1.1;
+	}
+
+	#ltc-axis-arrow path {
+		fill: var(--ltc-axis);
+	}
+
+	.ltc-threshold-band {
+		fill: url(#ltc-threshold-fill);
+	}
+
+	.ltc-threshold-edge {
+		stroke: color-mix(in srgb, var(--ltc-accent) 50%, transparent);
+		stroke-width: 1;
+		stroke-dasharray: 4 5;
+		vector-effect: non-scaling-stroke;
+	}
+
+	.ltc-curve-shadow,
+	.ltc-curve {
+		fill: none;
+		stroke-linecap: round;
+		vector-effect: non-scaling-stroke;
+	}
+
+	.ltc-curve-shadow {
+		stroke: var(--color-bg);
+		stroke-width: 8;
+	}
+
+	.ltc-curve {
+		stroke: var(--ltc-accent);
+		stroke-width: 3.5;
+	}
+
+	.ltc-y-axis-label {
+		position: absolute;
+		top: 0.85rem;
+		left: 1.05rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.12rem;
+		max-width: 14rem;
+		font-size: 0.625rem;
+		line-height: 1.35;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.ltc-y-axis-label strong {
+		font-weight: 600;
+		color: var(--color-text-primary);
+	}
+
+	.ltc-conditions {
+		position: absolute;
+		top: 16%;
+		left: 40.5%;
+		z-index: 2;
+		width: 20.5%;
+		padding: 0.65rem 0.7rem 0.7rem;
+		border: 1px solid color-mix(in srgb, var(--ltc-accent) 38%, var(--color-border));
+		background: color-mix(in srgb, var(--color-surface) 91%, transparent);
+		box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-bg) 40%, transparent);
+	}
+
+	.ltc-conditions > span,
+	.ltc-compounding > span {
+		display: block;
+		margin-bottom: 0.4rem;
+		font-size: 0.5625rem;
+		font-weight: 700;
+		letter-spacing: 0.11em;
+		text-transform: uppercase;
+		color: var(--ltc-accent);
+	}
+
+	.ltc-conditions ul {
+		display: grid;
+		gap: 0.28rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.ltc-conditions li {
+		position: relative;
+		margin: 0;
+		padding-left: 0.6rem;
+		font-size: 0.625rem;
+		line-height: 1.25;
+		color: var(--color-text-secondary);
+	}
+
+	.ltc-conditions li::before {
+		position: absolute;
+		top: 0.52em;
+		left: 0;
+		width: 0.25rem;
+		height: 1px;
+		background: var(--ltc-accent);
+		content: '';
+	}
+
+	.ltc-compounding {
+		position: absolute;
+		top: 21%;
+		right: 2.5%;
+		width: 26%;
+		padding-left: 0.75rem;
+		border-left: 2px solid var(--ltc-accent);
+	}
+
+	.ltc-compounding strong {
+		display: block;
+		font-size: 0.6875rem;
+		font-weight: 500;
+		line-height: 1.4;
+		color: var(--color-text-secondary);
+	}
+
+	.ltc-intervention {
+		position: absolute;
+		top: 63%;
+		left: 29%;
+		display: grid;
+		grid-template-columns: minmax(6.5rem, 0.8fr) minmax(4rem, 1fr) minmax(6.5rem, 0.9fr);
+		gap: 0.65rem;
+		align-items: center;
+		width: 47%;
+		font-size: 0.5625rem;
+		line-height: 1.35;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.ltc-intervention i {
+		position: relative;
+		display: block;
+		height: 1px;
+		background: var(--ltc-secondary);
+	}
+
+	.ltc-intervention i::after {
+		position: absolute;
+		top: 50%;
+		right: -1px;
+		width: 0.42rem;
+		height: 0.42rem;
+		border-top: 1px solid var(--ltc-secondary);
+		border-right: 1px solid var(--ltc-secondary);
+		content: '';
+		transform: translateY(-50%) rotate(45deg);
+	}
+
+	.ltc-intervention strong {
+		font-weight: 700;
+		color: var(--ltc-secondary);
+	}
+
+	.ltc-regimes {
+		position: absolute;
+		top: 80.5%;
+		left: 9%;
+		display: grid;
+		grid-template-columns: 1fr 0.75fr 1.2fr;
+		gap: 1rem;
+		align-items: start;
+		width: 86%;
+		font-size: 0.625rem;
+		line-height: 1.35;
+		letter-spacing: 0.04em;
+		text-align: center;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.ltc-regimes strong {
+		font-weight: 700;
+		color: var(--ltc-accent);
+	}
+
+	.ltc-x-axis-label {
+		position: absolute;
+		right: 2.25%;
+		bottom: 0.75rem;
+		font-size: 0.5625rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.ltc-x-axis-label span {
+		color: var(--color-text-secondary);
+	}
+
+	.ltc-claim {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr);
+		gap: 1rem 1.25rem;
+		align-items: baseline;
+		padding: 1rem 1.1rem;
+		border-right: 1px solid var(--color-border);
+		border-bottom: 1px solid var(--color-border);
+		border-left: 1px solid var(--color-border);
+		background: color-mix(in srgb, var(--ltc-accent) 5%, var(--color-surface));
+	}
+
+	.ltc-claim span {
+		font-size: 0.5625rem;
+		font-weight: 700;
+		letter-spacing: 0.11em;
+		text-transform: uppercase;
+		color: var(--ltc-accent);
+	}
+
+	.ltc-claim strong {
+		font-family: var(--font-display);
+		font-size: 1rem;
+		font-weight: 500;
+		line-height: 1.45;
+		color: var(--color-text-primary);
+	}
+
+	.ltc-caption {
+		margin-top: 0.9rem;
+		font-size: 0.75rem;
+		line-height: 1.55;
+		color: var(--color-text-tertiary);
+	}
+
+	@container (max-width: 34rem) {
+		.ltc-header {
+			grid-template-columns: 1fr;
+			gap: 0.3rem;
+		}
+
+		.ltc-subtitle {
+			max-width: none;
+			text-align: left;
+		}
+
+		.ltc-canvas {
+			min-height: 37rem;
+		}
+
+		.ltc-threshold-band {
+			x: 34;
+			width: 34;
+		}
+
+		.ltc-threshold-edge:first-of-type {
+			x1: 34;
+			x2: 34;
+		}
+
+		.ltc-threshold-edge:nth-of-type(2) {
+			x1: 68;
+			x2: 68;
+		}
+
+		.ltc-y-axis-label {
+			left: 0.8rem;
+			max-width: 10rem;
+		}
+
+		.ltc-conditions {
+			top: 20%;
+			left: 36%;
+			width: 31%;
+		}
+
+		.ltc-compounding {
+			top: 10.5%;
+			right: 2.5%;
+			width: 29%;
+		}
+
+		.ltc-compounding strong {
+			font-size: 0.625rem;
+		}
+
+		.ltc-intervention {
+			top: 65%;
+			left: 11%;
+			grid-template-columns: minmax(5.25rem, 1fr) minmax(2rem, 0.55fr) minmax(5.25rem, 1fr);
+			gap: 0.3rem;
+			width: 78%;
+			font-size: 0.5625rem;
+		}
+
+		.ltc-intervention i {
+			width: auto;
+		}
+
+		.ltc-regimes {
+			left: 9%;
+			grid-template-columns: 1fr 0.8fr 1.1fr;
+			gap: 0.25rem;
+			width: 87%;
+			font-size: 0.5625rem;
+		}
+
+		.ltc-x-axis-label {
+			left: 9%;
+			right: auto;
+			max-width: 83%;
+			font-size: 0.5625rem;
+		}
+
+		.ltc-claim {
+			grid-template-columns: 1fr;
+			gap: 0.35rem;
+		}
+	}
+</style>
