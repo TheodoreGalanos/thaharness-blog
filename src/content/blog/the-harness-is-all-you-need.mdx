@@ -9,6 +9,9 @@ tags: ["benchmarks", "aec", "ai-agents", "harness-design", "evaluation", "ai-in-
 featured: true
 ---
 
+import Figure from '../../components/Figure.astro';
+import aecBenchTui from '../../assets/blog/aec-bench/aec-bench-tui.png';
+
 Estimated reading time: 5 minutes
 
 There is a genre of LinkedIn post that goes something like this: "I gave GPT my floor plan and it produced a schedule in 30 seconds. The industry will never be the same."
@@ -65,6 +68,10 @@ AEC-Bench is a start, but it is only a start. The industry needs benchmarks that
 
 This is what **aec-bench** is supposed to be — an open platform for AEC agent evaluation — and we will have more to share soon.
 
-![aec-bench: from task templates and instance generation to experiment orchestration, evaluation, and comparison across harness designs — all from the terminal.](../../assets/blog/aec-bench/aec-bench-tui.png)
+<Figure
+	src={aecBenchTui}
+	alt="AEC-Bench terminal interface showing task generation, experiment orchestration, evaluation, and harness comparison"
+	caption="aec-bench: from task templates and instance generation to experiment orchestration, evaluation, and comparison across harness designs — all from the terminal."
+/>
 
 In the meantime, the [paper](https://arxiv.org/abs/2603.29199) and benchmark [dataset](https://huggingface.co/datasets/nomic-ai/aec-bench) are available now. If you're interested making AI work in the built environment, take a look and share your thoughts! And if you're still relying on anecdotes to judge what these systems can do, consider that you might be optimising for demos when you should be optimising for deployment.

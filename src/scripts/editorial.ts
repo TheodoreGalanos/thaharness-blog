@@ -23,40 +23,46 @@ function setupProgressBar(): void {
   const bar = document.querySelector<HTMLElement>(".editorial-progress-bar");
   if (!article || !bar) return;
 
+  let animationFrame: number | null = null;
+  let articleTop = 0;
+  let articleHeight = 0;
+
   function update() {
+    animationFrame = null;
     if (!article || !bar) return;
-    const rect = article.getBoundingClientRect();
-    const articleTop = rect.top + window.scrollY;
     const ratio = computeScrollProgress(
       window.scrollY,
       articleTop,
-      rect.height,
+      articleHeight,
       window.innerHeight,
     );
     bar.style.transform = `scaleX(${ratio})`;
   }
 
-  update();
-  window.addEventListener("scroll", update, { passive: true });
-  window.addEventListener("resize", update, { passive: true });
-}
-
-/**
- * Compute which three chapter indices occupy the [left, center, right] slots
- * given the active index and total count. Clamps at list edges so the first
- * or last section still renders three items.
- */
-export function computeSlotWindow(
-  activeIndex: number,
-  total: number,
-): { left: number; center: number; right: number } {
-  if (total < 3) {
-    return { left: 0, center: Math.min(1, total - 1), right: total - 1 };
+  function scheduleUpdate() {
+    if (animationFrame !== null) return;
+    animationFrame = window.requestAnimationFrame(update);
   }
-  let start = activeIndex - 1;
-  if (start < 0) start = 0;
-  if (start > total - 3) start = total - 3;
-  return { left: start, center: start + 1, right: start + 2 };
+
+  function measureGeometry() {
+    if (!article) return;
+    const rect = article.getBoundingClientRect();
+    articleTop = rect.top + window.scrollY;
+    articleHeight = rect.height;
+    scheduleUpdate();
+  }
+
+  measureGeometry();
+  window.addEventListener("scroll", scheduleUpdate, { passive: true });
+  window.addEventListener("resize", measureGeometry, { passive: true });
+  window.addEventListener("load", measureGeometry, { once: true });
+
+  if (typeof ResizeObserver !== "undefined") {
+    const resizeObserver = new ResizeObserver(measureGeometry);
+    resizeObserver.observe(article);
+  }
+
+  void document.fonts?.ready.then(measureGeometry);
 }
 
 export function computeAnchorScrollTop(
@@ -84,41 +90,102 @@ export function computeCssLengthPixels(
   return amount;
 }
 
+export function shouldShowChapterRail(
+  overviewBottom: number,
+  headerHeight: number,
+): boolean {
+  return overviewBottom <= headerHeight;
+}
+
+function revealActiveRailLink(): void {
+  const rail = document.querySelector<HTMLElement>(".chapter-rail.is-visible");
+  const list = rail?.querySelector<HTMLOListElement>(".chapter-rail-list");
+  const activeLink = list?.querySelector<HTMLAnchorElement>(
+    '[data-chapter-rail-link][aria-current="true"]',
+  );
+  if (!list || !activeLink) return;
+
+  const left = Math.max(
+    0,
+    activeLink.offsetLeft - (list.clientWidth - activeLink.offsetWidth) / 2,
+  );
+  list.scrollTo({ left, behavior: "auto" });
+}
+
+function setupChapterRail(): void {
+  const overview = document.querySelector<HTMLElement>(".chapter-strip");
+  const rail = document.querySelector<HTMLElement>(".chapter-rail");
+  if (!overview || !rail || typeof IntersectionObserver === "undefined") return;
+
+  const siteHeader = document.querySelector<HTMLElement>("body > header");
+  let observer: IntersectionObserver | null = null;
+  let visible = false;
+
+  const setVisible = (nextVisible: boolean) => {
+    if (visible === nextVisible) return;
+    visible = nextVisible;
+    rail.classList.toggle("is-visible", nextVisible);
+    rail.setAttribute("aria-hidden", String(!nextVisible));
+    rail.inert = !nextVisible;
+    if (nextVisible) revealActiveRailLink();
+  };
+
+  const observeOverview = () => {
+    observer?.disconnect();
+    const headerHeight = Math.ceil(
+      siteHeader?.getBoundingClientRect().height ?? 64,
+    );
+    observer = new IntersectionObserver(
+      ([entry]) => {
+        setVisible(
+          shouldShowChapterRail(entry.boundingClientRect.bottom, headerHeight),
+        );
+      },
+      {
+        rootMargin: `-${headerHeight}px 0px 0px 0px`,
+        threshold: 0,
+      },
+    );
+    observer.observe(overview);
+  };
+
+  observeOverview();
+  if (siteHeader && typeof ResizeObserver !== "undefined") {
+    const headerObserver = new ResizeObserver(observeOverview);
+    headerObserver.observe(siteHeader);
+  } else {
+    window.addEventListener("resize", observeOverview, { passive: true });
+  }
+}
+
 function setupChapterTracking(): void {
   const links = document.querySelectorAll<HTMLAnchorElement>(
     "[data-chapter-link]",
   );
   if (links.length === 0) return;
 
-  const slugs = Array.from(links).map((link) => link.dataset.chapterLink ?? "");
+  const slugs = [
+    ...new Set(
+      Array.from(links).map((link) => link.dataset.chapterLink ?? ""),
+    ),
+  ];
   const targets = slugs
     .map((slug) => document.getElementById(slug))
     .filter((el): el is HTMLElement => el !== null);
   if (targets.length === 0) return;
 
-  const strip = document.querySelector<HTMLElement>("[data-chapter-strip]");
-  const listItems = Array.from(links).map((link) => link.closest("li"));
-
   let activeSlug = "";
 
-  const applySlots = (activeIndex: number, slug: string) => {
-    const { left, center, right } = computeSlotWindow(
-      activeIndex,
-      slugs.length,
-    );
-    links.forEach((link, index) => {
-      const li = listItems[index];
-      li?.classList.remove("is-slot-left", "is-slot-center", "is-slot-right");
-      if (index === activeIndex) {
+  const applyActiveState = (slug: string) => {
+    links.forEach((link) => {
+      if (link.dataset.chapterLink === slug) {
         link.setAttribute("aria-current", "true");
       } else {
         link.removeAttribute("aria-current");
       }
-      if (index === left) li?.classList.add("is-slot-left");
-      else if (index === center) li?.classList.add("is-slot-center");
-      else if (index === right) li?.classList.add("is-slot-right");
     });
     activeSlug = slug;
+    revealActiveRailLink();
   };
 
   const observer = new IntersectionObserver(
@@ -131,56 +198,16 @@ function setupChapterTracking(): void {
       )[0];
       const slug = topmost.target.id;
       if (slug === activeSlug) return;
-      const activeIndex = slugs.indexOf(slug);
-      if (activeIndex < 0) return;
-
-      // If the strip is in compact mode, wrap slot changes in a view
-      // transition so items crossfade smoothly between positions.
-      const doc = document as Document & {
-        startViewTransition?: (cb: () => void) => { finished: Promise<void> };
-      };
-      const compact = strip?.classList.contains("is-compact");
-      if (compact && typeof doc.startViewTransition === "function") {
-        doc.startViewTransition(() => applySlots(activeIndex, slug));
-      } else {
-        applySlots(activeIndex, slug);
-      }
+      if (!slugs.includes(slug)) return;
+      applyActiveState(slug);
     },
-    { rootMargin: "-96px 0px -60% 0px", threshold: 0 },
+    {
+      rootMargin: `-${Math.round(getEditorialAnchorOffset())}px 0px -60% 0px`,
+      threshold: 0,
+    },
   );
 
   targets.forEach((el) => observer.observe(el));
-}
-
-function setupChapterMorph(): void {
-  const sentinel = document.querySelector<HTMLElement>(
-    ".chapter-strip-sentinel",
-  );
-  const strip = document.querySelector<HTMLElement>("[data-chapter-strip]");
-  if (!sentinel || !strip) return;
-
-  const observer = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        const shouldCompact = !entry.isIntersecting;
-        const apply = () => strip.classList.toggle("is-compact", shouldCompact);
-
-        // View Transitions API animates the layout change with per-item
-        // stagger (see ::view-transition-group rules in global.css).
-        const doc = document as Document & {
-          startViewTransition?: (cb: () => void) => { finished: Promise<void> };
-        };
-        if (typeof doc.startViewTransition === "function") {
-          doc.startViewTransition(apply);
-        } else {
-          apply();
-        }
-      }
-    },
-    { rootMargin: "-68px 0px 0px 0px", threshold: 0 },
-  );
-
-  observer.observe(sentinel);
 }
 
 function getEditorialAnchorOffset(): number {
@@ -224,7 +251,11 @@ function setupFootnoteAnchorScrolling(): void {
 
     event.preventDefault();
     history.pushState(null, "", link.hash);
-    scrollToHashTarget(link.hash, "smooth");
+    const behavior = window.matchMedia("(prefers-reduced-motion: reduce)")
+      .matches
+      ? "auto"
+      : "smooth";
+    scrollToHashTarget(link.hash, behavior);
   });
 
   if (window.location.hash) {
@@ -237,8 +268,8 @@ function setupFootnoteAnchorScrolling(): void {
 if (typeof document !== "undefined") {
   const init = () => {
     setupProgressBar();
+    setupChapterRail();
     setupChapterTracking();
-    setupChapterMorph();
     setupFootnoteAnchorScrolling();
   };
 

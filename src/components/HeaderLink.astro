@@ -15,7 +15,7 @@ const isActive = href === pathname || href === '/' + (subpath?.[0] || '');
 	href={href}
 	aria-current={isActive ? 'page' : undefined}
 	class:list={[
-		'header-link inline-flex items-center font-heading text-[0.75rem] sm:text-[0.8125rem] font-normal px-1.5 sm:px-2 py-2 transition-colors duration-250',
+		'header-link inline-flex items-center font-heading text-[0.75rem] sm:text-[0.8125rem] font-normal px-1 sm:px-2 py-2 transition-colors duration-250',
 		isActive
 			? 'text-[--color-accent]'
 			: 'text-[--color-text-secondary] hover:text-[--color-text-primary]',

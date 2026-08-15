@@ -156,6 +156,20 @@
 .status-bar-disciplines {
   display: none;
 }
+
+@media (max-width: 639px) {
+  .status-bar-inner {
+    flex-wrap: nowrap;
+    column-gap: 0.75rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .status-bar-build {
+    display: none;
+  }
+}
+
 @media (min-width: 640px) {
   .status-bar-disciplines {
     display: inline;
