@@ -8,13 +8,14 @@ import ThemeToggle from './ThemeToggle.astro';
 ---
 
 <header class="sticky top-0 left-0 right-0 z-50 border-b border-[--color-border]" style="background-color: var(--color-bg);">
-	<nav class="page-shell flex items-center justify-between gap-3 h-16 md:h-[4.25rem]">
+	<nav class="site-header-shell page-shell flex items-center justify-between gap-1 sm:gap-3 h-16 md:h-[4.25rem]">
 		<a
 			href="/"
-			class="flex min-w-0 items-center gap-2 no-underline hover:no-underline"
+			aria-label="The Harness home"
+			class="flex shrink-0 items-center gap-2 no-underline hover:no-underline"
 		>
 			<Image src={logoIcon} alt="" width={28} height={40} class="logo-icon" />
-			<span class="font-heading font-medium text-lg sm:text-xl text-[--color-text-primary] tracking-[-0.02em] truncate">The Harness</span>
+			<span class="hidden sm:inline font-heading font-medium text-lg sm:text-xl text-[--color-text-primary] tracking-[-0.02em]">The Harness</span>
 		</a>
 
 		<div class="flex shrink-0 items-center gap-0.5 md:gap-2">
@@ -33,5 +34,12 @@ import ThemeToggle from './ThemeToggle.astro';
 <style>
 	.logo-icon {
 		filter: drop-shadow(0 0 4px rgba(232, 168, 76, 0.4));
+	}
+
+	@media (max-width: 359px) {
+		.site-header-shell {
+			padding-left: 0.75rem;
+			padding-right: 0.75rem;
+		}
 	}
 </style>

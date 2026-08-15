@@ -135,12 +135,20 @@ const svg = renderPlot({
 			</div>
 		</aside>
 
-		<div class="od-chart" set:html={svg}></div>
+		<span class="od-scroll-hint">Swipe for full chart <span aria-hidden="true">→</span></span>
+		<div
+			class="od-chart"
+			role="region"
+			tabindex="0"
+			aria-label={`${title ?? 'Outcome distribution'} chart. Scroll horizontally for full detail.`}
+			set:html={svg}
+		></div>
 	</div>
 
 	{caption && <figcaption class="od-caption">{caption}</figcaption>}
 
 	<script
+		is:inline
 		type="application/json"
 		data-od-bars
 		set:html={JSON.stringify(
@@ -176,6 +184,10 @@ const svg = renderPlot({
 
 	.od-body {
 		position: relative;
+	}
+
+	.od-scroll-hint {
+		display: none;
 	}
 
 	.od-chart {
@@ -222,6 +234,29 @@ const svg = renderPlot({
 		opacity: 0.4;
 	}
 
+	@media (max-width: 600px) {
+		.od-scroll-hint {
+			display: block;
+			margin-bottom: 0.5rem;
+			font-family: var(--font-mono);
+			font-size: 0.625rem;
+			letter-spacing: 0.06em;
+			color: var(--color-accent-secondary);
+		}
+
+		.od-chart {
+			overflow-x: auto;
+			overscroll-behavior-inline: contain;
+			-webkit-overflow-scrolling: touch;
+			padding-bottom: 0.5rem;
+		}
+
+		.od-chart :global(svg) {
+			width: 34rem;
+			max-width: none;
+		}
+	}
+
 	.od-caption {
 		margin-top: 1.5rem;
 		padding-top: 1rem;
@@ -260,11 +295,11 @@ const svg = renderPlot({
 
 			const bars = root.querySelectorAll<SVGElement>('.od-bar');
 
-			function resetPanel() {
+			const resetPanel = () => {
 				panel.reset();
 				root.removeAttribute('data-od-hover');
 				bars.forEach((b) => b.classList.remove('is-active'));
-			}
+			};
 
 			bars.forEach((bar, i) => {
 				const show = () => {

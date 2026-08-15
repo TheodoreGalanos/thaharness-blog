@@ -1,10 +1,12 @@
 <!-- ABOUTME: Dark-mode editorial blog post layout inspired by Anthropic's long-form features. -->
-<!-- ABOUTME: Warm-dark surface, Fraunces display headlines with mono kickers, no TOC furniture. -->
+<!-- ABOUTME: Warm-dark surface, Fraunces headlines, and stable chapter navigation. -->
 ---
 import { Image } from 'astro:assets';
 import Analytics from '@vercel/analytics/astro';
 import SpeedInsights from '@vercel/speed-insights/astro';
 import type { CollectionEntry } from 'astro:content';
+import '../styles/chart-hover-panel.css';
+import '../styles/editorial.css';
 import BaseHead from '../components/BaseHead.astro';
 import ChapterStrip from '../components/ChapterStrip.astro';
 import Footer from '../components/Footer.astro';
@@ -94,8 +96,7 @@ const {
 					)}
 				</header>
 
-				<div class="chapter-strip-sentinel" aria-hidden="true"></div>
-			<ChapterStrip headings={headings} />
+				<ChapterStrip headings={headings} />
 
 				{heroImage && (
 					<div class="editorial-hero">
@@ -133,7 +134,6 @@ const {
 				background-color: var(--color-accent);
 				transform: scaleX(0);
 				transform-origin: left center;
-				transition: transform 0.1s linear;
 				will-change: transform;
 			}
 
