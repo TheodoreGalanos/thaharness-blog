@@ -39,7 +39,7 @@ The term originally described a deliberately low-attention mode of programming: 
 
 The label also tempts us to govern the identity or method of the builder. Was this made by a “real” developer? Was AI used? Did the person understand every line?
 
-Those questions can matter, but they are poor first-order measures of risk. A short human-written script with a production credential can be more dangerous than a large AI-assisted application isolated from sensitive data and external systems. The better questions concern the artefact itself: what can it read, what can it change, who relies on it, how long will it persist, how easily can it be reversed, and what happens when it is wrong?
+Those questions can matter, but they are poor first-order measures of risk. A short human-written script with a production credential can be more dangerous than a large AI-assisted application isolated from sensitive data and external systems. The better questions concern the artefact itself. What can it read or change? Who relies on it, and how long will it persist? How easily can it be reversed, and what happens when it is wrong?
 
 Creation and authority are different things. Our governance models need to recognise that.
 
@@ -129,7 +129,7 @@ In [*Where Capability Actually Lives*](/blog/where-capability-actually-lives-in-
 
 The same is true of safe software creation. Safety is a property of the environment in which creation occurs and of the authority that environment can confer.
 
-The practical prerequisite is therefore more than a licence. It is a paved environment that controls identity, execution, data, credentials, and source; verifies what is built; and stages deployment with observability, rollback, and accountable ownership. Controls should be expressed as close as possible to the systems they govern.
+The practical prerequisite is therefore more than a licence. It is a paved environment that controls identity, execution, data, credentials, and source. It verifies what is built and stages deployment with observability, rollback, and accountable ownership. Controls should be expressed as close as possible to the systems they govern.
 
 This does not mean the platform should prescribe one approved process for every idea. It should encode invariants: no production credentials in an experiment; no untracked deployment; no silent use of protected data; no consequential action without an owner; no promotion without the evidence appropriate to the risk.
 
@@ -149,7 +149,7 @@ If every generated change requires a scarce specialist to inspect everything man
 
 The practical goal is pervasive verification with selective human permission.
 
-Routine checks should run as part of the workflow: tests, policy and security checks, provenance, permission boundaries, deployment evidence, and telemetry. Their point is not to replace human judgement but reserve it for the places it contributes something irreducible: purpose, professional validity, unusual risk, contested trade-offs, exceptions, and changes in organisational authority.
+Routine checks should run as part of the workflow: tests, policy and security checks, provenance, permission boundaries, deployment evidence, and telemetry. Their point is not to replace human judgement but to reserve it for the places it contributes something irreducible: purpose, professional validity, unusual risk, contested trade-offs, exceptions, and changes in organisational authority.
 
 <VerificationBoundaryDiagram />
 

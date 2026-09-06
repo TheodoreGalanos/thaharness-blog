@@ -15,7 +15,7 @@ import { rlmArchitectureShiftData } from '../../data/recursive-by-design-charts'
 
 In [The Harness Is All You Need](/blog/the-harness-is-all-you-need/), I argued that domain-specific tooling around the model matters more than the model itself. AEC-Bench showed this empirically: the biggest performance gains came from better retrieval and document parsing, not model upgrades. Earlier, in [Benchmarking Agents on Real Engineering Work](/blog/benchmarking-agents-on-real-engineering-work/), we'd seen the same pattern from the other direction — when harness support was stripped away, performance didn't degrade gracefully. It collapsed.
 
-These arguments seem to draw a line. Model on one side. Harness on the other. My goal in this article is to discuss with you how that is..more complex than it sounds.
+These arguments seem to draw a line. Model on one side. Harness on the other. My goal in this article is to discuss with you why that is more complex than it sounds.
 
 <Pullquote>
 The agent's reasoning architecture is itself a harness design choice. Agent design and harness design are the same problem.
@@ -25,7 +25,7 @@ When [Zhang and Khattab](https://arxiv.org/abs/2512.24601) published the RLM pap
 
 The answer to the question was the same it always is: I had to build one to fully understand it. And as it turns out, the difference is architectural, and it's easy to miss.
 
-Claude Code and Codex are powerful systems. But they still put the full context: the conversation, the documents, the task, all of it into the model's context window. The model attends over all of it, and as the window fills, capability degrades. This is "context rot," and every long-running agent session hits it eventually.
+Claude Code and Codex are powerful systems. But they still put the full context into the model's context window: the conversation, the documents, the task, all of it. The model attends over all of it, and as the window fills, capability degrades. This is "context rot," and every long-running agent session hits it eventually.
 
 RLMs do something fundamentally different. The context lives *outside* the model, as a variable in a persistent Python environment. The model never sees the full input. Instead, it writes code to programmatically interact with it — peeking at slices, filtering with regex, chunking and dispatching sub-LLM calls over pieces, accumulating results in variables. The model's context window stays compact. The work happens in the symbolic environment.
 
@@ -72,7 +72,7 @@ With prompt caching on top, the token economics went down to $0.56 per 9-section
 
 But the underlying problem remained. The agent still decided its own decomposition strategy on every run. Different runs still took different paths through the source material. Token usage was lower but still variable. We'd managed the symptom (context window pressure) without addressing the cause: unbounded decomposition.
 
-What if we computed the decomposition strategy upfront? What if we put domain expertise at use?
+What if we computed the decomposition strategy upfront? What if we put domain expertise to use?
 
 ## Stage 3: Lambda-RLM — When the Task Structure Is the Plan
 
@@ -145,7 +145,7 @@ The agent used "fee proposal" language in a scope of works document — a termin
 
 Both agent variants skipped a project objectives subsection. It was in the source brief. The template just didn't require it — added as a mandatory subsection, along with a contractual definitions section (a standard task feature neither agent generated).
 
-One reviewer caught a specification contradiction between two sections — the type of cabling specified in one place, was explicitly excluded in another. The human team had caught the same issue in their own review process. That finding inspired a cross-section consistency check: "does section X.XX (Security) contradict section X.XX (Electrical)?"
+One reviewer caught a specification contradiction between two sections — the type of cabling specified in one place was explicitly excluded in another. The human team had caught the same issue in their own review process. That finding inspired a cross-section consistency check: "does section X.XX (Security) contradict section X.XX (Electrical)?"
 
 Discipline leads noted that their workflow involved tagging sections by discipline lead, with each lead referencing the *specific* discipline specification. So we added discipline-specific extraction passes, routing each section's prompts through the relevant discipline spec summary rather than the whole document.
 
@@ -214,7 +214,7 @@ A lot more to share on aec-bench soon!
 
 ## Agent Design Is Harness Design
 
-We started this whole experiment with a model and a REPL. We ended with a deterministic pipeline that costs 14x less, runs at half the time, produces higher-quality output, and tells you what it will cost before it starts. And all we had to do is change the harness.
+We started this whole experiment with a model and a REPL. We ended with a deterministic pipeline that costs 14x less, runs in half the time, produces higher-quality output, and tells you what it will cost before it starts. And all we had to do was change the harness.
 
 But "harness" undersells it. What changed in this case was the *reasoning architecture* — how context is managed, how work is decomposed, where the model is and isn't asked to make decisions. That's agent design. It's also harness design. The two are the same discipline, and the line between them was always artificial.
 
