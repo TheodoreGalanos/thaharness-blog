@@ -1,45 +1,127 @@
-<!-- ABOUTME: Sticky site header — logo + The Harness wordmark on the left, mono nav + theme toggle on the right. -->
-<!-- ABOUTME: Author identity lives in the manifesto + /about; social icons live in the footer. -->
+<!-- ABOUTME: Branded site navigation with a compact, keyboard-accessible mobile menu. -->
+<!-- ABOUTME: Keeps the site name and theme control available at every viewport width. -->
 ---
 import { Image } from 'astro:assets';
 import logoIcon from '../assets/logo-icon-trimmed.png';
 import HeaderLink from './HeaderLink.astro';
 import ThemeToggle from './ThemeToggle.astro';
+const links = [
+	{ href: '/blog', label: 'Writing' },
+	{ href: '/about', label: 'About' },
+	{ href: '/subscribe', label: 'Subscribe' },
+	{ href: '/search', label: 'Search' },
+];
 ---
 
-<header class="sticky top-0 left-0 right-0 z-50 border-b border-[--color-border]" style="background-color: var(--color-bg);">
-	<nav class="site-header-shell page-shell flex items-center justify-between gap-1 sm:gap-3 h-16 md:h-[4.25rem]">
-		<a
-			href="/"
-			aria-label="The Harness home"
-			class="flex shrink-0 items-center gap-2 no-underline hover:no-underline"
-		>
-			<Image src={logoIcon} alt="" width={28} height={40} class="logo-icon" />
-			<span class="hidden sm:inline font-heading font-medium text-lg sm:text-xl text-[--color-text-primary] tracking-[-0.02em]">The Harness</span>
-		</a>
 
-		<div class="flex shrink-0 items-center gap-0.5 md:gap-2">
-			<HeaderLink href="/blog">writing</HeaderLink>
-			<span class="text-[--color-text-tertiary] text-xs hidden md:inline">&middot;</span>
-			<HeaderLink href="/about">about</HeaderLink>
-			<span class="text-[--color-text-tertiary] text-xs hidden md:inline">&middot;</span>
-			<HeaderLink href="/subscribe">subscribe</HeaderLink>
-			<span class="text-[--color-text-tertiary] text-xs hidden md:inline">&middot;</span>
-			<HeaderLink href="/search">search</HeaderLink>
+<a href="#main-content" class="skip-link">Skip to content</a>
+<header class="site-header">
+	<nav class="page-shell site-nav" aria-label="Main navigation">
+		<a href="/" aria-label="The Harness home" class="site-brand"
+			><Image src={logoIcon} alt="" width={28} height={40} /><span>The Harness</span></a
+		>
+		<div class="site-controls">
+			<div class="desktop-links">
+				{links.map((link) => <HeaderLink href={link.href}>{link.label}</HeaderLink>)}
+			</div>
+			<details class="mobile-menu">
+				<summary>Menu</summary>
+				<div class="mobile-links">
+					{links.map((link) => <HeaderLink href={link.href}>{link.label}</HeaderLink>)}
+				</div>
+			</details>
 			<ThemeToggle />
 		</div>
 	</nav>
 </header>
-
+<script>
+	const menu = document.querySelector<HTMLDetailsElement>('.mobile-menu');
+	document.addEventListener('keydown', (event) => {
+		if (event.key === 'Escape' && menu?.open) {
+			menu.open = false;
+			menu.querySelector('summary')?.focus();
+		}
+	});
+	document.addEventListener('click', (event) => {
+		if (menu?.open && event.target instanceof Node && !menu.contains(event.target))
+			menu.open = false;
+	});
+</script>
 <style>
-	.logo-icon {
-		filter: drop-shadow(0 0 4px rgba(232, 168, 76, 0.4));
+	.site-header {
+		position: sticky;
+		top: 0;
+		z-index: 50;
+		background: var(--color-bg);
+		border-bottom: 1px solid var(--color-border);
 	}
-
-	@media (max-width: 359px) {
-		.site-header-shell {
-			padding-left: 0.75rem;
-			padding-right: 0.75rem;
+	.site-nav {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		height: 4rem;
+		gap: 0.5rem;
+	}
+	.site-brand {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		color: var(--color-text-primary);
+		font-family: var(--font-display);
+		font-size: 1.25rem;
+		white-space: nowrap;
+	}
+	.site-controls,
+	.desktop-links {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+	.mobile-menu {
+		display: none;
+	}
+	@media (min-width: 768px) {
+		.site-nav {
+			height: 4.25rem;
+		}
+	}
+	@media (max-width: 639px) {
+		.site-nav {
+			padding-inline: 1rem;
+		}
+		.desktop-links {
+			display: none;
+		}
+		.mobile-menu {
+			display: block;
+			font-family: var(--font-mono);
+			font-size: 0.875rem;
+		}
+		summary {
+			display: flex;
+			align-items: center;
+			min-height: 44px;
+			padding: 0 0.5rem;
+			cursor: pointer;
+			list-style: none;
+		}
+		summary::-webkit-details-marker {
+			display: none;
+		}
+		.mobile-links {
+			position: absolute;
+			top: 100%;
+			right: 0;
+			left: 0;
+			padding: 0.75rem 1rem;
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			background: var(--color-bg);
+			border-bottom: 1px solid var(--color-border);
+		}
+		.mobile-links :global(a) {
+			min-height: 44px;
+			font-size: 0.875rem;
 		}
 	}
 </style>

@@ -51,7 +51,7 @@ describe('the-attacker-moves-second figures', () => {
 	});
 
 	it('never grants authority above the rail', () => {
-		const note = provenanceLedgerFlowData.topLayer.items.find((item) => item.kind === 'note');
+		const note = provenanceLedgerFlowData.topLayer.items.find((item) => 'kind' in item && item.kind === 'note');
 		assert.equal(note?.text, 'any text may propose; none of it may authorise');
 		assert.match(provenanceLedgerFlowData.topLayer.label, /nothing here carries authority/);
 	});

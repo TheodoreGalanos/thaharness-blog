@@ -1,46 +1,60 @@
-<!-- ABOUTME: Dark/light mode toggle button with moon and sun text icons. -->
-<!-- ABOUTME: Persists preference in localStorage and sets data-theme on the html element. -->
----
----
-
-<button
-	id="theme-toggle"
-	type="button"
-	aria-label="Toggle dark mode"
-	class="p-1.5 sm:p-2 font-heading text-base sm:text-lg text-[--color-text-secondary] hover:text-[--color-text-primary] transition-colors duration-250"
->
-	<span class="theme-icon-dark" aria-hidden="true">&#9789;</span>
-	<span class="theme-icon-light hidden" aria-hidden="true">&#9788;</span>
+<!-- ABOUTME: Changes the resolved page theme and remembers an explicit choice. -->
+<!-- ABOUTME: Works even when browser storage is unavailable. -->
+<button id="theme-toggle" type="button" aria-label="Change colour theme" class="theme-toggle">
+	<svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"
+		><circle cx="12" cy="12" r="4"></circle><path
+			d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"></path></svg
+	>
+	<svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"
+		><path d="M20 15.5A9 9 0 0 1 8.5 4 9 9 0 1 0 20 15.5Z"></path></svg
+	>
 </button>
-
 <script>
-	function updateToggleIcons(theme: string) {
-		const darkIcon = document.querySelector('.theme-icon-dark');
-		const lightIcon = document.querySelector('.theme-icon-light');
-		if (!darkIcon || !lightIcon) return;
-
-		if (theme === 'dark') {
-			darkIcon.classList.remove('hidden');
-			lightIcon.classList.add('hidden');
-		} else {
-			darkIcon.classList.add('hidden');
-			lightIcon.classList.remove('hidden');
+	const button = document.getElementById('theme-toggle');
+	const updateLabel = () =>
+		button?.setAttribute(
+			'aria-label',
+			document.documentElement.dataset.theme === 'dark'
+				? 'Switch to light mode'
+				: 'Switch to dark mode',
+		);
+	updateLabel();
+	button?.addEventListener('click', () => {
+		const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+		document.documentElement.dataset.theme = theme;
+		document.documentElement.style.colorScheme = theme;
+		try {
+			localStorage.setItem('theme', theme);
+		} catch (_) {
+			/* The current page can still change theme. */
 		}
-	}
-
-	function getEffectiveTheme(): string {
-		const stored = localStorage.getItem('theme');
-		if (stored) return stored;
-		return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-	}
-
-	updateToggleIcons(getEffectiveTheme());
-
-	document.getElementById('theme-toggle')?.addEventListener('click', () => {
-		const current = getEffectiveTheme();
-		const next = current === 'dark' ? 'light' : 'dark';
-		localStorage.setItem('theme', next);
-		document.documentElement.setAttribute('data-theme', next);
-		updateToggleIcons(next);
+		updateLabel();
 	});
 </script>
+<style>
+	.theme-toggle {
+		display: grid;
+		place-items: center;
+		width: 44px;
+		height: 44px;
+		flex: none;
+		color: var(--color-text-secondary);
+		cursor: pointer;
+	}
+	svg {
+		width: 20px;
+		height: 20px;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1.5;
+	}
+	.theme-moon {
+		display: none;
+	}
+	:global([data-theme='light']) .theme-sun {
+		display: none;
+	}
+	:global([data-theme='light']) .theme-moon {
+		display: block;
+	}
+</style>

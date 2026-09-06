@@ -129,9 +129,9 @@
   --color-surface: #ffffff;
   --color-text-primary: #1c1c1e;
   --color-text-secondary: #6b6b76;
-  --color-text-tertiary: #9d9da8;
-  --color-accent: #d4882c;
-  --color-accent-hover: #b8741f;
+  --color-text-tertiary: #70707b;
+  --color-accent: #965600;
+  --color-accent-hover: #784400;
   --color-accent-secondary: #2d8079;
   --color-border: #e8e8ec;
   --color-code-bg: #f4f4f5;
@@ -155,17 +155,18 @@ html {
   }
 }
 
-body {
-  font-family: var(--font-body);
-  font-size: 1.1875rem;
-  line-height: 1.75;
-  color: var(--color-text-primary);
-  background-color: var(--color-bg);
-  min-height: 100vh;
-  margin: 0;
-  padding: 0;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@layer base {
+  body {
+    font-family: var(--font-body);
+    font-size: 1.1875rem;
+    line-height: 1.75;
+    color: var(--color-text-primary);
+    background-color: var(--color-bg);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -227,6 +228,8 @@ main {
 img {
   max-width: 100%;
   height: auto;
+}
+
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -588,3 +591,11 @@ img {
     white-space: nowrap;
   }
 }
+
+:root {
+  --color-button-bg: #e8a84c;
+  --color-button-text: #18130e;
+}
+:focus-visible { outline: 2px solid var(--color-accent-secondary); outline-offset: 4px; }
+.skip-link { position: fixed; top: .5rem; left: 1rem; z-index: 100; padding: .5rem 1rem; background: var(--color-bg); transform: translateY(-200%); }
+.skip-link:focus { transform: none; }

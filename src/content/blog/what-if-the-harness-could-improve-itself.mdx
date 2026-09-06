@@ -23,8 +23,6 @@ import {
   strategyContrastData,
 } from '../../data/autoresearch-charts';
 
-Estimated reading time: 25 minutes
-
 About a week ago, Andrej Karpathy released [autoresearch](https://github.com/karpathy/autoresearch): a system where an LLM agent improves a model training pipeline overnight. The agent edits code, trains for five minutes, checks whether the result improved, and keeps or discards the change. Over roughly 700 experiments, it found around 20 real improvements and cut GPT-2 training time by 11%.
 
 The design is compact: one markdown file, one editable target (`train.py`), one metric (`val_bpb`), and a greedy keep-or-revert loop.

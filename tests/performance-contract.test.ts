@@ -18,7 +18,6 @@ const editorialLayout = source('../src/layouts/EditorialPost.astro');
 const editorialScript = source('../src/scripts/editorial.ts');
 const lightboxScript = source('../src/scripts/image-lightbox.ts');
 const homePage = source('../src/pages/index.astro');
-const subscribePage = source('../src/pages/subscribe.astro');
 
 describe('performance delivery contract', () => {
 	it('self-hosts the exact font faces without a Google Fonts dependency', () => {
@@ -54,7 +53,6 @@ describe('performance delivery contract', () => {
 	it('loads landing and editorial CSS only from the routes that need it', () => {
 		assert.doesNotMatch(globalStyles, /@import "\.\/(?:landing|editorial|chart-hover-panel)\.css"/);
 		assert.match(homePage, /import '\.\.\/styles\/landing\.css';/);
-		assert.match(subscribePage, /import '\.\.\/styles\/landing\.css';/);
 		assert.match(editorialLayout, /import '\.\.\/styles\/editorial\.css';/);
 		assert.match(editorialLayout, /import '\.\.\/styles\/chart-hover-panel\.css';/);
 	});

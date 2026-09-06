@@ -115,47 +115,46 @@ function revealActiveRailLink(): void {
 function setupChapterRail(): void {
   const overview = document.querySelector<HTMLElement>(".chapter-strip");
   const rail = document.querySelector<HTMLElement>(".chapter-rail");
-  if (!overview || !rail || typeof IntersectionObserver === "undefined") return;
-
-  const siteHeader = document.querySelector<HTMLElement>("body > header");
-  let observer: IntersectionObserver | null = null;
+  if (!overview || !rail) return;
+  const header = document.querySelector<HTMLElement>("body > header");
+  let overviewBottom = 0;
+  let headerHeight = 64;
+  let frame: number | null = null;
   let visible = false;
 
-  const setVisible = (nextVisible: boolean) => {
-    if (visible === nextVisible) return;
-    visible = nextVisible;
-    rail.classList.toggle("is-visible", nextVisible);
-    rail.setAttribute("aria-hidden", String(!nextVisible));
-    rail.inert = !nextVisible;
-    if (nextVisible) revealActiveRailLink();
-  };
-
-  const observeOverview = () => {
-    observer?.disconnect();
-    const headerHeight = Math.ceil(
-      siteHeader?.getBoundingClientRect().height ?? 64,
-    );
-    observer = new IntersectionObserver(
-      ([entry]) => {
-        setVisible(
-          shouldShowChapterRail(entry.boundingClientRect.bottom, headerHeight),
-        );
-      },
-      {
-        rootMargin: `-${headerHeight}px 0px 0px 0px`,
-        threshold: 0,
-      },
-    );
-    observer.observe(overview);
-  };
-
-  observeOverview();
-  if (siteHeader && typeof ResizeObserver !== "undefined") {
-    const headerObserver = new ResizeObserver(observeOverview);
-    headerObserver.observe(siteHeader);
-  } else {
-    window.addEventListener("resize", observeOverview, { passive: true });
+  function update() {
+    frame = null;
+    const next = shouldShowChapterRail(overviewBottom - window.scrollY, headerHeight);
+    if (next === visible || !rail) return;
+    visible = next;
+    rail.classList.toggle("is-visible", next);
+    rail.setAttribute("aria-hidden", String(!next));
+    rail.inert = !next;
+    if (next) revealActiveRailLink();
   }
+  function schedule() {
+    if (frame === null) frame = requestAnimationFrame(update);
+  }
+  function measure() {
+    if (!overview) return;
+    overviewBottom = overview.getBoundingClientRect().bottom + window.scrollY;
+    headerHeight = Math.ceil(header?.getBoundingClientRect().height ?? 64);
+    schedule();
+  }
+  measure();
+  window.addEventListener("scroll", schedule, { passive: true });
+  window.addEventListener("resize", measure, { passive: true });
+  window.addEventListener("pageshow", measure);
+  window.addEventListener("load", measure, { once: true });
+  overview.addEventListener("toggle", measure);
+  if (typeof ResizeObserver !== "undefined") {
+    const observer = new ResizeObserver(measure);
+    observer.observe(overview);
+    if (header) observer.observe(header);
+    const articleHeader = document.querySelector(".editorial-header");
+    if (articleHeader) observer.observe(articleHeader);
+  }
+  void document.fonts?.ready.then(measure);
 }
 
 function setupChapterTracking(): void {

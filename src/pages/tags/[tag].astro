@@ -10,6 +10,7 @@ import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
 import { SITE_TITLE } from '../../consts';
 import { getPublishedBlogPosts } from '../../utils/blog';
+import { topics } from '../../data/topics';
 
 export async function getStaticPaths() {
 	const posts = getPublishedBlogPosts(await getCollection('blog'));
@@ -26,63 +27,98 @@ export async function getStaticPaths() {
 			.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 		return {
 			params: { tag },
-			props: { posts: filtered },
+			props: {
+				posts: filtered,
+				recommended: (topics.find((topic) => topic.tag === tag)?.posts ?? [])
+					.map((id) => posts.find((post) => post.id === id))
+					.filter(Boolean),
+			},
 		};
 	});
 }
 
 interface Props {
 	posts: Awaited<ReturnType<typeof getCollection<'blog'>>>;
+	recommended: Awaited<ReturnType<typeof getCollection<'blog'>>>;
 }
 
 const { tag } = Astro.params;
-const { posts } = Astro.props;
+const { posts, recommended } = Astro.props;
+const topic = topics.find((topic) => topic.tag === tag);
+const remaining = posts.filter((post) => !recommended.some((item) => item.id === post.id));
 
 const prettyTag = (tag ?? '')
 	.split('-')
-	.map((part) => part.length > 0 ? part[0].toUpperCase() + part.slice(1) : part)
+	.map((part) => (part.length > 0 ? part[0].toUpperCase() + part.slice(1) : part))
 	.join(' ');
 ---
 
 <!doctype html>
 <html lang="en" data-theme="dark">
 	<head>
-		<BaseHead title={`${prettyTag} — articles and research | ${SITE_TITLE}`} description={`Articles tagged ${prettyTag}: harness engineering research, agent evaluation, and practical AI for AEC and domain-specific engineering.`} />
+		<BaseHead
+			title={`${prettyTag} — articles and research | ${SITE_TITLE}`}
+			description={topic?.description ??
+				`Articles tagged ${prettyTag}: harness engineering research, agent evaluation, and practical AI for AEC and domain-specific engineering.`}
+		/>
 	</head>
-	<body class="bg-[--color-bg]">
+	<body class="bg-[var(--color-bg)]">
 		<Header />
-		<main class="px-6 py-16 md:py-24">
+		<main id="main-content" class="px-6 py-16 md:py-24">
 			<div class="mx-auto max-w-[50rem]">
 				<header class="tag-header">
 					<span class="tag-kicker">Topic</span>
-					<h1 class="tag-headline">{prettyTag}</h1>
+					<h1 class="tag-headline">{topic?.title ?? prettyTag}</h1>
 					<p class="tag-deck">
-						{posts.length} {posts.length === 1 ? 'piece' : 'pieces'} in this thread.
+						{
+							topic?.description ??
+								`${posts.length} ${posts.length === 1 ? 'article' : 'articles'} in this topic.`
+						}
 					</p>
 				</header>
 
+				{
+					recommended.length > 0 && (
+						<section class="topic-reading-order" aria-labelledby="reading-order">
+							<>
+								<h2 id="reading-order">Start here</h2>
+								<ol>
+									{recommended.map((post) => (
+										<li>
+											<a href={`/blog/${post.id}/`}>
+												<h3>{post.data.title}</h3>
+												<p>{post.data.description}</p>
+											</a>
+										</li>
+									))}
+								</ol>
+							</>
+						</section>
+					)
+				}
+				{topic && <h2 class="more-in-topic">More in this topic</h2>}
 				<ol class="archive-list" role="list">
-					{posts.map((post) => (
-						<li class={`archive-item${post.data.featured ? ' is-featured' : ''}`}>
-							<a href={`/blog/${post.id}/`} class="archive-link">
-								<div class="archive-meta">
-									<FormattedDate date={post.data.pubDate} />
-									{post.data.featured && (
-										<span class="archive-featured">Featured</span>
-									)}
-								</div>
-								<h2 class="archive-title">{post.data.title}</h2>
-								<p class="archive-description">{post.data.description}</p>
-								{post.data.tags.length > 0 && (
-									<div class="archive-tags">
-										{post.data.tags.slice(0, 4).map((t: string) => (
-											<span class={`archive-tag${t === tag ? ' is-active' : ''}`}>{t}</span>
-										))}
+					{
+						remaining.map((post) => (
+							<li class={`archive-item${post.data.featured ? ' is-featured' : ''}`}>
+								<a href={`/blog/${post.id}/`} class="archive-link">
+									<div class="archive-meta">
+										<FormattedDate date={post.data.pubDate} />
+										{post.data.featured && <span class="archive-featured">Featured</span>}
 									</div>
-								)}
-							</a>
-						</li>
-					))}
+									<h2 class="archive-title">{post.data.title}</h2>
+									<p class="archive-description">{post.data.description}</p>
+									{post.data.tags.length > 0 && (
+										<div class="archive-tags">
+											{post.data.tags.slice(0, 4).map((t: string) => (
+												<span class={`archive-tag${t === tag ? ' is-active' : ''}`}>{t}</span>
+											))}
+										</div>
+									)}
+								</a>
+							</li>
+						))
+					}
 				</ol>
 			</div>
 		</main>
@@ -217,5 +253,38 @@ const prettyTag = (tag ?? '')
 		.archive-description {
 			font-size: 1rem;
 		}
+	}
+</style>
+
+<style>
+	.topic-reading-order h2,
+	.more-in-topic {
+		font-family: var(--font-display);
+		font-size: 1.75rem;
+	}
+	.topic-reading-order ol {
+		padding-left: 1.5rem;
+	}
+	.topic-reading-order li {
+		padding: 0.75rem 0 0.75rem 0.5rem;
+	}
+	.topic-reading-order li::marker {
+		color: var(--color-accent-secondary);
+	}
+	.topic-reading-order a {
+		color: var(--color-text-primary);
+	}
+	.topic-reading-order h3 {
+		font-family: var(--font-display);
+		font-size: 1.5rem;
+	}
+	.topic-reading-order p {
+		font-family: var(--font-body);
+		color: var(--color-text-secondary);
+		font-size: 1.0625rem;
+		margin: 0.5rem 0 0;
+	}
+	.more-in-topic {
+		margin-top: 2rem;
 	}
 </style>
