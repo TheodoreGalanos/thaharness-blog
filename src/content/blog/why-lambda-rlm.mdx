@@ -1,0 +1,78 @@
+---
+title: "Why Lambda-RLM"
+description: "Six months of RLM literature have clarified what recursion actually buys you — and what it costs. A short applied-research look at why the deterministic pipeline keeps paying off."
+author: "Theodoros Galanos"
+category: "Engineering"
+draft: true
+pubDate: 2026-04-23
+tags: ["recursive-language-models", "rlm", "lambda-rlm", "harness-design", "ai-agents", "uncertainty", "applied-research"]
+featured: false
+---
+
+In [Recursive by Design](/blog/recursive-by-design/), I walked through how we ended up building a deterministic RLM pipeline for report generation. The core argument was architectural: the template is a dependency tree, and the sources have measurable sizes. That means the decomposition can be computed once in Python rather than rediscovered by the model on every run.
+
+That post was the applied half of the story. Since writing it, I've been catching up on the research half. The last six months have produced a surprisingly sharp picture of where recursion helps, where it hurts, and what's actually doing the work. This post is a short read of that literature through our work on lambda-RLM.
+
+Five contributions set the scene:
+
+- Zhang, Kraska, and Khattab — the original [Recursive Language Models paper](https://arxiv.org/abs/2512.24601). The paradigm.
+- Wang — ["Think, But Don't Overthink"](https://arxiv.org/abs/2603.02615). Reproduces RLM with open-source models, tests depth=2.
+- Alizadeh et al. — ["Recursive Language Models Meet Uncertainty (SRLM)"](https://arxiv.org/abs/2603.15653). Asks whether recursion is actually the source of the gains.
+- Weitekamp — [Recursive Language Models as Memory Systems](https://raw.works/recursive-language-models-as-memory-systems/) and [RLMs are the New Reasoning Models](https://raw.works/rlms-are-the-new-reasoning-models/). Practitioner reports from DSPy.RLM experiments.
+- Mastra — [Observational Memory](https://mastra.ai/research/observational-memory). Not an RLM, but adjacent: the SOTA result on LongMemEval using background Observer/Reflector agents.
+
+Read together, they change how I'd pitch lambda-RLM: as a bet on *bounded, externalized computation*, with the recursion graph as a consequence rather than the feature.
+
+## What the literature agrees on
+
+A few results land in the same place from very different directions.
+
+**Depth-1 is the sweet spot — and sometimes depth-0 wins.** Wang's reproduction is the clearest demonstration. DeepSeek v3.2 on OOLONG goes from 0% baseline → 42.1% at depth-1 → 33.7% at depth-2, with execution time exploding from 3.6s to 89.3s to 344.5s. At depth-2 the model stops anchoring to its input and starts reciting pretraining data (the "parametric hallucination" failure mode), or loops endlessly verifying itself. The REPL has no native stopping criterion, so the only defence is a harness-imposed one.
+
+**Recursion hurts strong models on short context.** This is the most counter-intuitive result, and it shows up in both SRLM and Wang. Kimi K2 scores 86.6% on OOLONG natively. Wrapping it in an RLM drops it to 60%. SRLM reports the same pattern across GPT-5 and any context that fits the native window. The scaffold adds cognitive load the model doesn't need.
+
+**Recursion isn't the active ingredient. Externalization is.** SRLM's sharpest finding: a self-reflective program search with *no sub-calls* matches or beats recursive RLM on long-context benchmarks by up to 22%. On LongBench CodeQA with Qwen3-Coder, the jump from base model (20%) to no-recursion programmatic RLM (53.8%) accounts for almost all of the gain; adding recursion only nudges it to 59.8%. What's doing the work is *treating context as an external variable the model can inspect*. Recursion is one way to exploit that, not the thing that makes it work.
+
+**Structured scaffolding closes the gap between model tiers.** Weitekamp's DSPy.RLM result on LongMemEval is the concrete data point: Gemini 3 Flash with the structured DSPy.RLM scaffold matches Gemini 3 Pro with the freeform RLM package. The structure keeps the cheaper model on the rails. Prime Intellect's earlier result pointed the same way — small model plus RLM scaffold beating a larger model without one.
+
+**External retrieval isn't a prerequisite for SOTA memory.** Mastra's Observational Memory hits 94.87% on LongMemEval with a stable, append-only observation log and no per-turn retrieval. Their claim that "observations are more useful to the model than the raw correct data" — beating the oracle — is a strong signal that *structured summaries dominate raw content* for downstream reasoning.
+
+## What this validates about lambda-RLM
+
+Reading this research alongside our lambda-RLM work, I find support for several design decisions we originally made for practical reasons.
+
+**Fixed-depth planning.** Our planner computes branching factor and recursion depth from a cost model, not from agent discretion. Every section runs at a bounded depth — usually 0 or 1, occasionally 2 for very large single sources. Wang's depth-2 failure modes (parametric hallucination, format collapse, performative reasoning) are all runtime behaviours of an agent that can keep spawning sub-calls. We don't see any of them because the plan physically cannot produce them. The call count is printed before the first API call and matches the actual execution exactly.
+
+**Structured extraction over freeform REPL code.** Our leaf operations return typed JSON against a schema, not arbitrary Python output. This echoes the DSPy.RLM finding: structure is the rail that keeps weaker models performing as if they were stronger ones. It also makes the "formatting collapse" Wang observed (models printing raw `print(f"Answer: ...")` code instead of the answer) structurally impossible — there's no user-facing output layer for the model to confuse with the REPL scratchpad.
+
+**Externalization without forced recursion.** This is the one that matters most after reading SRLM. Our extract / review / generate pipeline treats source documents as external variables and lets the model operate on bounded slices of them. But for sections whose sources fit in the context window, the planner produces a single leaf op — no chunking, no reduce, no recursion. That's exactly the "no sub-calls" mode SRLM identifies as the workhorse. We arrived at it for cost reasons; it turns out to also be the regime where long-context performance actually comes from.
+
+**Cost is known before the first call.** This sounds operational, but it's also an epistemic position. Wang's cost analysis is the strongest practical case against naive RLM deployment: industrial use requires knowing the upper bound on compute, not just the expected value. A deterministic plan converts an open-ended agent into a cost-predictable pipeline without sacrificing the externalization.
+
+## What the literature suggests we should add
+
+The interesting part is what we *haven't* built yet, and where the literature points.
+
+**A pass-through mode.** Both SRLM and Wang show that recursion hurts when context fits natively. Our planner currently always chunks a source if it exceeds `context_window_chars`, but it doesn't have an explicit "this fits — just pass it through to generation with no extraction step" regime for small sources on strong models. Adding that closes the only obvious gap between our approach and the SRLM "no sub-calls" variant.
+
+**Tiered model routing.** Strong models don't benefit from recursion; weaker models benefit a lot. Our pipeline currently uses one client for all phases. A cheap, fast model for leaf extraction (many small calls, well-structured input) combined with a strong model for review and generation (few calls, semantic synthesis) matches both the Mastra Observer/Reflector split and the SRLM finding that recursion helps mostly when the base model can't handle the context directly.
+
+**Intrinsic uncertainty signals.** This is the biggest conceptual shift on offer. Our review phase calls a separate LLM to check extraction against a contract — it's one-shot external judgement. SRLM argues for intrinsic signals derived from the model's own output: self-consistency across K extractions, verbalized confidence per field, reasoning trace length as an epistemic effort proxy. The joint score $s(p) = VC(p) \cdot Len(p)$ is surprisingly effective in their ablations, and all three signals come from generation statistics we already have or can elicit cheaply.
+
+The attractive property is composability. Self-consistency falls out of running extraction twice, which we already do in some configurations. Verbalized confidence is one line in the extraction prompt's JSON schema, and trace length is a counter. None of these require a separate LLM pass. Together, they could replace or narrow the review phase where it's expensive, while leaving it in place where the task genuinely requires it.
+
+**Cross-section observation memory.** Our extractions are per-section silos — section 3's facts don't inform section 5's extraction, even when the dependency tree says they should. Observational Memory's append-only observation log is the obvious pattern to borrow. Not a full OM implementation — our context is small and structured — but a lightweight event log of "what was extracted, with what provenance, with what confidence" that later sections can consult. We already write something like this as trajectory metadata; promoting it to an input signal is the natural next step.
+
+## The harness thesis, sharpened
+
+The previous post ended with "agent design is harness design". Six months of reading has sharpened what I mean by that.
+
+RLMs collapse reasoning and tool use into one abstraction: the prompt is an environment the model can inspect and act on. The value of the abstraction isn't recursion itself — it's externalization, which decouples the size of the task from the size of the context window. Recursion is one mechanism for exploiting that. Deterministic planning is another. Uncertainty-guided program search is a third. The literature now has evidence for all three, and they are not in tension: they're composable choices about *who computes what* in the pipeline.
+
+Lambda-RLM's bet was that for report generation the task structure encodes most of the planning, so the agent doesn't need to re-derive it. That bet holds up. What the new work adds is a richer story about what else the harness can be doing — not on behalf of the model, but alongside it — to keep the whole system predictable, cheap, and aligned with the actual source material.
+
+More on that in the next post, where we actually build some of it.
+
+---
+
+*Thanks to Alex Zhang, Raymond Weitekamp, and the Mastra team for the work that made this synthesis possible.*

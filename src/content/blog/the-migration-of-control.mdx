@@ -1,0 +1,272 @@
+---
+title: "The Migration of Control"
+description: "How task specification moved into prompts, procedure into software, and control became distributed across models, harnesses, and environments."
+author: "Theodoros Galanos"
+category: "Engineering"
+draft: true
+pubDate: 2026-08-07
+tags: ["large-language-models", "prompt-programming", "in-context-learning", "instruction-tuning", "synthetic-data", "knowledge-distillation", "chain-of-thought", "reasoning", "reasoning-models", "test-time-compute", "multimodal-ai", "semantic-generation", "generative-design", "computational-design", "tool-use", "function-calling", "retrieval-augmented-generation", "workflow-orchestration", "dspy", "pydantic-graph", "qwery", "state-machines", "compound-ai-systems", "ai-agents", "harness-engineering", "agent-evaluation", "task-worlds", "aec-bench", "agentic-reinforcement-learning", "ai-history"]
+featured: false
+---
+
+In March 2021, I was training an [open-source DALL·E implementation](https://github.com/lucidrains/DALLE-pytorch/discussions/95) on images and descriptions of residential floor plans. It could produce an image of a layout, but that left a practical problem. To measure a room or move a wall, design software needed room boundaries and coordinates. The image didn't provide them as objects the software could work with.
+
+I later tried a different approach with Architext. The model generated room names and coordinates, giving software something it could parse and check. That was a useful step, and it exposed another limit: the geometry could be valid even when the design missed the brief.
+
+I kept encountering versions of that problem. At Aurecon, we worked on training data, evidence retrieval, and executable workflows. Later, through agents and engineering benchmarks, I could test more of what happened between receiving a task and claiming to have completed it. Each setting made the gap between an acceptable-looking result and completed work easier to examine.
+
+These projects overlapped, as did the research behind them.[^evidence-and-dates] Looking back, I can see how we gradually divided the work differently. Models took on more decisions. People and software still had to establish what evidence they could use, what they were allowed to do, and how to check the result.
+
+## Generating a floor plan was only the beginning
+
+I called that first experiment ArchDALL·E. In a public note from 16 March 2021, I described training on 5,000 image-text pairs of mostly residential layouts. The captions specified room counts and spatial relationships, much as a simple brief might describe what a layout should contain and how its parts should relate.
+
+The experiment sat within a broader change in how people could use models. [GPT-3](https://arxiv.org/abs/2005.14165) had shown that instructions and examples could configure a frozen model for many tasks without updating its weights. The [API](https://openai.com/index/openai-api/) let a developer use the same endpoint for extraction, classification, translation, or generation by changing the text supplied to it. A domain expert could try an idea before committing to a task-specific training pipeline.
+
+[CLIP](https://arxiv.org/abs/2103.00020) and [DALL·E](https://openai.com/index/dall-e/) extended the use of language across images and text. A description could identify a visual category or specify an image to generate. In my experiment, the description was architectural, but the output was still pixels.
+
+A plausible floor-plan image still left someone or something else to recover the geometry. Before software could measure or modify the design, it needed an explicit description of the rooms and their boundaries.
+
+[Architext](https://arxiv.org/abs/2303.07519) generated that description directly. A language model wrote each room's name followed by the coordinates of its corners. A script could then read those coordinates as a polygon and check the geometry. It accepted complete sequences that formed closed, non-intersecting room polygons, and rejected malformed outputs or layouts with orphan rooms.
+
+For example, a bedroom could be represented as:
+
+```text
+bedroom: (13,12), (8,12), (8,9), (13,9)
+```
+
+The training corpus contained 250,000 unique residential layouts and more than five million semantic annotations generated through Rhino and Grasshopper.[^architext-data] I fine-tuned GPT-2, GPT-Neo, and GPT-J variants on these prompt-layout pairs, culminating in a 6-billion-parameter [Architext GPT-J model](https://huggingface.co/THEODOROS/Architext-gptj-6B). A person could describe a layout in ordinary language and receive geometry that another program could render, measure, and change.
+
+Architext required domain fine-tuning. GPT-3's in-context learning configured a general model through a prompt. They were different ways to adapt a model, but both let a person describe the intended result in language. For architectural work, the output format mattered just as much as that convenient input.
+
+The evaluation showed how far apart those two requirements remained. GPT-J-6B produced valid geometry in all six prompt categories under the paper's parser-based test. But when we checked whether the designs satisfied the intended constraints, average semantic correctness ranged from 25% to 83.73%. The model had learned the grammar of a floor plan more reliably than it had learned to satisfy the brief.
+
+The model emitted a design from left to right, without keeping an explicit record of outstanding constraints or checking the partial geometry as it went. If it violated a requirement, it had no process for going back and repairing the design before finishing. We could test generation and checking separately, but passing the geometry check still wasn't enough.
+
+In 2022, I began an unfinished [Architext PPO experiment](https://github.com/TheodoreGalanos/architext-ppo). Later public work added a [semantic evaluator](https://github.com/CarperAI/ArchitextRL/commit/d5c38905ef6c358d5ce0703eb8f1530fa5892db9) and an [Architext example in TRLX](https://github.com/CarperAI/trlx/blob/06cd30f400743ac4417f83c407217317304d1a67/examples/architext.py). These efforts did not mature into a rigorous post-training programme. They left an experiment open: use the brief as the task, the coordinate sequence as the action, and geometry and constraint checks to provide a reward.
+
+Some of the questions I now study through engineering benchmarks were already present in that unfinished experiment. I had a model that could produce a domain object and software that could check parts of it. Architext still lacked a reliable process for constructing, inspecting, and repairing a design until it met its requirements.
+
+## Building an engineering curriculum at Aurecon
+
+By early 2023, at Aurecon, we were using generation to prepare examples from which models could learn to respond to engineering tasks. Architext had used synthetic layouts to teach the grammar of geometry. Here, we were building a pipeline to produce instructions and responses across engineering disciplines.
+
+We called its capability map TaskMaster. It organised 15 engineering capabilities into more than 100 task entries, defining which parts of professional practice the curriculum should cover. Before a model began writing questions, we had specified what kinds of material it should generate.
+
+This work followed a change in model training. Research such as [FLAN](https://arxiv.org/abs/2109.01652) and [T0](https://arxiv.org/abs/2110.08207) had trained models on tasks expressed as instructions. [InstructGPT](https://arxiv.org/abs/2203.02155) combined supervised demonstrations with rankings of model outputs and reinforcement learning from human feedback. On its evaluated prompt distribution, people preferred the output of its 1.3-billion-parameter model to that of the original 175-billion-parameter GPT-3.
+
+Training was changing which behaviours a model produced by default. [ChatGPT's release in November 2022](https://openai.com/index/chatgpt/) made the assistant form familiar through follow-up questions, corrections, and refusals. A prompt could ask for a behaviour during one interaction; instruction tuning could make that behaviour more likely across later interactions.
+
+For an engineering team, this raised a practical data problem. Reports, standards, manuals, and records of expert decisions were not automatically demonstrations of how an assistant should respond. A passage might contain the information needed to answer a question without containing the question, a useful explanation, or the conditions under which the answer applied.
+
+[Self-Instruct](https://arxiv.org/abs/2212.10560) used a language model to generate candidate instructions, inputs, and outputs, then filtered invalid or redundant examples before training. [Evol-Instruct](https://arxiv.org/abs/2304.12244) rewrote seed instructions into more complex forms. These methods offered ways to produce candidate training data, but they left the choice of subject matter, source material, and acceptance criteria to the surrounding process.
+
+Our pipeline started with a capability and a professional scope. Models acting as teachers generated knowledge challenges, broke them into parts, and wrote questions about them. Some questions asked what would happen if the conditions changed. The models then used source material to write answers and explain them, sometimes turning the exchange into a dialogue with an engineering assistant. Later pipelines asked models to apply knowledge and troubleshoot problems, as well as predict, justify, and reflect. The examples went beyond recalling facts.
+
+We began with open-source engineering textbooks and later extended the document work to internal material. The pipelines cleaned the text and divided it into excerpts before generating questions and answers. Because each answer was tied to a passage, a reviewer could inspect its basis. They still had to judge whether the question was useful and whether the answer represented the source correctly.
+
+[Instruction backtranslation](https://arxiv.org/abs/2308.06259) reversed part of the process: begin with a person-written passage and infer an instruction that could plausibly have elicited it. The response remained connected to human work, although the inferred instruction could mischaracterise it. Other transformations made questions harder, rewrote them to stand alone, or approached the same knowledge from another direction.
+
+There was a lot of preparation around the generation itself. The capability map guided coverage, and source preparation determined what information reached the teacher model. Once we had generated and transformed the candidates, schema checks reduced parsing failures while selection and inspection determined which examples were suitable for further work. Generating more text would not, by itself, tell us whether the curriculum covered engineering practice well.
+
+The curriculum work sat within a larger experimental stack. We operated dedicated A100 GPU infrastructure for fine-tuning and built an internal inference layer around [NVIDIA Triton Inference Server](https://github.com/triton-inference-server/server). That gave us infrastructure for experimenting with model adaptation as well as producing its input data.
+
+The result was a pipeline for preparing and inspecting candidate training data. A claim about improved engineering performance would need a separate evaluation of the trained model.
+
+For me, this period extends the earlier representation problem. An engineering corpus had to be turned into examples of something a model should do. The model could help generate those examples, but the engineering coverage, source selection, and assessment process still required deliberate design.
+
+## Making evidence usable
+
+Checking individual examples left another question: how well did the collection cover the work? A pipeline could produce many well-formed examples while repeating familiar subjects and barely addressing others. With our enterprise version of Nomic Atlas, we built embedding maps that exposed duplicates and areas needing further exploration.
+
+In October 2024, Aurecon [announced a strategic partnership with Nomic](https://www.aurecongroup.com/about/latest-news/2024/october/aurecon-nomic-partnership) focused on making difficult organisational data usable for generative-AI applications. A later [Nomic case study](https://www.nomic.ai/case-studies/aurecon-case-study) described my GenAI team using the platform to organise, deduplicate, and cluster information. It also described the platform becoming a search backend and part of synthetic-generation pipelines.
+
+Domain experts could inspect and curate the data through the map, while internal applications accessed that same filtered collection through APIs. People and software could work from the same organised evidence. The choices made during curation could therefore affect what an application retrieved.
+
+We could use a source collection both to prepare training examples and to retrieve evidence during a task. The effect was different in each case. Our curriculum pipelines turned passages into demonstrations intended to change later behaviour through training. Retrieval gave the model relevant material during the current interaction, without changing its weights.
+
+Earlier research, including [REALM](https://arxiv.org/abs/2002.08909) and [retrieval-augmented generation](https://arxiv.org/abs/2005.11401), had already brought external evidence into language-model systems. In a fixed retrieval pipeline, the application decided when to fetch documents and how much material to give the model.
+
+[WebGPT](https://arxiv.org/abs/2112.09332), in 2021, gave a model more control over the search. GPT-3 operated a text browser with commands for searching, opening results, finding text, collecting references, and ending the session. After each observation, it could choose another action. Retrieval could therefore be a fixed application step or part of a model-directed investigation.
+
+That difference would become important in our later workflows. A research process might need another search after finding a gap or a contradiction. Retrieving once at the beginning could not account for everything the application would discover while answering.
+
+There was also a more basic limit. Whatever selected the next search, it could only work with the evidence exposed to it. Files became parsed text, pages became images, and retrieval systems selected fragments for context. Those transformations determined which details remained available. A source document being present in a database did not mean the model could inspect every relationship within it.
+
+This connected data preparation to application design. The source, its representation, and the way we retrieved it affected the work the model could do. Those choices shaped our training examples, and they also shaped the evidence available when an application had to make a decision.
+
+## Making the procedure explicit in Qwery
+
+Finding evidence was one part of answering a research request. We also needed a procedure for deciding what to do with it, and what to do when it wasn't enough. During 2025, we built Qwery at Aurecon to put those operations inside executable workflows.
+
+One workflow began by analysing the request and preparing a search. It retrieved evidence, drafted an answer, and assessed the answer's quality. If gaps remained, it searched again and revised the response. Once the answer was judged sufficient, it moved to checks on grounding and citations.
+
+```text
+analyse request
+  → prepare search
+  → retrieve evidence
+  → synthesise
+  → judge quality
+      ├─ gaps remain → focused search → revise → judge again
+      └─ sufficient → validate grounding and citations → final
+```
+
+The model could assess whether the answer met configured criteria. Software used that assessment to select an allowed next step and enforce an iteration limit. The process did not depend on a model remembering every instruction about how to conduct research throughout a long conversation.
+
+This arrangement drew on several developments in language-model applications. The 2022 [chain-of-thought paper](https://arxiv.org/abs/2201.11903) had shown that worked examples could elicit intermediate steps before an answer. The earlier [*Show Your Work*](https://arxiv.org/abs/2112.00114) experiments used scratchpads for tasks such as long addition and program execution. Partial sums or variable values written into context became available to later steps.
+
+Intermediate work could help produce an answer, and an application could inspect it. It could also be wrong. Chain-of-thought gains depended on the task and model; longer responses alone did not supply better reasoning. Nor was a readable explanation a complete account of how a model reached its decision. Work by [Turpin et al.](https://arxiv.org/abs/2305.04388) and [Lanham et al.](https://arxiv.org/abs/2307.13702) showed why stated reasoning could omit influences or differ in how strongly it affected the answer.
+
+An application could check a stated calculation without treating the surrounding explanation as proof. With [Program-Aided Language Models](https://arxiv.org/abs/2211.10435), the model generated code and an interpreter performed the calculation. [ReAct](https://arxiv.org/abs/2210.03629) interleaved reasoning, actions, and observations so that an external result could inform the next step. These methods gave intermediate work practical uses beyond displaying a longer answer.
+
+There was a practical complication when one model's output became another operation's input. A person would understand the phrase “two duty pumps and one standby.” A software component might need those counts in separate, named fields before it could use them:
+
+```json
+{ "duty": 2, "standby": 1 }
+```
+
+The meaning could be correct while the format was unusable. Parsers, schemas, and validation helped make these operations work together.
+
+Early work such as [*AI Chains*](https://arxiv.org/abs/2110.01691) and [*PromptChainer*](https://arxiv.org/abs/2203.06566) treated model calls as components whose intermediate results could be inspected and changed. The same general model could extract in one step and classify in another. A failed final response could then be investigated at the step where it first went wrong.
+
+At Aurecon, a prototype using [DSPy](https://arxiv.org/abs/2310.03714) gave metadata extraction named inputs and outputs, then connected it to retrieval. It compiled that composition against examples and a metric. The surviving prototype does not establish that compilation improved the result, but it shows the approach that carried into later work. Each model operation had a defined input, an expected output, and a way to evaluate the result.
+
+Workflow libraries made it practical to connect those operations, keep their working state, and allow a process to return to an earlier step. [LangGraph](https://www.langchain.com/blog/langgraph) supported shared state and cyclic routing. [Pydantic Graph](https://pydantic.dev/docs/ai/graph/graph/) represented transitions through typed nodes. Its [first PyPI release appeared in January 2025](https://pypi.org/project/pydantic-graph/#history), and Qwery used it to execute workflows with a configurable layer on top.
+
+In the mature source snapshot, configuration named the operations, their settings, and their permitted successors. Shared state retained the request, retrieved evidence, citations, identified gaps, and results of earlier checks. A prompt supplied the instructions for a local operation; the workflow kept track of the overall procedure.
+
+In the research workflow, a model judged the answer for completeness, accuracy, citation quality, and clarity. Software used those scores to choose the next route. A weak answer could lead to focused retrieval and another draft, but the process had an iteration limit and a fallback when no routing condition matched. The model's assessment influenced what happened next within choices the application had defined.
+
+### The limits of a defined procedure
+
+Because the procedure was explicit, a reviewer could see which evidence preceded an answer and why the system searched again or stopped. The same design also made our assumptions part of executable software.
+
+Those assumptions could be wrong. An early classification error could send a task down an unsuitable branch while later nodes behaved correctly for the state they received. A valid JSON object could carry a mistaken judgment. Traces could help locate the divergence without resolving the underlying semantic error.
+
+Fixed workflows suited tasks whose important states, exceptions, and completion criteria could be specified in advance. Open-ended research was harder to contain that way. Conflicting evidence might require a new decomposition or an approach the designer had not anticipated. Every additional route needed to be represented and maintained.
+
+A model can choose within a workflow, and a workflow can contain a model-directed investigation. The practical decision is how much of the procedure to specify in advance and how much choice to give the model during execution.
+
+With Qwery, we could express a professional procedure in software and inspect its working state as it ran. Whether that procedure produced a useful result still depended on the evidence, the model's judgments, and the method we had encoded.
+
+## Giving models more choice
+
+That leaves a choice about who decides the next step. A workflow can prescribe another search, while an agent can choose what to search for and decide whether the result is worth inspecting. If an approach fails, the model can choose to replace it. Software still executes the actions, but more of the sequence is decided during the task.
+
+That capability did not arrive with modern reasoning models. WebGPT and ReAct already let models select actions after observing results. The 2023 agent systems explored different ways to sustain the process: [Reflexion](https://arxiv.org/abs/2303.11366) stored feedback as textual episodic memory, while [Voyager](https://arxiv.org/abs/2305.16291) stored successful behaviours as executable skills. Developers supplied memory, criticism, and stopping mechanisms around controllers that could not yet provide them reliably.
+
+Sustaining that process reliably was difficult. In the original [WebArena](https://arxiv.org/abs/2307.13854) evaluation, the best GPT-4-based agent completed 14.41% of realistic web tasks, compared with 78.24% for humans. Once an early mistake changed what the agent observed, plausible actions could take it steadily further from its objective.
+
+[SWE-agent](https://arxiv.org/abs/2405.15793) showed why the interface deserved attention. Repository commands and observations designed for a language model were part of the evaluated system. What an agent could observe, edit, and recover from depended on the software around it as well as its model.
+
+Reasoning-oriented training strengthened the model's contribution. In September 2024, OpenAI described [o1-preview](https://openai.com/index/learning-to-reason-with-llms/) as trained through reinforcement learning to refine strategies, recognise mistakes, and try different approaches. Its reported performance improved with more training compute and more time spent reasoning at inference. The [DeepSeek-R1 paper](https://arxiv.org/abs/2501.12948) reported related behaviours emerging in reinforcement learning and described how some reasoning patterns could be transferred to smaller models.
+
+A chain-of-thought prompt encouraged a model to produce intermediate steps. Reasoning-oriented training developed its capacity to use additional deliberation. Some planning and critique that applications had arranged as separate model calls could take place within a model's own work before it selected an external action.
+
+A better plan still needed accurate observations and a reliable executor. A model could critique a plan from the same mistaken premise and return a more polished error. Its reasoning did not establish that a document was current, that a requested write was permitted, or that a service had completed an operation.
+
+Longer tasks added another requirement. The model had to keep working as actions returned new information, recover when something failed, and retain the purpose of the task across successive decisions. Nathan Lambert describes models intended for this role as [long-horizon, tool-using agent substrates](https://rlhfbook.com/teach/course/lec5-chap7/#recent-chinese-open-models). The surrounding application still had to support continuity, as Anthropic describes in its work on [long-running agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents).
+
+In my later work, the harness became the place to define those operating conditions. It exposed evidence and tools, retained working state, bounded computation, and established how to check completion. The model could choose more of its method within that environment.
+
+### Search and revision in a pricing task
+
+In one internal pricing system, for example, we divided a recursive estimation task into phases: planning, evidence retrieval, package work, and task work. The model could search a document registry and inspect its metadata, then find terms and read selected ranges. It could investigate the material without receiving every source document in every prompt.
+
+The model could decide how to investigate within a phase, but the harness limited its opportunities to revise. It could re-extract a package or task once and reallocate an estimate once. With a ceiling on requests and tool loops in each phase, a difficult extraction couldn't consume an unlimited sequence of retries.
+
+A scratchpad carried working notes between phases. We kept those notes separate from the records used to diagnose a run: model requests, tool calls, results, token use, and failures. Estimates, confidence, and evidence anchors were also saved for later analysis, without being fed back into the controller.
+
+A final audit checked source fidelity, hour conservation, allocation bounds, citations, role levels, and task legitimacy. Violations appeared as caveats rather than blocking every non-conforming draft.
+
+The model had freedom to search and revise within a phase. Software determined how long that work could continue and which checks applied to the result.
+
+### Proposing an action and approving it
+
+An internal BIM review harness addressed a different question: who could approve an action? Its core was deterministic and defined an operating environment for a future agent. It wasn't yet an autonomous BIM agent.
+
+A caller could propose a goal and a set of steps, which a compiler checked before putting them in execution order. Unknown tools, missing or duplicate step identifiers, invalid dependencies, and cycles caused rejection. The tool registry determined whether each operation was a read, a local write, or an external write. A proposal couldn't declare its own operation harmless.
+
+Every tool that could write required approval for the specific changes it was allowed to make. An approval record could also name an actor and include an expiry. The registry checked the permitted scope and any expiry before execution. Changes to the evidence store ran inside transactions. If an operation failed, those changes could be rolled back while a separate record of the failure remained.
+
+Completed runs produced content-hashed artefacts whose bytes stayed fixed when later evidence arrived. Publication waited for operator decisions on draft findings. People could inspect evidence, findings, case files, and review queues rather than relying on a conversational claim that the work was finished.
+
+These controls addressed a basic property of tool use. The model generates a request; software decides whether to execute it and records what happened. A well-formed request can still name the wrong record or repeat an operation that already succeeded. Retrying a read and retrying a write can have very different consequences.
+
+The [2023 function-calling interface](https://openai.com/index/function-calling-and-other-api-updates/) constrained how models expressed requests, but the application still had to validate arguments, enforce permissions, and report the actual service response. Research on [indirect prompt injection](https://arxiv.org/abs/2302.12173) also showed how retrieved content could redirect an application. The executor needed to enforce the action boundary even when the generated request sounded reasonable.
+
+The pricing and BIM systems made different aspects of that boundary concrete. One bounded investigation and exposed problems in estimates. The other controlled proposed operations and the release of reviewed artefacts.
+
+## Testing what the systems could do
+
+To study how the operating environment affected performance, we needed engineering tasks with results we could check. I developed the original [AEC-Bench](https://arxiv.org/html/2603.29199v1) with Harsh Mankodiya, Chase Gallik, and Andriy Mulyar. The March 2026 release contained 196 instances across nine task families and three context scopes, allowing us to compare agent systems and inspect how they reached their results.
+
+The central comparison kept the model family and task the same while changing the support available to the agent. We compared a base coding-agent harness, called `H`, with a version called `H+`. That second version added Nomic representations and tools while retaining the underlying harness and task environment. We could then examine whether a different way of accessing the evidence helped the same model do the work.
+
+On detail technical review, the additional support improved performance by 32.2 percentage points, averaged across four model configurations. But several tasks that depended on visual evidence or exhaustive inspection declined. We used one trial per instance in these baselines, so the results showed capability boundaries without establishing stable production reliability.
+
+The difference was more informative than a general claim that more tools improved performance. Retrieval support helped where finding the right information was a bottleneck. It did not solve every task involving a drawing or a large body of material that needed exhaustive inspection. The usefulness of the added capabilities depended on what the work required.
+
+The records of those runs gave us a clue. In 77% of the evaluated trajectories, the agent invoked `pdftotext`, a tool for extracting text from a PDF. The agents were approaching construction documents through familiar coding operations: convert the file to text, search it, and work on the result with shell tools. That could help with keyword search, but it could also discard the spatial layout and geometric relationships that made a drawing useful.
+
+This took me back to Architext. I had moved from pixels to coordinates so that software could work with a design. Now agents were often moving from drawings to linear text so they could work with construction documents. In each case, the representation determined which parts of the engineering problem remained available.
+
+This did not make `pdftotext` the cause of every failed task. The traces showed how agents approached the evidence and gave us specific limitations to investigate. A drawing could contain the required information while the agent's working representation omitted the relationships needed to use it.
+
+I began publishing this argument and related experiments through *The Harness*. A model's capability on professional work depended on its tools, reference material, observations, output requirements, and checks. Those parts of the system could be changed and evaluated alongside the model.
+
+One early [HVAC audit experiment](/blog/benchmarking-agents-on-real-engineering-work/) showed how large that dependence could be. With the full tool and guidance, Claude Sonnet 4.6 averaged 0.966 reward on a small office-building audit set. Across the four reduced-guidance `L0`–`L3` conditions, mean reward was zero.
+
+The failed runs could still sound competent. The model substituted a different room programme, invented a standard value, or explained HVAC without auditing the assigned schedule. It wrote fluently while leaving the required work undone. This was a small probe, with deliberately strong tool support in the full condition, so it wasn't a general estimate of model competence. It gave us specific failures to investigate beyond the writing quality of the answer.
+
+That changed what could be improved in an experiment. We could alter how evidence was presented, which operations were available, and what verification instructions the model received. A change to the surrounding system could matter even when model weights stayed fixed. It could also fail on another model or under a different evidence condition.
+
+### Turning a failure into another test
+
+In one [bounded prompt-evolution experiment](/blog/what-if-the-harness-could-improve-itself/), a two-sentence verification checklist raised the five-instance full-reference mean from 0.94 to 0.98. In one sparse-reference `L0` instance, the same checklist regressed. A separate GPT-4.1-mini run needed the underlying idea expressed as a hard verification gate.
+
+An instruction that helped one configuration could fail in another. Keeping the failed case alongside the improvement prevented us from treating a small result as a rule for every later run.
+
+A harness could now be tested as part of the system. A failure could lead to a proposed change, another evaluation, and a decision to retain or reject the change. The evidence needed to survive that process so that a later improvement could be compared with the failure that motivated it.
+
+The later [`aec-bench` platform](https://github.com/TheodoreGalanos/aec-bench) extended this work beyond the original benchmark. It could generate tasks and freeze them into versioned datasets whose contents could no longer change. We could run agent–harness configurations against those tasks, apply deterministic verifiers, and retain the trials for analysis and human review. Selected tasks could also be exported as training environments with verifiers, while hosted evaluation samples could be imported for inspection.
+
+The platform did not train models itself. Its role was to preserve the task, evidence, and verification requirements across evaluation and external training systems. A training result would be difficult to interpret if the meaning of success changed between the initial failure and the later check.
+
+In the first [small, unpaired adapter check](/blog/making-aec-bench-trainable/), the 15 base samples averaged 0.333 reward and the 15 adapter samples averaged 0.800. The traces were consistent with improved completion of that narrow workflow set. The sample design did not establish a controlled general advantage or broader engineering competence.
+
+These experiments brought the unfinished Architext work back into view. There was again a task, a generated action or artefact, and software able to check parts of the result. Now the surrounding machinery could preserve failures, support diagnosis, and carry the same requirements into a later harness or training experiment.
+
+There was still something missing from a fixed package of evidence and a check at the end. Some work depends on information that arrives later, after earlier decisions have already changed what remains possible.
+
+## Learning from work that changes over time
+
+To study that kind of work, an evaluation has to represent what changes during a task. Evidence can arrive in stages, and an accepted submission can constrain a later decision. An action might consume a resource or create an obligation that another action must address. The order matters.
+
+Current work in [`aec-bench`](https://github.com/TheodoreGalanos/aec-bench) explores this through a synthetic wastewater-pump-station stewardship world. As an agent observes the station and chooses actions, deterministic physical and work-process rules update one authoritative state. Its actions, along with external events, change what it encounters later.
+
+The agent sees evidence about the world, while the host retains its own controls. We record the state before an action or external event, what was committed, and how the rules changed the state afterwards. Those records preserve when things happened and allow transitions to be replayed and inspected after a run. Branching and rollouts let us experiment with different continuations, while evaluation remains separate from the live state transition.
+
+A separate hydraulic-review lifecycle tests a related problem. It releases evidence through ordered checkpoints and makes accepted submissions immutable within a run. The host controls checkpoint advance and verification. This is a finite review lifecycle rather than the registered pump-station world, but both make later work depend on earlier observations and commitments.
+
+We can then examine how an agent responded to evidence that arrived halfway through a task, or whether an earlier commitment made the final outcome harder to achieve. A final answer alone might conceal those events. Keeping the state and transitions lets us inspect the sequence.
+
+These are synthetic environments. Their records support diagnosis of causal chains within the simulation and make controlled counterfactual experiments possible. They do not, by themselves, prove why one model, memory, or harness performs better. That still requires a controlled comparison. Nor does a successful synthetic run establish reliable performance on a real engineering asset.
+
+Even if an agent completes a long episode, it may begin the next with the same instructions, tools, and blind spots. For it to improve across runs, evidence from the earlier work has to change the later system. We then have to test whether that change helped.
+
+Research such as [WebRL](https://arxiv.org/abs/2411.02337) explored this for web agents by generating tasks from unsuccessful attempts, using outcome-supervised rewards, and updating an action policy through online reinforcement learning. The aim was to learn how to reach a successful state through a sequence of actions. An early action could affect every later observation, and reward might arrive only at the end.
+
+In my own work, a run might suggest that we need a better tool or a different representation of the evidence. It might point to a change in the prompt, task, or training data. The experiment has to establish which change improves the result, and under which conditions.
+
+The separation between proposing a change and judging it remains essential. A model-generated verifier can share the blind spots of the model it evaluates. If an agent can alter both its actions and the definition of success without an independent check, a higher score may only show that the test became easier to satisfy. Changes to an evaluator need assessment just as changes to an agent do.
+
+This is the work I want to continue: use failures to propose changes, test those changes under explicit conditions, and retain what the evidence supports. Training and inference remain ways to improve a system. The representation of engineering work and the design of its operating environment give us further things to test.
+
+I began in 2021 with a floor-plan image that engineering software couldn't readily measure or edit. The work since then has brought more of the task into view: the evidence a model can use, the procedure it follows, the actions it is allowed to take, and what happens afterwards.
+
+A model can now choose more of what to do next. People still have to specify what the task requires, and software has to enforce the limits. Then the result has to withstand a check. That's the migration of control I can trace through these projects, and the part of the story that remains unfinished.
+
+[^architext-data]: The corpus contained 5,145,750 semantic annotations across 250,000 unique residential layouts.
+
+[^evidence-and-dates]: Dates in the research history refer to papers, releases, or company announcements, not necessarily the start of the underlying work. Internal examples draw on public records where available and otherwise on my recollection and surviving source snapshots. Those snapshots show what the systems became; they do not establish that every feature existed in the first implementation. Company case studies are first-party descriptions, not independent evaluations. The original AEC-Bench paper and the later `aec-bench` platform are distinct stages.

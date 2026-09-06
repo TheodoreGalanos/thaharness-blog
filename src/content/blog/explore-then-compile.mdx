@@ -1,0 +1,343 @@
+---
+title: "Explore, Then Compile"
+description: "Prime Agent showed why an environment must let an agent explore while keeping control of consequences, and why repeated behaviour needs evidence before it becomes permanent machinery."
+author: "Theodoros Galanos"
+category: "Engineering"
+draft: true
+pubDate: 2026-08-11
+tags: ["prime-agent", "aec-bench", "recursive-language-models", "continual-harness", "harness-engineering", "agent-evaluation", "ai-in-aec"]
+featured: false
+---
+
+import PrimeWorldTrajectory from '../../components/charts/PrimeWorldTrajectory.astro';
+import { primeWorldTrajectory } from '../../data/prime-world-trajectory';
+
+An agent environment has two jobs that pull in different directions.
+On the one side, give the agent the freedom to find a solution that its designers did not anticipate. On the other, control what the agent can change, keep evidence of what happened, and judge the result independently.
+
+That tension quickly becomes visible when you put an RLM harness like the Prime Agent inside an engineering task world. Even without task-specific advice, it found useful actions and recovered when the world rejected a request. But it also wasted a lot of effort reopening and rereading large state records.
+
+I've talked about this a lot over the past few months, but this tension is why harness engineering is so crucial in any out-of-distribution (OOD) domain, engineering included. It is also why specialised harnesses are not just needed but so much more efficient. In this case, a small adjustment to how it kept a compact working record cut its action attempts by half and reduced overall cost.
+
+Prime then used its `/refine` capability to review its own run and propose a memory: do not retry an inspection unless another pump can cover the required service for the full job. I tested that adaptation in two different pump-station conditions and got mixed results. I think this is anecdotal evidence that hill climbing out of distribution is harder than it sounds.
+
+The record-keeping change came from a different path. Repeated runs showed Prime reopening large state records and rebuilding its action history. This was interesting in itself because it sort of went against what RLMs are supposed to bring to the table. I moved that bookkeeping into a small ledger tool, which kept the exact observations and action results outside the conversation. While this created a more reliable record, it still produced runs with more model calls and tokens than a comparable run without the ledger.
+
+These results point to a general rule for agent environments. Treat new instructions, memories, tools, and agent-written improvements as things to test, not as proven improvements. Keep the task rules, world state, and judgement of success outside the agent. Test each change when the conditions change and make a pattern permanent only when the evidence shows what it improves and where it fails.
+
+That is really all that “explore, then compile” means. First let the agent show you how it works through a new problem. Then move the parts that repeatedly help into guidance or code. After that, evaluate the new system again.
+
+## TL;DR
+
+- aec-bench keeps Prime's reasoning process separate from the engineering world. Prime can observe the world and request actions, but it cannot edit the rules, hidden state, or evaluation.
+- The world can continue after one Prime conversation ends. A fresh Prime session sees the new public state and can use the same permitted work files.
+- Task-specific advice reduced wasted actions in one study. It did not help reliably when the starting conditions changed.
+- Prime proposed a new memory from its own experience. It helped one case and made another more expensive, so it was not promoted as a general rule.
+- Moving exact state and action records into code made the evidence easier to control. It did not reduce model use in the first complete run.
+- The design lesson is to let agents explore, test proposed improvements under changed conditions, and compile only the patterns that transfer.
+- No retained paid run has used a Prime child agent. Recursion is not yet the cause of these results.
+
+## The Agent Became a Process
+
+Prime Intellect announced [Prime Agent](https://www.primeintellect.ai/blog/prime-agent) on 5 August. Two days later, aec-bench had a local batch adapter and its first live ACP session in an engineering task world.
+
+When I first read the release, almost every component looked familiar: a persistent Python environment, recursive agents, compaction, skills, memory, and a harness that can revise parts of itself. How they were assembled was different.
+
+Prime Agent (PA) and its integration into aec-bench built on prior work around harness design and evolution. The original [Recursive Language Model](https://arxiv.org/abs/2512.24601) moved context outside the model window so that the model could inspect it with code and recursively reason over selected parts. [Lambda-RLM](https://arxiv.org/abs/2603.20105) kept semantic judgement model-driven while moving known orchestration into typed, deterministic operations. [Continual Harness](https://arxiv.org/abs/2605.09998) made the prompt, memory, skills, and subagent configuration mutable state. PA brings related ideas into a durable process model where root and child sessions have identities and lifecycles rather than merely returning strings.
+
+RLM made context programmable. PA makes the recursive unit persistent.
+
+Its recursive interface makes this change visible:
+
+```python
+child = await rlm(
+    "Inspect the authentication implementation and report likely bugs.",
+    name="auth-reviewer",
+)
+```
+
+In a call-and-return system, `await` suggests that the answer is about to arrive. [Prime's RLM runtime works differently](https://github.com/PrimeIntellect-ai/prime-agent/blob/v0.7.0/packages/coding-agent/docs/rlm-runtime.md). The call returns when the child has been admitted. The value is a handle, not the child's answer. A retained child can have its own model loop, history, session directory, and kernel. Results arrive later through a message or file.
+
+That is closer to starting another long-lived agent than calling a recursive function.
+
+The aec-bench integration question therefore changed. It was no longer, "How do we add one more model adapter?" It became, "How do we run a process that can outlive one request without letting it redefine the task, the evidence, or task success?"
+
+The split was simple: PA could do the work, but it could not define the task or judge its own result. I ran PA as a separate program and gave it only the information and actions allowed by the task. aec-bench kept control of the task rules, evidence, and evaluation.
+
+## The First Boundary
+
+[PR #107](https://github.com/TheodoreGalanos/aec-bench/pull/107) added Prime as a process-backed adapter on the existing `run-local` path:
+
+```text
+aec-bench task package
+  -> staged local workspace
+  -> prime-agent --mode json
+  -> output.md or final assistant text
+  -> existing normaliser
+  -> existing task verifier
+  -> existing evaluation and TrialRecord import
+```
+
+Prime is installed separately and selected explicitly:
+
+```bash
+uv run aec-bench run-local tasks/<task> \
+  --adapter prime-agent \
+  --model <prime-model>
+```
+
+aec-bench does not import Prime internals or recreate its provider stack. The adapter launches the executable with an argument list, reads its versioned JSON-lines stream, and preserves the run evidence. It rejects malformed or incomplete streams. It keeps unknown event types instead of deleting evidence it does not understand.
+
+Each trial gets separate Prime state and session directories. Ambient skills, extensions, prompt templates, and context files are disabled. If an assistant message does not contain complete usage fields, cost remains unknown rather than becoming zero.
+
+The authority rule is simple:
+
+> Prime owns the attempt. aec-bench owns what the attempt is allowed to prove.
+
+Ninety-seven focused tests passed when the batch adapter merged. They proved the aec-bench side against a controlled executable, not a live Prime service or provider. This distinction became important almost immediately.
+
+## The Boundary Became a World
+
+[PR #108](https://github.com/TheodoreGalanos/aec-bench/pull/108) connected Prime's ACP mode to the existing wastewater pump-station world. The next changes added enforced limits, normalised session evidence, a macOS sandbox, bounded-session evaluation, and exact world rejection codes.
+
+The agent receives one generic `aec-world` skill and three operations:
+
+```python
+await aec_world.capabilities()
+observation = await aec_world.observe()
+await aec_world.invoke(..., decision_id=observation["decision_id"])
+```
+
+The actor endpoint privately owns the episode and its world repository. Prime cannot select a run, branch, profile, evaluator, verifier, rollout, or host control. It cannot read hidden state or world persistence files. It sees only the actor-visible observation and the result of its own request.
+
+The two processes remain separate:
+
+```text
+Prime cognitive process
+  reasoning, Python, files, memory, children, compaction, refinement
+
+aec-bench causal process
+  observations, actions, state, time, consequences, replay, evaluation
+```
+
+Many agent harnesses own both the cognitive trajectory and the apparent environment around it. That can work when the environment is a repository or a collection of files. It becomes dangerous when the task has independent state, time, permissions, and consequences. The agent must be able to change the world through actions without owning the machinery that decides what those actions mean.
+
+This is also a security boundary. Same-user local execution is useful development evidence, but it is not benchmark-valid. A benchmark-valid local run places Prime in a filesystem and process sandbox that prevents it from reading the world repository or host controls. Prime and any descendants form one composite actor principal unless the runtime can enforce narrower child capabilities. We do not claim that only the root can act.
+
+### The first Open run
+
+The first benchmark-valid Open run used Prime Agent 0.7.0 with Claude Sonnet 4.6. Prime had no pump-station guidance, no child agents, and no refinement.
+
+It discovered the interface without help. It called `capabilities`, observed the actor-visible plan, and chose Pump A post-maintenance verification before Pump B obstruction clearance. That first scheduling choice matched the task-owned reference controller.
+
+The trajectory became more useful than its final score.
+
+<PrimeWorldTrajectory
+	title="One run, two verdicts"
+	subtitle="Prime Open · smoke 05"
+	data={primeWorldTrajectory}
+	caption="Prime Agent 0.7.0 with Claude Sonnet 4.6. Source: canonical smoke-05 replay, verifier, evaluation, actor transport, and normalised Prime session. The exact run package currently lives in the repo's gitignored research artifacts, so the public PRs prove the runner and controls, not this downloadable trajectory."
+/>
+
+Prime made 13 action attempts. Ten were applied. Three were rejected by world policy: a concurrent process conflict, a provisional return backed by the wrong evidence type, and an attempt to resume a completed process. Each rejection left state unchanged, and Prime recovered without a tool error.
+
+It also protected the operating outcome. The verifier recorded 115,200 required and served capacity-seconds, with zero unserved or surplus capacity. All ten accepted transitions replayed exactly. There were no stale decisions, duplicate request IDs, obligation breaches, restriction breaches, or evidence-integrity gaps.
+
+The rough result was efficiency. Prime used 24 model calls and 439,807 aggregate tokens at a recorded cost of USD 1.24. It repeatedly printed and re-inspected large state objects instead of keeping a compact working record.
+
+The stored `complete_journey` evaluation passed nine of ten gates. It failed because Operations reviews were still required. Prime could create the evidence for those reviews, but it had no authority to perform them. Re-evaluating the same canonical state under the supported `bounded_continuation` scope passed every applicable gate.
+
+The run had completed useful actor work. The experiment had asked it to cross an authority boundary that the interface deliberately denied.
+
+## A Journey Is More Than One Session
+
+The solution was not to give Prime an Operations tool. [PR #113](https://github.com/TheodoreGalanos/aec-bench/pull/113) added [host-owned journey continuation](https://github.com/TheodoreGalanos/aec-bench/blob/main/src/aec_bench/harness/pump_station_prime/journey.py).
+
+When Prime reaches a clean `end_turn`, the coordinator closes that Prime process. If the world has one eligible continuation, the host applies at most one task-owned control through the host authority surface. It validates the world repository and starts a fresh Prime ACP process at the resulting actor-visible snapshot.
+
+```text
+Prime session 1
+  actor work
+  -> clean end_turn
+
+deterministic host control
+  -> replay and persistence validation
+
+Prime session 2
+  fresh runtime and conversation
+  -> current observation plus shared actor workspace
+```
+
+No LLM chooses or applies the host control. Prime does not receive the control selector, hidden justification, or host paths. The actor ledger marks the transition as a host event, not a Prime action.
+
+This creates three different kinds of continuity:
+
+- The world, causal timeline, accepted actions, and host controls persist.
+- The actor workspace and its compact records persist.
+- The Prime conversation, process, and runtime do not persist.
+
+The world repository remains the replay authority. The coordinator adds exactly-once control records and journey-wide limits so that a fresh session cannot silently reset the experiment's total allowance. It continues only after a normal cognitive boundary, not after cancellation, provider failure, invalid replay, or exhausted limits.
+
+The first paid Open Journey smoke crossed two host boundaries and three Prime sessions. It used 57 world-action attempts, 96 model calls, and 4.02 million tokens. It still ended incomplete, but it proved the session-to-control-to-snapshot lineage. The world continued while the cognitive process was replaced.
+
+That result matters beyond this pump station. It turns persistence into an experimental variable. We can preserve the world while resetting the conversation. We can preserve actor-owned files while resetting the kernel. Later, we can choose whether a harness refinement persists for one session, one journey, or one task family.
+
+Continual learning no longer has to mean keeping one context alive forever. It can become a controlled question: which state deserves to survive which boundary, and how much competence survives with it?
+
+## Guided Changed the Method, Not the World
+
+[PR #112](https://github.com/TheodoreGalanos/aec-bench/pull/112) added a narrow pump-station Guided treatment. Open receives the generic `aec-world` skill. Guided receives the same skill plus task-family advice.
+
+The advice teaches Prime to keep full objects in Python, print selected fields, maintain compact state, record actions in a ledger, stop equivalent searches after `NO_ACCESSIBLE_RESULT`, and produce its report from the ledger. It does not provide a fixed action sequence, hydraulic answer, hidden state, host-control rule, verifier hint, new observation, or easier world action.
+
+The first balanced study ran two Open and two Guided sessions on one pump profile with Claude Sonnet 4.6. All four were benchmark-valid, ended naturally, replayed, and preserved full service. All four stopped at the same Operations boundary.
+
+Within that study, Guided changed the process:
+
+- mean world-action attempts fell from 55 to 26, a 53% reduction;
+- mean tokens fell from 3.57 million to 2.47 million, a 31% reduction;
+- mean rejected invokes fell from 12 to 6;
+- mean invalid invokes fell from 7.5 to zero; and
+- mean recorded cost fell from USD 10.52 to USD 6.95.
+
+Model calls changed by only 3%. Compact-state discipline was also inconsistent between the two Guided replicates. No formal human report review was part of this study. The result said that guidance could alter process efficiency on this profile. It did not establish transfer.
+
+The later journey study used Azure OpenAI GPT-5.4 and two pump profiles. Execution order was interleaved, and Open and Guided used the same deterministic host policy.
+
+| Profile and treatment | Final state | Prime sessions | World attempts | Model calls | Tokens | Cost |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| RS1 Open | Complete | 3 | 37 | 63 | 2.33M | USD 1.92 |
+| RS1 Guided | Incomplete | 3 | 28 | 90 | 3.34M | USD 2.19 |
+| RS2 Guided | Complete | 3 | 35 | 86 | 2.43M | USD 1.76 |
+| RS2 Open | Complete | 3 | 31 | 53 | 2.45M | USD 1.83 |
+
+All four journeys were benchmark-valid. Guided used fewer action attempts on RS1 but did not complete. It completed RS2, but with more attempts and calls than Open. Because completion states differ, aggregating these rows into one average would hide the important result.
+
+Guidance changed the policy. It did not dominate it.
+
+## `/refine` Proposed a Real Lesson
+
+The next question was whether Prime could discover a better instruction itself.
+
+[PR #117](https://github.com/TheodoreGalanos/aec-bench/pull/117) added a [qualification bridge](https://github.com/TheodoreGalanos/aec-bench/blob/main/src/aec_bench/experimentation/qualification/prime_refinement.py) for [Prime refinement](https://github.com/TheodoreGalanos/aec-bench/blob/main/src/aec_bench/prime_agent/refinement.py). Depending on an explicit mode, a trial can capture `/refine` output, discover a candidate change, or run with one fixed candidate. Supported candidate kinds include prompt, memory, skill, and subagent changes.
+
+The important word is candidate. Discovery does not promote a change. Candidate runs fail closed if the supplied change drifts, and the comparison keeps the baseline fixed.
+
+In the first valid discovery journey, Prime proposed one portable memory:
+
+> Inspection retries require assured non-target service coverage, not just a freed target.
+
+The detailed lesson was precise. Freeing the target pump is necessary but not sufficient. Another pump must be able to carry service through the inspection. If not, the inspection remains blocked until host assurance, review, or new public evidence changes the condition.
+
+The discovery journey completed in three segments and three host controls. It was benchmark-valid. That made the memory plausible, not qualified.
+
+The next valid qualification compared a clean baseline and the fixed candidate on both profiles:
+
+| Profile | Baseline | Candidate | Candidate effect |
+| --- | --- | --- | --- |
+| RS1 | Incomplete; 52 attempts; 4.26M tokens | Complete; 31 attempts; 3.39M tokens | Large improvement |
+| RS2 | Complete; 41 attempts; 2.61M tokens | Complete; 45 attempts; 3.77M tokens | Same completion, more work |
+
+The candidate solved the observed RS1 failure and reduced work there. On RS2 it preserved completion but increased attempts and tokens. The evidence is valid, but the qualification decision remains pending. The candidate was not promoted as general pump guidance.
+
+This is the most direct evidence for the article's thesis:
+
+> A lesson can be genuinely useful without being generally good.
+
+This is where an evaluation library changes the meaning of continual harness adaptation. `/refine` supplies plasticity. It does not supply epistemology. The ability to change the harness and the ability to establish that the change should persist are different capabilities.
+
+> A local refinement is a hypothesis. Promotion is an evaluation decision.
+
+If we had promoted the memory from the discovery trajectory alone, we would have turned one local success into a family-wide rule. Qualification exposed the cost of that jump.
+
+## The First Thing We Compiled
+
+[Lambda-RLM](/blog/why-lambda-rlm/) suggests a broader destination: known task structure represented as bounded, typed execution before the model runs. We did not build that whole system. We started by compiling one recurring motif that the Open and Guided trajectories had exposed.
+
+Open repeatedly loaded large state objects into the conversation. Guided tried to correct that through instructions. The pattern looked stable enough to move into code: preserve the complete actor-visible object outside the conversation, expose only the part needed now, and record every attempted action exactly.
+
+[PR #118](https://github.com/TheodoreGalanos/aec-bench/pull/118) added that motif as a shared [`aec-actor-ledger` capability](https://github.com/TheodoreGalanos/aec-bench/blob/main/src/aec_bench/prime_agent/skill_packages/aec-actor-ledger/SKILL.md). It saves exact actor-visible observations and action results to files, returns compact selected fields to the conversation, provides bounded search and window operations, and records one exact ledger entry for each attempted world action.
+
+Prime still chooses what to investigate and which action to request. The capability does not encode a pump-specific solution or fixed action plan. It does not reveal hidden world state, add actions, change host policy, or supply verifier information.
+
+This compiles a stable data-handling motif, not the whole engineering task:
+
+```text
+Open cognitive process
+  decides what evidence and action matter
+
+Compiled actor operations
+  preserve exact objects
+  expose compact views
+  bound retrieval
+  record the action ledger
+```
+
+The first Planned smoke completed one valid bounded session, with 13 action attempts and 13 exact ledger entries, then stopped at the external authority boundary. The next smoke completed the full RS1 journey across three Prime sessions and three host controls. It recorded 31 action attempts, 31 ledger entries, 117 model calls, 5.36 million tokens, and USD 3.35 in model cost.
+
+For context, the earlier GPT-5.4 RS1 Open journey also completed. It used 37 action attempts, 63 model calls, 2.33 million tokens, and USD 1.92. This is a diagnostic comparison, not a controlled treatment result. Planned used fewer world actions but substantially more model work. We have evidence that the compiled ledger capability functions across a full journey. We do not have evidence that Planned is more efficient than Open.
+
+More structure did not automatically mean less inference. Compilation moved exact state handling out of the conversation, but the surrounding cognitive process became more expensive. A structured capability can reduce one form of waste while adding more calls to inspect, reconcile, or reason around its interface. “Compile what repeats” is therefore a hypothesis about reliability and control before it is a claim about token efficiency.
+
+It is also not a full Lambda-RLM implementation. Prime still follows an open-ended cognitive path, so the complete call graph and total cost are not known before execution. The run had access to Prime's child-agent tools, but it created no child sessions.
+
+That absence is informative. The feature that first drew us to Prime was durable recursive agents. It is not yet responsible for these results. So far, the useful Lambda-RLM-like move is externalisation: keep exact state outside the conversation, retrieve bounded parts, and record decisions in a stable structure. Recursion remains an available mechanism, not an observed cause of the result.
+
+## The Pattern Is Larger Than One Pump Station
+
+The integration now covers two different execution shapes. A [hydraulic-review lifecycle](https://github.com/TheodoreGalanos/aec-bench/blob/main/src/aec_bench/harness/hydraulic_review_prime/lifecycle.py) runs staged engineering work through fresh Prime sessions. It owns stage order and shared work products; it is not a causal world. [PR #120](https://github.com/TheodoreGalanos/aec-bench/pull/120) added a second interactive world for a [bounded dam-seepage investigation](https://github.com/TheodoreGalanos/aec-bench/blob/main/src/aec_bench/harness/dam_seepage_prime/session.py). The dam integration has deterministic code and tests, but no retained paid model artifact yet.
+
+The same rule applied to the implementation. We did not start with a universal world framework. The second real world exposed what was actually shared, and only then did we extract the [Prime actor endpoint](https://github.com/TheodoreGalanos/aec-bench/blob/main/src/aec_bench/harness/prime_actor_endpoint.py). Prime process control and actor transport are shared harness concerns. Each world still owns its state, actions, replay, and evaluation, while the lifecycle keeps its separate stage semantics.
+
+Explore, then compile applies to software architecture too.
+
+## What the Evidence Now Says
+
+The progression is no longer hypothetical:
+
+| Step | What became real | What remains unproven |
+| --- | --- | --- |
+| Open | Prime can act through a narrow causal boundary and leave replayable evidence | General engineering competence |
+| Journey | A world can persist across fresh cognitive sessions and host controls | That more sessions produce better decisions |
+| Guided | Task-family advice can reduce waste without changing the world | A consistent advantage across profiles and models |
+| Refine | Prime can propose a useful local harness change | Safe general promotion across a task family |
+| Planned | Stable actor-state operations can be compiled into a reusable capability | Lower cost, fewer model calls, or a full Lambda-RLM plan |
+
+Several limits still matter:
+
+- The detailed trajectories are in local, gitignored experiment artifacts. The public repository proves the machinery, not the paid run packages.
+- No retained live run has created a Prime child session, so recursive topology and child usage accounting remain empirically untested.
+- Planned has one completed paid journey, not a controlled advantage over Open.
+- The refinement candidate has not transferred beyond the pump family.
+- The dam world has no retained paid live result.
+- The batch path still needs stronger command failure signalling, formal evidence binding in `TrialRecord`, and live background-worker cleanup proof.
+
+These limits are part of the result. They stop an implementation milestone from becoming a benchmark claim.
+
+## What I Want to Test Next
+
+**When should a child become a process?** None of the retained runs used Prime's recursive child architecture. We need a task where persistent specialisation is useful, then compare it with bounded semantic calls.
+
+**Can an Open trajectory become a typed plan?** The actor ledger compiles state handling, not task decomposition. The next Lambda-RLM step is a stable decision subgraph with Prime retained as the escape path.
+
+**What should survive a session boundary?** Journey continuation now lets us vary conversation, workspace, harness memory, and causal-world persistence independently.
+
+**How far should a refinement propagate?** The RS1 and RS2 result shows why instance, profile, task-family, and domain scope must be earned rather than assumed.
+
+**Can a world and harness adapt without corrupting evaluation?** The learner, harness, and environment can change only if independent evaluation and lineage still distinguish improvement from a moving target.
+
+## Explore, Then Compile
+
+The path is now concrete.
+
+Open execution exposes the real failure modes. Guided execution tests whether model-facing advice changes the process without changing the task. `/refine` proposes a local cognitive change. Qualification tests that change against a clean baseline and another profile. Planned execution materialises only the parts that appear stable enough to deserve code.
+
+Even then, compilation is not a certificate. The compiled path must be evaluated again.
+
+Prime remains valuable when the fixed path meets something new. aec-bench remains responsible for keeping the world, authority, evidence, and evaluation outside the agent's control. Metrics such as calls, tokens, retries, and action counts remain diagnostic evidence. They are not visible task budgets or reward hints for the agent to optimise against.
+
+The early results are messier than a single improvement curve. That is a strength. Guidance helped, then failed to transfer cleanly. Refinement found a sharp lesson, then exposed its cost elsewhere. A Lambda-RLM-inspired capability made state and action handling more exact, then used more model work than Open.
+
+The goal is not to replace a general agent with an increasingly elaborate hand-built harness. It is also not to let the agent rewrite its harness and call every local gain learning. The interesting system sits between those extremes: general enough to discover new strategies, structured enough to preserve what repeatedly works, and evaluated strongly enough to tell the difference.
+
+Explore, then compile. After compiling, evaluate again.
