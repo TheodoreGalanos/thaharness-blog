@@ -38,7 +38,7 @@ That earlier piece made a conceptual claim about where capability lives. **This 
 
 The aim here is to start measuring that claim on real engineering tasks. The longer-term goal is a benchmark, but this piece reports an early run toward one: a single task, from a single discipline, using one agent harness setup, tested across a small set of models.
 
-Concretely, the work focuses on **HVAC heat load calculations and schedule audits**, grounded in the kinds of structured documents that show up in actual AEC workflows, and includes nearly 480 trials with the same harness, the same tools, and the same output contract. The harness was a tool-using agent, and the tool itself was deliberately strong: the calculation procedure was reverse engineered into code, the relevant lookup values were exposed, and the models were given something close to an oracle calculator rather than being asked to derive the whole method from scratch.
+Concretely, the work focuses on **HVAC heat load calculations and schedule audits**, grounded in the kinds of structured documents that show up in actual AEC workflows. It includes nearly 480 trials with the same harness, the same tools, and the same output contract. The harness was a tool-using agent, and the tool itself was deliberately strong. The calculation procedure was reverse engineered into code, the relevant lookup values were exposed, and the models were given something close to an oracle calculator rather than being asked to derive the whole method from scratch.
 
 That is narrow by design, and still early. But it is already enough to surface useful patterns. The point of sharing it now is not to pretend the benchmark is finished. It is to put the initial results and the early methodology in the open, get feedback, and sharpen the next iterations while the benchmark is still taking shape.
 
@@ -76,7 +76,7 @@ That is where the real spread appears: **systematic checking, consistency across
 
 <StackedBars {...auditMixedUseFrontierData} />
 
-They also give us a useful improvement gradient. When an agent fails, the failure is usually legible. It missed a discrepancy, checked too shallowly, used the tools badly, ran out of turns, or never made it cleanly into the required output format. That is exactly what you want from a benchmark aimed at building better agent environments around real domain tasks.
+The audit tasks also give us a useful improvement gradient. When an agent fails, the failure is usually legible. It missed a discrepancy, checked too shallowly, used the tools badly, ran out of turns, or never made it cleanly into the required output format. That is exactly what you want from a benchmark aimed at building better agent environments around real domain tasks.
 
 For AEC practitioners, that should feel familiar. The painful mistakes in practice are often not a single wrong formula. They are missed discrepancies, skipped checks, and brittle review processes.
 
@@ -278,7 +278,7 @@ That metric matters because it punishes low accuracy sharply. **A cheap wrong an
 
 That matters especially in AEC, where the near-term deployment shape is often low request volume and very high task value. These are usually not million-QPS workloads. They are bounded but complex tasks that take skilled people real time to complete, and where the cost of a bad result can easily dominate the cost of the model run itself. In that setting, quality comes first.
 
-The practical sequence is usually two-stage. First, you pay for quality in order to discover which tasks agents can actually do well enough to be useful. Only later, once those workflows are stable and you start scaling them across teams or organisations, does cost become the main optimisation target. At that point the question changes from can this task be done well to how broadly can we deploy it without losing quality or blowing up spend.
+The practical sequence is usually two-stage. First, you pay for quality in order to discover which tasks agents can actually do well enough to be useful. Only later, once those workflows are stable and you start scaling them across teams or organisations, does cost become the main optimisation target. At that point the question changes from "can this task be done well?" to "how broadly can we deploy it without losing quality or blowing up spend?"
 
 In this small experiment, if you want the highest ceiling, Sonnet 4.6 is the answer.
 

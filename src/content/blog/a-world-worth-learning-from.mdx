@@ -25,11 +25,11 @@ import {
 
 [Part 1](/blog/fluent-but-unsafe/) ended with a review record worth preserving. Findings had stable identities, evidence requests stated what is needed to close them, and accepted decisions pointed back to their basis. But, just as it is common in most agentic environments, the agent still saw every revision at once. It reconstructed the history with hindsight, submitted one polished answer, and stopped.
 
-This time, in this environment design approach, we changed this: evidence arrived in three releases. The agent had to make a decision and commit before seeing what comes next, it had to preserve decisions that remained valid after that, and revise only those undermined by new evidence. Finally, it had to leave a record behind that another reviewer, human or agent, could continue.
+This time, we changed the sequence: evidence arrived in three releases. The agent had to make a decision and commit before seeing what came next. It then had to preserve decisions that remained valid and revise only those undermined by new evidence. Finally, it had to leave a record behind that another reviewer, human or agent, could continue.
 
 To do this, I redesigned the hydraulic review task from Part 1 and ran it sixteen times: four versions of the task, each tested with four ways of carrying the past. The pattern was clearer than the scores make it sound. Letting the agent continue in the same model session—with its earlier conversation and submitted reviews still available—finished with the highest overall score. A written handover came close behind. Giving the agent all the files again, but none of its earlier decisions, worked much worse. Giving it only the newest material was worse still: one run did not finish. Since I tested each combination only once, and always in the same order, this is a useful signal, not proof that conversation continuity caused the difference.
 
-Model weights never changed in this setup, this isn't continual learning yet (although next steps will work on that!). It was work focused on what I think is a prerequisite of designing and constructing agentic environments: before an agent can learn from experience, the environment has to produce experience worth learning from.
+Model weights never changed in this setup. This isn't continual learning yet (although next steps will work on that!). It was work focused on what I think is a prerequisite of designing and constructing agentic environments: before an agent can learn from experience, the environment has to produce experience worth learning from.
 
 ## The Review Had To Survive Time
 
@@ -37,7 +37,7 @@ Model weights never changed in this setup, this isn't continual learning yet (al
 
 Those first tasks contained conclusions that later evidence could confirm, overturn, or leave unchanged. Yet the agent never experienced that sequence or passage of time. The original package, the response, the revised report, and the closeout material were all present in one prompt. The task was larger, but the interaction was not longer, and certainly not richer.
 
-I was trying to design long horizon tasks but I think by giving the correction up front I just disguised hindsight as long horizon.
+I was trying to design long horizon tasks, but I think that by giving the correction up front, I just disguised hindsight as long horizon.
 
 The missing layer of interaction actually starts after the agent commits its response, just as it would in the real world. A reviewer raises a finding, asks for evidence, receives a response, and decides what changed. Some earlier decisions survive. Others must be changed. The final decision is defensible only if the record remains consistent across the whole history.
 
@@ -84,7 +84,7 @@ A fluent summary of the latest files is not enough. History is part of the answe
 
 ## Four Ways To Carry The Past
 
-To understand the impact of history in task execution, and task design in how it handles and uses historical information, I designed four different history carriers:
+To understand how history affects task execution, and how task design shapes its use, I designed four different history carriers:
 
 | Setup | What remains visible |
 | --- | --- |
@@ -93,7 +93,7 @@ To understand the impact of history in task execution, and task design in how it
 | All review evidence | A fresh conversation plus every file released so far |
 | Latest review only | A fresh conversation plus only the newest material |
 
-The problem itself, and the correct resolution did not change. Only the information carried from one checkpoint to the next changes.
+The problem itself and the correct resolution did not change. Only the information carried from one checkpoint to the next changed.
 
 In the continuous setup, the agent starts with the first review. Once its submission passes the structural checks, the harness archives it and reveals the next review to the same conversation. Each stage in the other setups begins with a fresh conversation, while the harness controls which part of the earlier record remains visible.
 

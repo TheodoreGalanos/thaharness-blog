@@ -108,7 +108,7 @@ The loop mirrors autoresearch exactly:
 5. Keep if reward improved, revert if not
 6. Repeat
 
-The `program.md` is organised into eleven sections: purpose, setup, scope constraints, artefact definition, experiment execution, feedback reading, optimisation targets, the loop itself, logging, autonomy mandate, and information discipline. The information discipline section is the one that has no analogue in Karpathy's version: it explicitly instructs the autoresearcher not to attempt reading task files or verifier code, and frames any desire to know specific task details as a signal to focus on process guidance instead.
+The `program.md` is organised into eleven sections: purpose, setup, scope constraints, artefact definition, experiment execution, feedback reading, optimisation targets, the loop itself, logging, autonomy mandate, and information discipline. The information discipline section is the one that has no analogue in Karpathy's version. It explicitly instructs the autoresearcher not to attempt reading task files or verifier code, and frames any desire to know specific task details as a signal to focus on process guidance instead.
 
 ## What Behavioural Feedback Adds to Agent Evaluation
 
@@ -175,7 +175,7 @@ The second Claude Sonnet 4.6 run tested four modifications against five instance
 Three approaches failed:
 - **Iteration 1** added a completeness rule: "verify every room, do not skip rooms, a missed error costs more than an extra turn." No reward change. The instruction was redundant.
 - **Iteration 2** added zero tolerance for numerical mismatches: "report ANY difference, do not dismiss as rounding." No reward change, but efficiency degraded sharply — 64 turns and 685k tokens versus the baseline's 52 turns and 553k. The agent re-checked more and found nothing new.
-- **Iteration 3** restructured the workflow to a two-pass approach: sweep all totals first, then deep-dive flagged rooms. No reward improvement, and efficiency nearly doubled — 79 turns and 1.08 million tokens. It mostly shuffled which errors were caught without improving overall coverage.
+- **Iteration 3** restructured the workflow to a two-pass approach: sweep all totals first, then deep-dive flagged rooms. No reward improvement, and token use nearly doubled — 79 turns and 1.08 million tokens. It mostly shuffled which errors were caught without improving overall coverage.
 
 **Iteration 4 worked.** The change was small: two sentences extended. The orient step added design conditions. The verify step added an explicit per-room checklist: (a) input parameters, (b) each heat gain component, (c) ventilation terms, (d) totals. Mean reward rose from 0.94 to 0.98. Adelaide and Melbourne both jumped from 0.9 to 1.0. Only Darwin remained at 0.9. The efficiency cost was modest: 55 turns and 613k tokens, an 11% increase over baseline.
 
@@ -332,6 +332,6 @@ The prompt surface itself can also become more adaptive:
 
 The longer-term question is whether prompts, tasks, and rubrics can be improved jointly. That is where recursive harness improvement starts to look more like a research programme.
 
-For now, the result is small and specific: an autonomous loop, an information barrier, behavioural feedback that inverted our assumptions about verification, one prompt change that helped at full reference, another that worked for a very different reason at `L0`, and a cross-model comparison showing that prompt ideas can transfer even when prompt wording does not. The environment was improvable in each case, but the successful strategy depended on what information the environment already supplied and which model was inside it. The agents that scored best were not simply the ones that checked the most. They were the ones whose workflow matched the structure of the task, the information available, and the model's own behavioural constraints.
+For now, the result is small and specific. We have an autonomous loop, an information barrier, and behavioural feedback that inverted our assumptions about verification. One prompt change helped at full reference; another worked for a very different reason at `L0`. A cross-model comparison showed that prompt ideas can transfer even when prompt wording does not. The environment was improvable in each case, but the successful strategy depended on what information the environment already supplied and which model was inside it. The agents that scored best were not simply the ones that checked the most. They were the ones whose workflow matched the structure of the task, the information available, and the model's own behavioural constraints.
 
 That, at least, is consistent with everything we have been learning about where capability actually lives.
