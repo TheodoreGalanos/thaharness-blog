@@ -25,6 +25,7 @@ interface Props {
 	modifiedTime?: Date;
 	tags?: string[];
 	wordCount?: number;
+	seoTitle?: string;
 	articleSection?: string;
 }
 
@@ -32,6 +33,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
 const {
 	title,
+	seoTitle = title,
 	description,
 	image = '/social-card.png',
 	type = 'website',
@@ -152,7 +154,7 @@ if (type === 'article') {
 <link rel="canonical" href={canonicalURL} />
 
 <!-- Primary Meta Tags -->
-<title>{title}</title>
+<title>{seoTitle}</title>
 <meta name="title" content={title} />
 <meta name="description" content={description} />
 <meta name="author" content={author} />
@@ -160,7 +162,7 @@ if (type === 'article') {
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content={type} />
 <meta property="og:site_name" content={SITE_TITLE} />
-<meta property="og:url" content={Astro.url} />
+<meta property="og:url" content={canonicalURL} />
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
 <meta property="og:image" content={imageURL} />
@@ -171,7 +173,7 @@ if (type === 'article') {
 
 <!-- Twitter -->
 <meta property="twitter:card" content="summary_large_image" />
-<meta property="twitter:url" content={Astro.url} />
+<meta property="twitter:url" content={canonicalURL} />
 <meta property="twitter:title" content={title} />
 <meta property="twitter:description" content={description} />
 <meta property="twitter:image" content={imageURL} />
@@ -181,10 +183,14 @@ if (type === 'article') {
 <!-- Structured data -->
 <script is:inline type="application/ld+json" set:html={JSON.stringify(schemaGraph)}></script>
 
-<!-- Theme initialization (runs before page paint to prevent flash) -->
+<!-- Use the same resolved value for first paint and the toggle. -->
 <script is:inline>
-	(function() {
-		var stored = localStorage.getItem('theme');
-		document.documentElement.setAttribute('data-theme', stored || 'dark');
-	})();
+ (function () {
+  var stored;
+  try { stored = localStorage.getItem('theme'); } catch (_) {}
+  var theme = stored === 'dark' || stored === 'light' ? stored :
+   (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  document.documentElement.dataset.theme = theme;
+  document.documentElement.style.colorScheme = theme;
+ })();
 </script>

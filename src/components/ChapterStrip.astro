@@ -13,53 +13,65 @@ interface Props {
 }
 
 const { headings, minSections = 3 } = Astro.props;
-const sections = headings.filter(
-	(h) => h.depth === 2 && h.slug !== 'footnote-label',
-);
+const sections = headings.filter((h) => h.depth === 2 && h.slug !== 'footnote-label');
 const show = sections.length >= minSections;
 ---
 
-{show && (
-	<>
-		<nav class="chapter-strip" aria-label="In this piece">
-			<span class="chapter-strip-label">In this piece</span>
-			<ol class="chapter-strip-list">
-				{sections.map((section, index) => (
-					<li>
-						<a
-							href={`#${section.slug}`}
-							data-chapter-link={section.slug}
-							aria-current={index === 0 ? 'true' : undefined}
-						>
-							<span class="chapter-num">{String(index + 1).padStart(2, '0')}</span>
-							<span class="chapter-text">{section.text}</span>
-						</a>
-					</li>
-				))}
-			</ol>
-		</nav>
+{
+	show && (
+		<>
+			<details class="chapter-strip" open>
+				<summary>
+					Contents <span>{sections.length} sections</span>
+				</summary>
+				<nav aria-label="In this piece">
+					<span class="chapter-strip-label">In this piece</span>
+					<ol class="chapter-strip-list">
+						{sections.map((section, index) => (
+							<li>
+								<a
+									href={`#${section.slug}`}
+									data-chapter-link={section.slug}
+									aria-current={index === 0 ? 'true' : undefined}
+								>
+									<span class="chapter-num">{String(index + 1).padStart(2, '0')}</span>
+									<span class="chapter-text">{section.text}</span>
+								</a>
+							</li>
+						))}
+					</ol>
+				</nav>
+			</details>
 
-		<nav
-			class="chapter-rail"
-			aria-label="Article chapters"
-			aria-hidden="true"
-			inert
-		>
-			<ol class="chapter-rail-list">
-				{sections.map((section, index) => (
-					<li>
-						<a
-							href={`#${section.slug}`}
-							data-chapter-link={section.slug}
-							data-chapter-rail-link
-							aria-current={index === 0 ? 'true' : undefined}
-						>
-							<span class="chapter-num">{String(index + 1).padStart(2, '0')}</span>
-							<span class="chapter-text">{section.text}</span>
-						</a>
-					</li>
-				))}
-			</ol>
-		</nav>
-	</>
-)}
+			<nav class="chapter-rail" aria-label="Article chapters" aria-hidden="true" inert>
+				<ol class="chapter-rail-list">
+					{sections.map((section, index) => (
+						<li>
+							<a
+								href={`#${section.slug}`}
+								data-chapter-link={section.slug}
+								data-chapter-rail-link
+								aria-current={index === 0 ? 'true' : undefined}
+							>
+								<span class="chapter-num">{String(index + 1).padStart(2, '0')}</span>
+								<span class="chapter-text">{section.text}</span>
+							</a>
+						</li>
+					))}
+				</ol>
+			</nav>
+		</>
+	)
+}
+
+<script is:inline>
+	(function () {
+		var overview = document.querySelector('.chapter-strip');
+		if (!overview) return;
+		var wide = matchMedia('(min-width: 769px)');
+		overview.open = wide.matches;
+		wide.addEventListener('change', function () {
+			overview.open = wide.matches;
+		});
+	})();
+</script>

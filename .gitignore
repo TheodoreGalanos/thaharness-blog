@@ -50,3 +50,7 @@ src/assets/logo-transparent.png
 
 # raw PNG exports for the autoresearch post — SVGs are the source of truth
 src/assets/blog/autoresearch/*.png
+
+# Browser test artifacts
+test-results/
+playwright-report/

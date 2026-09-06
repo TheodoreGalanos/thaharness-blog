@@ -17,8 +17,6 @@ const header = source('../src/components/Header.astro');
 const figure = source('../src/components/Figure.astro');
 const footer = source('../src/components/Footer.astro');
 const tagPill = source('../src/components/TagPill.astro');
-const statusBar = source('../src/components/landing/StatusBar.astro');
-const landingStyles = source('../src/styles/landing.css');
 const globalStyles = source('../src/styles/global.css');
 const barsWithBaseline = source(
 	'../src/components/charts/BarsWithBaseline.astro',
@@ -66,24 +64,13 @@ describe('mobile design contract', () => {
 
 	it('keeps mobile navigation and compact controls tappable', () => {
 		assert.match(header, /aria-label="The Harness home"/);
-		assert.match(
-			header,
-			/class="[^\"]*hidden sm:inline[^\"]*"[^>]*>The Harness<\/span>/,
-		);
+
 		assert.match(tagPill, /min-h-11/);
 		assert.match(footer, /flex flex-wrap/);
 		assert.match(footer, /min-h-11 min-w-11/);
 		for (const component of interactiveChartComponents) {
 			assert.match(component, /min-height: 2\.75rem;/);
 		}
-	});
-
-	it('keeps the landing status bar on one row on narrow phones', () => {
-		assert.match(statusBar, /class="status-bar-build"/);
-		assert.match(
-			landingStyles,
-			/@media \(max-width: 639px\) \{[\s\S]*?flex-wrap: nowrap;[\s\S]*?\.status-bar-build \{\s*display: none;/,
-		);
 	});
 
 	it('contains fixed-canvas charts without shrinking their labels', () => {

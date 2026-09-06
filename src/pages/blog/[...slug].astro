@@ -18,9 +18,6 @@ const post = Astro.props as Props;
 const { Content, headings } = await render(post);
 const allPosts = getPublishedBlogPosts(await getCollection('blog'));
 
-const readingTimeSource = post.body ?? '';
-const readingTime = Math.max(3, Math.ceil(readingTimeSource.split(/\s+/).filter(Boolean).length / 180));
-
 const relatedPosts = allPosts
 	.filter((entry) => entry.id !== post.id)
 	.sort((left, right) => {
@@ -33,6 +30,6 @@ const relatedPosts = allPosts
 	.slice(0, 3);
 ---
 
-<EditorialPost {...post.data} slug={post.id} readingTime={readingTime} relatedPosts={relatedPosts} headings={headings}>
+<EditorialPost {...post.data} slug={post.id} relatedPosts={relatedPosts} headings={headings}>
 	<Content />
 </EditorialPost>
