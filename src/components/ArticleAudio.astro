@@ -1,0 +1,257 @@
+<!-- ABOUTME: Compact audio controls for a saved English article recording. -->
+<!-- ABOUTME: Renders duration without loading media or exposing extra file links. -->
+---
+import { formatAudioTime } from '../scripts/article-audio';
+
+interface Props {
+	url: string;
+	durationSeconds: number;
+}
+const { url, durationSeconds } = Astro.props;
+---
+
+<section class="article-audio" data-article-audio data-audio-url={url} data-duration={durationSeconds}
+	aria-label="Article audio" data-pagefind-ignore>
+	<div class="audio-heading">
+		<p class="audio-title">Listen to this article</p>
+		<p class="audio-description">English · AI narration</p>
+	</div>
+	<audio preload="none" aria-label="Article narration"></audio>
+	<div class="audio-main">
+		<button class="audio-play" type="button" data-play aria-label="Play audio" disabled>
+			<svg class="play-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M7 4v16l13-8z" fill="currentColor" /></svg>
+			<svg class="pause-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 4h4v16H6zm8 0h4v16h-4z" fill="currentColor" /></svg>
+		</button>
+		<div class="audio-timeline">
+			<input class="audio-seek" data-seek type="range" min="0" max={durationSeconds} value="0" step="1" aria-label="Audio position" disabled />
+			<div class="audio-times" aria-hidden="true"><span data-elapsed>0:00</span><span data-duration-label>{formatAudioTime(Math.round(durationSeconds))}</span></div>
+		</div>
+	</div>
+	<div class="audio-toolbar">
+		<div class="audio-skips">
+			<button type="button" data-skip="-15" aria-label="Back 15 seconds" title="Back 15 seconds" disabled>−15s</button>
+			<button type="button" data-skip="15" aria-label="Forward 15 seconds" title="Forward 15 seconds" disabled>+15s</button>
+		</div>
+		<label class="audio-speed">Speed
+			<select data-speed aria-label="Playback speed" disabled>
+				{[1, 1.15].map(rate => <option value={rate} selected={rate === 1}>{rate}×</option>)}
+			</select>
+		</label>
+		<div class="audio-volume">
+			<button type="button" data-mute aria-label="Mute audio" disabled>Mute</button>
+			<input type="range" data-volume min="0" max="1" step="0.05" value="1" aria-label="Volume" disabled />
+		</div>
+	</div>
+	<p class="audio-status" data-status role="status" aria-live="polite"></p>
+</section>
+
+<noscript><style is:inline>.article-audio { display: none; }</style></noscript>
+
+<script>
+	import { initArticleAudio } from '../scripts/article-audio';
+	document.querySelectorAll<HTMLElement>('[data-article-audio]').forEach(initArticleAudio);
+</script>
+
+<style>
+	.article-audio {
+		margin-top: 1.5rem;
+		padding: 1rem 0 0.5rem;
+		border-block: 1px solid var(--color-border);
+		color: var(--color-text-primary);
+	}
+	.article-audio p {
+		margin: 0;
+	}
+	.audio-heading {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.5rem 1rem;
+		flex-wrap: wrap;
+	}
+	.audio-title {
+		font-family: var(--font-body);
+		font-size: 1.125rem;
+		line-height: 1.4;
+	}
+	.audio-description {
+		font-family: var(--font-body);
+		font-size: 0.8125rem;
+		color: var(--color-text-secondary);
+	}
+	.audio-main {
+		display: grid;
+		grid-template-columns: 2.75rem minmax(0, 1fr);
+		align-items: center;
+		gap: 0.75rem;
+		margin-top: 0.625rem;
+	}
+	button, select, input {
+		-webkit-tap-highlight-color: transparent;
+	}
+	button, select {
+		font: inherit;
+		cursor: pointer;
+	}
+	button:disabled, input:disabled, select:disabled {
+		opacity: 0.45;
+		cursor: default;
+	}
+	button:focus-visible, select:focus-visible, input:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 4px;
+	}
+	.audio-play {
+		display: grid;
+		place-items: center;
+		width: 2.75rem;
+		height: 2.75rem;
+		border-radius: 50%;
+		background: var(--color-accent);
+		color: var(--color-bg);
+		border: 0;
+	}
+	.audio-play:hover:not(:disabled) {
+		background: var(--color-accent-hover);
+	}
+	.play-icon {
+		margin-left: 2px;
+	}
+	.pause-icon {
+		display: none;
+	}
+	[data-state='playing'] .pause-icon, [data-state='loading'] .pause-icon {
+		display: block;
+	}
+	[data-state='playing'] .play-icon, [data-state='loading'] .play-icon {
+		display: none;
+	}
+	.audio-timeline {
+		min-width: 0;
+	}
+	.audio-seek {
+		--audio-progress: 0%;
+		appearance: none;
+		display: block;
+		width: 100%;
+		height: 2rem;
+		margin: 0;
+		background: transparent;
+		cursor: pointer;
+	}
+	.audio-seek::-webkit-slider-runnable-track {
+		height: 4px;
+		border-radius: 2px;
+		background: linear-gradient(to right, var(--color-accent) var(--audio-progress), var(--color-border) var(--audio-progress));
+	}
+	.audio-seek::-moz-range-track {
+		height: 4px;
+		border-radius: 2px;
+		background: var(--color-border);
+	}
+	.audio-seek::-moz-range-progress {
+		height: 4px;
+		background: var(--color-accent);
+	}
+	.audio-seek::-webkit-slider-thumb {
+		appearance: none;
+		width: 14px;
+		height: 14px;
+		border-radius: 50%;
+		margin-top: -5px;
+		background: var(--color-accent);
+	}
+	.audio-seek::-moz-range-thumb {
+		width: 14px;
+		height: 14px;
+		border: 0;
+		border-radius: 50%;
+		background: var(--color-accent);
+	}
+	.audio-times {
+		display: flex;
+		justify-content: space-between;
+		font: 0.6875rem/1.5 var(--font-mono);
+		font-variant-numeric: tabular-nums;
+		color: var(--color-text-secondary);
+	}
+	.audio-toolbar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.25rem 0.75rem;
+		margin-top: 0.375rem;
+		font: 0.75rem/1.5 var(--font-mono);
+	}
+	.audio-skips {
+		display: flex;
+		gap: 0.25rem;
+	}
+	.audio-toolbar button {
+		min-width: 44px;
+		min-height: 44px;
+		border: 0;
+		background: transparent;
+		padding: 0 0.4rem;
+		color: var(--color-text-primary);
+	}
+	.audio-toolbar button:hover:not(:disabled) {
+		color: var(--color-accent);
+	}
+	.audio-speed {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		color: var(--color-text-secondary);
+	}
+	.audio-speed select {
+		min-height: 44px;
+		border: 0;
+		border-radius: 4px;
+		padding: 0 0.2rem;
+		background: var(--color-surface);
+		color: var(--color-text-primary);
+	}
+	.audio-volume {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+	}
+	.audio-volume input {
+		width: 4rem;
+		height: 44px;
+		accent-color: var(--color-accent);
+	}
+	.audio-status {
+		font: 0.875rem/1.5 var(--font-body);
+	}
+	.article-audio:not([data-state='error']) .audio-status {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+	[data-state='error'] .audio-status {
+		padding-top: 0.5rem;
+	}
+	@media (max-width: 600px), (pointer: coarse) {
+		.audio-volume {
+			display: none;
+		}
+	}
+	@media (max-width: 380px) {
+		.audio-toolbar {
+			column-gap: 0.5rem;
+		}
+		.audio-description {
+			font-size: 0.8125rem;
+		}
+	}
+	@media print {
+		.article-audio {
+			display: none;
+		}
+	}
+</style>

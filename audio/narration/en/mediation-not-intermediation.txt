@@ -1,0 +1,27 @@
+Mediation, Not Intermediation
+
+I have seen many posts over the last few weeks repeating the “work on the foundations of [aspect] first before AI” message. I thought I’d write a few words on why I think this is wrong.
+
+First, let’s discuss these aspects. The most popular, by far, are data and governance. The idea is simple: first solve the issues in these, to prepare the ground for efficient and responsible AI deployment. Let’s go through them one by one since the reasons for each are different.
+
+Data: The Sisyphean Foundation
+
+Anyone who has worked with AI knows that data are very important. As we moved to agentic orchestration and harness engineering, importance shifted to context: ideally, structured representations of fit-for-task data. The call for action, or pause, is the following: without the right data foundations, AI deployment will suffer.
+
+Why is this wrong? Not because data are not foundational to AI. They are. The problem is that the imaginary foundation of pristine data is unattainable. Like a modern Sisyphus, it is an uphill battle that never ends.
+
+AI allows us to build extremely valuable workflows and agents on top of partially structured or unstructured data, with great return on investment. In fact, agentic workflows are the way out of legacy data in both directions: the best tool for structuring the messy data we already have, and the way to prevent future legacy data, by creating data at the source. This is the conceptual inversion that needs to happen:
+
+Harness engineering means developing agentic workflows that create high quality, structured, annotated, task specific data, at the source.
+
+I wrote about this previously: harness, benchmark, models, and data are all parts of the same knot. Doing one means doing all the others. Developing agentic AI is therefore the best proactive approach to data engineering, setting a solid foundation for what is coming.
+
+Governance: Intermediation by Committee
+
+I have, for some time now, said that one of the biggest benefits of AI is its ability to replace and remove unnecessary intermediation. That extra layer of friction adds hard-to-measure costs to almost everything we do today. I think a lot of the work in the governance space falls in this intermediation layer. This is obvious in organisations that immerse themselves in frameworks, policies, and committees before they’ve designed a single agent, experimented with a single harness, evaluated a single task, or deployed a single product. Intermediation, aimed towards inaction.
+
+Now, this doesn’t mean that governance is not important. In fact, it is not just a core layer of AI deployment but also a core design principle for agentic systems themselves. I’m not referring to governance embedded in risk practice, production controls, evaluations, and accountable ownership. That is infrastructure. I’m referring to governance as a separate approval theatre that delays contact with real systems. Nor does it start from a blank slate: industry domains already carry a long history of policies, governance frameworks, and risk frameworks, embedded in everything they do. These are assets, ready to be drawn on and extended for AI deployment from day one, not replaced by a parallel apparatus. Governance should be part of how AI systems are designed, how experimentation happens, how harnesses are built and agents are deployed. And that means it should be informed by practice and practitioners, benchmarks and evaluations, and not by committees and frameworks. Once again, the same pattern emerges: proactive not reactive. Build the systems, learn from them, and then (co-)design new governance around that experience.
+
+High-Level Principles, Low-Level Infrastructure
+
+High level principles and low level infrastructure. That is all you really need, not just to get started but to build successful, scalable, and responsible AI systems. Both should be grounded in practice and domain expertise, in access to real problems, and in the ability to iterate and learn from real-world deployments. That has been my job for as long as I can remember in this space, to bring those two together and clear the noise in between them. Mediation, not intermediation.

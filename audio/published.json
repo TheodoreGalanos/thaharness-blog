@@ -1,0 +1,208 @@
+{
+  "store": {
+    "id": "store_2EsLTWDZZpu12rcg",
+    "name": "blog-article-audio",
+    "region": "iad1",
+    "access": "public"
+  },
+  "articles": [
+    {
+      "slug": "the-distance-to-the-edge",
+      "title": "The Distance to the Edge",
+      "language": "en",
+      "url": "https://2esltwdzzpu12rcg.public.blob.vercel-storage.com/audio/en/the-distance-to-the-edge-66b15c416693d50a.mp3",
+      "durationSeconds": 1115.7942857142857,
+      "bytes": 13389889,
+      "contentType": "audio/mpeg",
+      "sha256": "66b15c416693d50a6d307433947422b3bd6b6f3ef0d0c380d01d4fd3bfed1efd",
+      "textSha256": "af6de236f24e9cfe43f1cd0490a3a2d5db2388e65c45bd0ada3b533be472a717",
+      "requestHash": "7a40a4cafba9a33d1365579c57f7199d2406dcc90a6d308d96443ddc99aa29d8",
+      "sourceUrl": "https://theharness.blog/blog/the-distance-to-the-edge/",
+      "verifiedAt": "2026-09-06T04:50:29.948Z",
+      "verification": {
+        "headStatus": 200,
+        "rangeStatus": 206,
+        "matchingByteRanges": [
+          [
+            0,
+            1023
+          ],
+          [
+            6694944,
+            6695967
+          ],
+          [
+            13388865,
+            13389888
+          ]
+        ],
+        "cacheControl": "public, max-age=31536000"
+      }
+    },
+    {
+      "slug": "a-world-worth-learning-from",
+      "title": "A World Worth Learning From",
+      "language": "en",
+      "url": "https://2esltwdzzpu12rcg.public.blob.vercel-storage.com/audio/en/a-world-worth-learning-from-4510fe907e497480.mp3",
+      "durationSeconds": 999.7844897959184,
+      "bytes": 11997772,
+      "contentType": "audio/mpeg",
+      "sha256": "4510fe907e497480dd4696c67e37ac7a5dd1ea084067c3dfb500b17b16266232",
+      "textSha256": "9b8509b69054d52c499c88987797ca04f256ec66ead8b8117e18386833b3b417",
+      "requestHash": "339be01f879204f1e7cffc28d63648822399127027ec7eba332f955d4155bb1c",
+      "sourceUrl": "https://theharness.blog/blog/a-world-worth-learning-from/",
+      "verifiedAt": "2026-09-06T04:50:39.211Z",
+      "verification": {
+        "headStatus": 200,
+        "rangeStatus": 206,
+        "matchingByteRanges": [
+          [
+            0,
+            1023
+          ],
+          [
+            5998886,
+            5999909
+          ],
+          [
+            11996748,
+            11997771
+          ]
+        ],
+        "cacheControl": "public, max-age=31536000"
+      }
+    },
+    {
+      "slug": "broad-creation-narrow-authority",
+      "title": "Broad Creation, Narrow Authority",
+      "language": "en",
+      "url": "https://2esltwdzzpu12rcg.public.blob.vercel-storage.com/audio/en/broad-creation-narrow-authority-9cc843ec896961a9.mp3",
+      "durationSeconds": 1155.6571428571428,
+      "bytes": 13868244,
+      "contentType": "audio/mpeg",
+      "sha256": "9cc843ec896961a9bee4c0293c9ab7bacc0f1f204a4d06931b59af400b1dbe6e",
+      "textSha256": "5064ee93282a59100afa37e923ee190b02ca0177ace1b119f0056f200baf5545",
+      "requestHash": "ac5d09ca01346fe82e3d59aa86e456bd34a38760ef8bf45979b51e1080bb2836",
+      "sourceUrl": "https://theharness.blog/blog/broad-creation-narrow-authority/",
+      "verifiedAt": "2026-09-06T04:50:48.734Z",
+      "verification": {
+        "headStatus": 200,
+        "rangeStatus": 206,
+        "matchingByteRanges": [
+          [
+            0,
+            1023
+          ],
+          [
+            6934122,
+            6935145
+          ],
+          [
+            13867220,
+            13868243
+          ]
+        ],
+        "cacheControl": "public, max-age=31536000"
+      }
+    },
+    {
+      "slug": "the-attacker-moves-second-so-did-i",
+      "title": "The Attacker Moves Second. So Did I.",
+      "language": "en",
+      "url": "https://2esltwdzzpu12rcg.public.blob.vercel-storage.com/audio/en/the-attacker-moves-second-so-did-i-af562112f1ae4963.mp3",
+      "durationSeconds": 1212.16,
+      "bytes": 14546278,
+      "contentType": "audio/mpeg",
+      "sha256": "af562112f1ae49633fd4c4c74ac6278ff734651a3e64c34da05adeef824d81dd",
+      "textSha256": "daf301d932947592319e89b4283de6ef029bd492a8f3017b50784fa590186eb1",
+      "requestHash": "fb0c61c1686a07c835eea7546b7b3d77816155618610bbc7bf7212a0387da9fb",
+      "sourceUrl": "https://theharness.blog/blog/the-attacker-moves-second-so-did-i/",
+      "verifiedAt": "2026-09-06T04:50:58.340Z",
+      "verification": {
+        "headStatus": 200,
+        "rangeStatus": 206,
+        "matchingByteRanges": [
+          [
+            0,
+            1023
+          ],
+          [
+            7273139,
+            7274162
+          ],
+          [
+            14545254,
+            14546277
+          ]
+        ],
+        "cacheControl": "public, max-age=31536000"
+      }
+    },
+    {
+      "slug": "fluent-but-unsafe",
+      "title": "Fluent, But Unsafe",
+      "language": "en",
+      "url": "https://2esltwdzzpu12rcg.public.blob.vercel-storage.com/audio/en/fluent-but-unsafe-815f14e2e4a53fe0.mp3",
+      "durationSeconds": 1587.722448979592,
+      "bytes": 19053027,
+      "contentType": "audio/mpeg",
+      "sha256": "815f14e2e4a53fe04d043d4aa6692c1e7a478fc3243816525e69a930da5fb06f",
+      "textSha256": "ea485f59fb9e5789fca83d5a8176327e2e8f08e8cc1db89281b57fea4f82c18c",
+      "requestHash": "543c45374b4a35d77d5c73b9da3cb4a2c5c536385817a9799eee123da0fa95ab",
+      "sourceUrl": "https://theharness.blog/blog/fluent-but-unsafe/",
+      "verifiedAt": "2026-09-06T04:51:07.972Z",
+      "verification": {
+        "headStatus": 200,
+        "rangeStatus": 206,
+        "matchingByteRanges": [
+          [
+            0,
+            1023
+          ],
+          [
+            9526513,
+            9527536
+          ],
+          [
+            19052003,
+            19053026
+          ]
+        ],
+        "cacheControl": "public, max-age=31536000"
+      }
+    },
+    {
+      "slug": "mediation-not-intermediation",
+      "title": "Mediation, Not Intermediation",
+      "language": "en",
+      "url": "https://2esltwdzzpu12rcg.public.blob.vercel-storage.com/audio/en/mediation-not-intermediation-7d8127b6787b7c7a.mp3",
+      "durationSeconds": 272.16979591836736,
+      "bytes": 3266396,
+      "contentType": "audio/mpeg",
+      "sha256": "7d8127b6787b7c7a484dde8388cc63cc8fd0091c89a7a0daaf020596e8cc0819",
+      "textSha256": "0e9ceed7e74b0ae370a4226f1c6ff95d0263069d15eb8067f022f6ae975c633e",
+      "requestHash": "216d437c311372445ecd0d0c9a4b96867285ed2bec0e92723c2cafede9f61396",
+      "sourceUrl": "https://theharness.blog/blog/mediation-not-intermediation/",
+      "verifiedAt": "2026-09-06T04:51:14.892Z",
+      "verification": {
+        "headStatus": 200,
+        "rangeStatus": 206,
+        "matchingByteRanges": [
+          [
+            0,
+            1023
+          ],
+          [
+            1633198,
+            1634221
+          ],
+          [
+            3265372,
+            3266395
+          ]
+        ],
+        "cacheControl": "public, max-age=31536000"
+      }
+    }
+  ]
+}

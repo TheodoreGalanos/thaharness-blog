@@ -26,6 +26,7 @@ Use Node.js 22 (`nvm use`). Run commands from the project root.
 | `python3 -m http.server 4330 --directory .vercel/output/static` | Preview the built static pages, including search |
 | `npm run astro -- check` | Run Astro type/content validation |
 | `npm test` | Run unit and content checks |
+| `npm run check:seo` | Build and verify article metadata, sitemap pages, and retired tag redirects |
 | `npm run test:built` | Check the deployable HTML, links, metadata and RSS |
 | `npm run test:browser` | Test built reader journeys in Chromium |
 
@@ -48,6 +49,12 @@ The collection schema is defined in `src/content.config.ts` and currently suppor
 - `heroImage`
 
 Posts are rendered through `src/pages/blog/[...slug].astro` and `src/layouts/EditorialPost.astro`.
+
+Use 3–4 focused tags per article, and reuse existing topics before creating a new one. Tags must be lowercase words separated by hyphens; the collection schema caps each article at four. Choose the main subjects, not every technology or term mentioned. Drafts follow the same tag convention.
+
+When retiring a public tag, add its closest active topic to `src/data/tag-redirects.mjs`. Astro emits permanent redirects through the Vercel adapter, and retired URLs are excluded from the sitemap. Keep redirect destinations on tags with published articles, and do not reuse retired tag names.
+
+The build runs `scripts/finalize-tag-redirects.mjs` to make those redirects accept URLs with or without a trailing slash. The installed Vercel adapter otherwise emits slashless patterns that miss the public sitemap URLs. `npm run check:seo` verifies both forms in the final deployment artifact.
 
 ## Project Structure
 

@@ -1,5 +1,7 @@
 # build output
 dist/
+# Generated narration audio and local generation receipts
+audio/generated/
 # generated types
 .astro/
 

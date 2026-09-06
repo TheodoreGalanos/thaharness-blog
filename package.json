@@ -4,14 +4,15 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && pagefind --site .vercel/output/static",
+    "build": "astro build && node ./scripts/finalize-tag-redirects.mjs && pagefind --site .vercel/output/static",
     "preview": "astro preview",
     "astro": "astro",
     "newsletter:broadcast": "node ./scripts/newsletter-broadcast.mjs",
     "newsletter:sync-segment": "node ./scripts/newsletter-sync-segment.mjs",
     "test": "node --experimental-strip-types --test ./tests/*.test.ts ./scripts/lib/*.test.js",
     "test:built": "node --test tests/built-site.test.mjs",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "check:seo": "npm run build && node ./scripts/check-seo.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.13",
