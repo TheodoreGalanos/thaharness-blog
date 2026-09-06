@@ -12,39 +12,65 @@ import { SITE_TITLE } from '../consts';
 <!doctype html>
 <html lang="en" data-theme="dark">
 	<head>
-		<BaseHead title={`About | ${SITE_TITLE}`} description="Theodoros Galanos writes about harness engineering, agentic AI evaluation, and the practical work of making AI agents reliable in AEC and domain-specific engineering." />
+		<BaseHead
+			title={`About | ${SITE_TITLE}`}
+			description="Theodoros Galanos writes about harness engineering, agentic AI evaluation, and the practical work of making AI agents reliable in AEC and domain-specific engineering."
+		/>
 	</head>
-	<body class="bg-[--color-bg]">
+	<body class="bg-[var(--color-bg)]">
 		<Header />
-		<main class="px-6 py-16 md:py-24">
+		<main id="main-content" class="px-6 py-16 md:py-24">
 			<article class="mx-auto max-w-[42rem]">
 				<header class="about-header">
 					<span class="about-kicker">About</span>
-					<h1 class="about-headline">The Harness</h1>
+					<h1 class="about-headline">Theodoros Galanos</h1>
 					<p class="about-deck">
-						A working notebook on harness engineering, agentic systems, and the work of making AI useful in real engineering practice.
+						A working notebook on harness engineering, agentic systems, and the work of making AI
+						useful in real engineering practice.
 					</p>
 				</header>
 
 				<div class="about-body">
 					<p>
-						Hello, I am Theodoros Galanos. I have been working at the intersection of AI, design, and engineering for the better part of the last 12 years.
+						I work at the intersection of AI, design and engineering. The Harness is where I publish
+						what I learn from building agentic systems and testing them against real engineering
+						work.
 					</p>
-
 					<p>
-						People who know me know that I tend to be opinionated about where the future is going, and equally interested in how that view changes over time. This site is where I try to make those ideas more concrete: a place to write about agentic systems, harness engineering, and the harder middle layer between model capability and reliable real-world work.
+						My central question is what makes an agent's work trustworthy. That includes the tools
+						it can use, the evidence it must produce, the checks around its outputs, and the
+						decisions that remain with people.
 					</p>
-
+					<h2>Work you can inspect</h2>
+					<ul>
+						<li>
+							<a href="/blog/benchmarking-agents-on-real-engineering-work/"
+								>AEC-Bench: evaluating engineering agents.</a
+							> Experiments with HVAC tasks, model comparisons, and the effect of removing harness guidance.
+						</li>
+						<li>
+							<a href="/blog/fluent-but-unsafe/">Auditing the benchmark itself.</a> What looked like finished
+							work and strong scores did not always survive engineering review. The <a
+								href="/runs/road-low-point-review/">published road-corridor run</a
+							> includes the source record and verifier receipt.
+						</li>
+						<li>
+							<a href="/blog/recursive-by-design/">Building recursive agents.</a> The design and practical
+							limits of Lambda-RLM on engineering tasks.
+						</li>
+					</ul>
 					<p>
-						My interests sit around the design of systems that need to do more than produce plausible answers. I care about environments, tools, verifiers, workflows, evaluation, and the control surfaces that let people direct useful autonomous behaviour without losing accountability.
+						I also write about <a href="/blog/broad-creation-narrow-authority/"
+							>organisational authority</a
+						> and <a href="/blog/the-distance-to-the-edge/">learning through repeated experiments</a
+						>. The technical and organisational conditions matter together.
 					</p>
-
 					<p>
-						The Harness exists to advance that work in public. Part of that means research: trying to make vague claims about agents more concrete through better tasks, better benchmarks, and better system design. Part of it means building: turning ideas about orchestration and reliability into actual tools, workflows, and experiments. Part of it means education: writing things clearly enough that other builders and domain experts can use them. And part of it means community: helping create a sharper conversation around what harness engineering is, why it matters, and how to do it well.
-					</p>
-
-					<p>
-						If you want to follow along, you can <a href="/subscribe">subscribe by email</a> or use the <a href="/rss.xml">RSS feed</a>. If you want a broader snapshot of my work, the header links point to my <a href="https://www.linkedin.com/in/theodorosgalanos/" target="_blank" rel="noopener noreferrer">LinkedIn</a> and <a href="https://x.com/TheodoreGalanos" target="_blank" rel="noopener noreferrer">X</a>. Otherwise, the <a href="/blog">archive</a> stays simple on purpose.
+						For a broader view of my work, visit <a
+							href="https://www.linkedin.com/in/theodorosgalanos/">LinkedIn</a
+						> or <a href="https://github.com/TheodoreGalanos">GitHub</a>. To follow new writing, <a
+							href="/subscribe/">subscribe by email</a
+						> or use the <a href="/rss.xml">RSS feed</a>.
 					</p>
 				</div>
 			</article>
@@ -111,7 +137,9 @@ import { SITE_TITLE } from '../consts';
 		background-size: 100% 1px;
 		background-position: 0 100%;
 		background-repeat: no-repeat;
-		transition: color 0.25s var(--ease-standard), background-image 0.25s var(--ease-standard);
+		transition:
+			color 0.25s var(--ease-standard),
+			background-image 0.25s var(--ease-standard);
 	}
 
 	.about-body a:hover {
@@ -124,5 +152,16 @@ import { SITE_TITLE } from '../consts';
 			font-size: 1.0625rem;
 			line-height: 1.75;
 		}
+	}
+</style>
+
+<style>
+	.about-body h2 {
+		font-family: var(--font-display);
+		font-size: 1.75rem;
+		margin: 2rem 0 1rem;
+	}
+	.about-body li {
+		margin-bottom: 1rem;
 	}
 </style>

@@ -1,0 +1,531 @@
+<!-- ABOUTME: Separates model-building scale from frontier-learning practice when comparing organisational AI capability. -->
+<!-- ABOUTME: Shows why an applied organisation can be far from a frontier lab on one axis and much closer on another. -->
+---
+const titleId = 'distance-axes-title';
+const descriptionId = 'distance-axes-description';
+---
+
+<figure class="dad" aria-labelledby={titleId} aria-describedby={descriptionId}>
+	<header class="dad-header">
+		<span class="dad-kicker">Two-axis comparison</span>
+		<div class="dad-title" id={titleId}>Distance depends on the axis</div>
+		<p class="dad-subtitle">Far in scale. Closer in practice.</p>
+	</header>
+
+	<p class="visually-hidden" id={descriptionId}>
+		A conceptual two-axis diagram compares three generic organisational positions. The
+		horizontal axis represents model-building scale and resources. The vertical axis
+		represents frontier-learning practice and adaptation rate. An applied organisation
+		operating at the edge and a conventional adopter occupy similar horizontal positions,
+		but the applied organisation sits much higher. The applied organisation and a frontier
+		AI lab are far apart horizontally, but both sit within the shaded frontier-learning
+		regime. Brackets mark their large difference in resources and smaller difference in
+		learning practice. Positions are relative and are not measured values.
+	</p>
+
+	<div class="dad-canvas" aria-hidden="true">
+		<svg class="dad-plot" viewBox="0 0 100 100" preserveAspectRatio="none">
+			<defs>
+				<linearGradient id="dad-regime-fill" x1="0" y1="0" x2="0" y2="1">
+					<stop offset="0" stop-color="var(--dad-accent)" stop-opacity="0.12"></stop>
+					<stop offset="1" stop-color="var(--dad-accent)" stop-opacity="0.035"></stop>
+				</linearGradient>
+				<marker
+					id="dad-axis-arrow"
+					viewBox="0 0 10 10"
+					refX="8"
+					refY="5"
+					markerWidth="5"
+					markerHeight="5"
+					orient="auto"
+				>
+					<path d="M 0 0 L 10 5 L 0 10 z"></path>
+				</marker>
+			</defs>
+
+			<rect class="dad-regime-band" x="9" y="12" width="87" height="32"></rect>
+			<line class="dad-regime-edge" x1="9" y1="44" x2="96" y2="44"></line>
+
+			<line
+				class="dad-axis"
+				x1="8"
+				y1="82"
+				x2="97"
+				y2="82"
+				marker-end="url(#dad-axis-arrow)"
+			></line>
+			<line
+				class="dad-axis"
+				x1="8"
+				y1="82"
+				x2="8"
+				y2="6"
+				marker-end="url(#dad-axis-arrow)"
+			></line>
+
+			<line class="dad-alignment" x1="33" y1="31" x2="33" y2="68"></line>
+
+			<g class="dad-resource-bracket">
+				<line x1="33" y1="51" x2="82" y2="51"></line>
+				<line x1="33" y1="48.5" x2="33" y2="53.5"></line>
+				<line x1="82" y1="48.5" x2="82" y2="53.5"></line>
+			</g>
+
+			<g class="dad-practice-bracket">
+				<line x1="89" y1="23" x2="89" y2="31"></line>
+				<line x1="87" y1="23" x2="91" y2="23"></line>
+				<line x1="87" y1="31" x2="91" y2="31"></line>
+			</g>
+		</svg>
+
+		<div class="dad-y-axis-label">
+			<span>Frontier-learning practice</span>
+			<strong>and adaptation rate</strong>
+		</div>
+
+		<div class="dad-regime-label">
+			<span>Frontier-learning regime</span>
+			<i></i>
+		</div>
+
+		<div class="dad-point is-applied">
+			<i></i>
+			<div class="dad-point-copy">
+				<strong>Applied organisation</strong>
+				<span>operating at the edge</span>
+			</div>
+		</div>
+
+		<div class="dad-point is-lab">
+			<i></i>
+			<div class="dad-point-copy">
+				<strong>Frontier AI lab</strong>
+				<span>frontier scale · rapid learning</span>
+			</div>
+		</div>
+
+		<div class="dad-point is-conventional">
+			<i></i>
+			<div class="dad-point-copy">
+				<strong>Conventional adopter</strong>
+				<span>similar resource position · slower learning</span>
+			</div>
+		</div>
+
+		<div class="dad-resource-gap-label">Large difference in resources</div>
+		<div class="dad-practice-gap-label">Smaller difference in learning practice</div>
+
+		<div class="dad-x-axis-label">Model-building scale and resources <span>→</span></div>
+	</div>
+
+	<div class="dad-mobile-readout" aria-hidden="true">
+		<div>
+			<i class="is-horizontal"></i>
+			<span>Large difference in resources</span>
+		</div>
+		<div>
+			<i class="is-vertical"></i>
+			<span>Smaller difference in learning practice</span>
+		</div>
+	</div>
+
+	<figcaption class="dad-caption">
+		Distance depends on the axis. An applied organisation may be far from a frontier
+		laboratory in scale, while operating much closer to it in learning practice.
+	</figcaption>
+</figure>
+
+<style>
+	.dad {
+		--dad-accent: var(--color-accent);
+		--dad-secondary: var(--color-accent-secondary);
+		--dad-axis: color-mix(in srgb, var(--color-text-tertiary) 82%, transparent);
+
+		margin: 3.25rem 0 4rem;
+		color: var(--color-text-primary);
+		font-family: var(--font-body);
+		text-align: left;
+		container-type: inline-size;
+	}
+
+	.dad-header {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 0.25rem 2rem;
+		align-items: end;
+		margin-bottom: 1.15rem;
+		padding-bottom: 0.85rem;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.dad-kicker,
+	.dad-subtitle,
+	.dad-y-axis-label,
+	.dad-regime-label,
+	.dad-point-copy,
+	.dad-resource-gap-label,
+	.dad-practice-gap-label,
+	.dad-x-axis-label,
+	.dad-mobile-readout {
+		font-family: var(--font-mono);
+	}
+
+	.dad-kicker {
+		grid-column: 1 / -1;
+		font-size: 0.625rem;
+		font-weight: 600;
+		letter-spacing: 0.15em;
+		text-transform: uppercase;
+		color: var(--dad-accent);
+	}
+
+	.dad-title {
+		font-family: var(--font-display);
+		font-size: clamp(1.35rem, 3vw, 1.75rem);
+		font-weight: 500;
+		line-height: 1.18;
+		letter-spacing: -0.015em;
+	}
+
+	.dad-subtitle {
+		max-width: 16rem;
+		margin: 0;
+		font-size: 0.625rem;
+		line-height: 1.45;
+		letter-spacing: 0.05em;
+		text-align: right;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.dad-canvas {
+		position: relative;
+		min-height: 31rem;
+		border: 1px solid var(--color-border);
+		background:
+			linear-gradient(var(--color-bg-grid) 1px, transparent 1px),
+			linear-gradient(90deg, var(--color-bg-grid) 1px, transparent 1px),
+			color-mix(in srgb, var(--color-surface) 72%, transparent);
+		background-size: 2rem 2rem;
+		overflow: hidden;
+	}
+
+	.dad-plot {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+	}
+
+	.dad-axis,
+	.dad-resource-bracket line,
+	.dad-practice-bracket line,
+	.dad-alignment,
+	.dad-regime-edge {
+		vector-effect: non-scaling-stroke;
+	}
+
+	.dad-axis {
+		stroke: var(--dad-axis);
+		stroke-width: 1.1;
+	}
+
+	#dad-axis-arrow path {
+		fill: var(--dad-axis);
+	}
+
+	.dad-regime-band {
+		fill: url(#dad-regime-fill);
+	}
+
+	.dad-regime-edge {
+		stroke: color-mix(in srgb, var(--dad-accent) 55%, transparent);
+		stroke-width: 1;
+		stroke-dasharray: 5 5;
+	}
+
+	.dad-alignment {
+		stroke: color-mix(in srgb, var(--color-text-tertiary) 44%, transparent);
+		stroke-width: 1;
+		stroke-dasharray: 3 5;
+	}
+
+	.dad-resource-bracket line {
+		stroke: color-mix(in srgb, var(--dad-accent) 66%, var(--color-text-tertiary));
+		stroke-width: 1.15;
+	}
+
+	.dad-practice-bracket line {
+		stroke: var(--dad-secondary);
+		stroke-width: 1.15;
+	}
+
+	.dad-y-axis-label {
+		position: absolute;
+		top: 0.75rem;
+		left: 1rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.12rem;
+		font-size: 0.625rem;
+		line-height: 1.35;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.dad-y-axis-label strong {
+		font-weight: 600;
+		color: var(--color-text-primary);
+	}
+
+	.dad-regime-label {
+		position: absolute;
+		top: 13.5%;
+		left: 11%;
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		font-size: 0.5625rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--dad-accent);
+	}
+
+	.dad-regime-label i {
+		display: block;
+		width: 2.5rem;
+		height: 1px;
+		background: var(--dad-accent);
+		opacity: 0.75;
+	}
+
+	.dad-point {
+		position: absolute;
+		z-index: 2;
+	}
+
+	.dad-point > i {
+		display: block;
+		width: 0.875rem;
+		height: 0.875rem;
+		border: 2px solid currentColor;
+		border-radius: 50%;
+		background: var(--color-bg);
+		box-shadow: 0 0 0 5px color-mix(in srgb, currentColor 12%, transparent);
+		transform: translate(-50%, -50%);
+	}
+
+	.dad-point.is-applied {
+		top: 31%;
+		left: 33%;
+		color: var(--dad-accent);
+	}
+
+	.dad-point.is-lab {
+		top: 23%;
+		left: 82%;
+		color: var(--dad-secondary);
+	}
+
+	.dad-point.is-conventional {
+		top: 68%;
+		left: 33%;
+		color: var(--color-text-tertiary);
+	}
+
+	.dad-point-copy {
+		position: absolute;
+		top: 0.65rem;
+		left: 0.8rem;
+		width: 13rem;
+		font-size: 0.625rem;
+		line-height: 1.35;
+		color: var(--color-text-secondary);
+	}
+
+	.dad-point-copy strong,
+	.dad-point-copy span {
+		display: block;
+	}
+
+	.dad-point-copy strong {
+		font-size: 0.6875rem;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: currentColor;
+	}
+
+	.dad-point-copy span {
+		margin-top: 0.12rem;
+		color: var(--color-text-tertiary);
+	}
+
+	.is-lab .dad-point-copy {
+		right: 0.8rem;
+		left: auto;
+		width: 11rem;
+		text-align: right;
+	}
+
+	.dad-resource-gap-label,
+	.dad-practice-gap-label {
+		position: absolute;
+		z-index: 2;
+		padding: 0.2rem 0.4rem;
+		background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+		font-size: 0.5625rem;
+		font-weight: 600;
+		line-height: 1.3;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+	}
+
+	.dad-resource-gap-label {
+		top: 48.25%;
+		left: 57.5%;
+		color: var(--dad-accent);
+		transform: translateX(-50%);
+	}
+
+	.dad-practice-gap-label {
+		top: 21.5%;
+		right: 0.75%;
+		width: 8.5%;
+		padding-inline: 0;
+		background: transparent;
+		color: var(--dad-secondary);
+	}
+
+	.dad-x-axis-label {
+		position: absolute;
+		right: 2.25%;
+		bottom: 0.75rem;
+		font-size: 0.5625rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.dad-x-axis-label span {
+		color: var(--color-text-secondary);
+	}
+
+	.dad-mobile-readout {
+		display: none;
+	}
+
+	.dad-caption {
+		margin-top: 0.9rem;
+		font-size: 0.75rem;
+		line-height: 1.55;
+		color: var(--color-text-tertiary);
+	}
+
+	@container (max-width: 34rem) {
+		.dad-header {
+			grid-template-columns: 1fr;
+			gap: 0.3rem;
+		}
+
+		.dad-subtitle {
+			max-width: none;
+			text-align: left;
+		}
+
+		.dad-canvas {
+			min-height: 36rem;
+		}
+
+		.dad-y-axis-label {
+			left: 0.75rem;
+			font-size: 0.5625rem;
+		}
+
+		.dad-regime-label {
+			left: 11%;
+			max-width: 10rem;
+		}
+
+		.dad-regime-label i {
+			display: none;
+		}
+
+		.dad-point-copy {
+			left: 0.65rem;
+			width: 7.5rem;
+			font-size: 0.5625rem;
+		}
+
+		.dad-point-copy strong {
+			font-size: 0.625rem;
+		}
+
+		.is-lab .dad-point-copy {
+			right: 0.65rem;
+			width: 6.75rem;
+		}
+
+		.is-conventional .dad-point-copy {
+			width: 7.75rem;
+		}
+
+		.dad-resource-gap-label,
+		.dad-practice-gap-label {
+			display: none;
+		}
+
+		.dad-x-axis-label {
+			left: 9%;
+			right: auto;
+			max-width: 83%;
+			font-size: 0.5625rem;
+		}
+
+		.dad-mobile-readout {
+			display: grid;
+			border-right: 1px solid var(--color-border);
+			border-bottom: 1px solid var(--color-border);
+			border-left: 1px solid var(--color-border);
+			background: color-mix(in srgb, var(--color-surface) 80%, transparent);
+		}
+
+		.dad-mobile-readout > div {
+			display: grid;
+			grid-template-columns: 2.5rem minmax(0, 1fr);
+			gap: 0.75rem;
+			align-items: center;
+			padding: 0.75rem 0.9rem;
+			font-size: 0.5625rem;
+			line-height: 1.35;
+			letter-spacing: 0.06em;
+			text-transform: uppercase;
+			color: var(--color-text-secondary);
+		}
+
+		.dad-mobile-readout > div + div {
+			border-top: 1px solid var(--color-border);
+		}
+
+		.dad-mobile-readout i {
+			position: relative;
+			display: block;
+			justify-self: center;
+			background: currentColor;
+		}
+
+		.dad-mobile-readout .is-horizontal {
+			width: 2.25rem;
+			height: 1px;
+			color: var(--dad-accent);
+		}
+
+		.dad-mobile-readout .is-vertical {
+			width: 1px;
+			height: 1.5rem;
+			color: var(--dad-secondary);
+		}
+	}
+</style>

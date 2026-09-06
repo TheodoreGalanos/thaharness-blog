@@ -6,7 +6,7 @@ category: "Engineering"
 draft: false
 pubDate: 2026-07-15
 updatedDate: 2026-07-15
-tags: ["harness-engineering", "agent-evaluation", "aec-bench", "task-worlds", "ai-in-aec"]
+tags: ["agent-evaluation", "aec-bench", "task-worlds", "ai-in-aec"]
 featured: false
 ---
 
@@ -31,8 +31,6 @@ import {
 } from '../../data/fluent-but-unsafe-figures';
 import { fluentButUnsafeRun } from '../../data/fluent-but-unsafe-run';
 
-Estimated reading time: 22 minutes
-
 ## TL;DR
 
 I set out to build long-horizon engineering tasks for aec-bench: tasks where an agent had to preserve engineering meaning across documents, decisions, and revisions. In hindsight, the work had reached an earlier milestone: a static world in which agents could work this way and, for the first time, produce a review state worth carrying into a later interaction. I built this first world wrong twice.
@@ -53,7 +51,7 @@ This article is the story of how the benchmark manufactured success, how expecte
 
 This post applies that theory — and reports what it cost to apply it.
 
-I catalogued 184 calculation tasks across civil, structural, mechanical, electrical, and ground engineering, clustered them into nineteen families, each built around a shared physical system — a road corridor, a pump station, a coastal boundary, or a fire-water system — and added one overlay for standards and approval authorities. Constructing tasks within each family, piece by piece, quickly revealed something that, in hindsight, might be obvious:
+I catalogued 184 calculation tasks across civil, structural, mechanical, electrical, and ground engineering. I clustered them into nineteen families, each built around a shared physical system — a road corridor, a pump station, a coastal boundary, or a fire-water system — and added one overlay for standards and approval authorities. Constructing tasks within each family, piece by piece, quickly revealed something that, in hindsight, might be obvious:
 
 > Long-horizon difficulty in engineering is not simply adding more steps. It is preserving engineering meaning across time: source values, unit conventions, case selections, handoffs between disciplines, contradictions, and a final artifact for someone to audit.
 
@@ -117,7 +115,7 @@ The task centres on a sag point in a road — the low spot where water ponds dur
 
 Each generated task uses one of eight versions of the review material: one clean and seven with a single planted change.
 
-The agent must produce the full review record: which documents it received; a cross-check that they all refer to the same road, location, equipment, and design scenario; one status for each review item; its own recomputed evidence; findings and requests for missing information; actions with owners; and a final decision on whether the work is ready to issue.
+The agent must produce the full review record. It must record which documents it received and cross-check that they all refer to the same road, location, equipment, and design scenario. It must provide one status for each review item, its own recomputed evidence, findings and requests for missing information, actions with owners, and a final decision on whether the work is ready to issue.
 
 <ReviewTaskAnatomyFigure
 	title="A state worth preserving"
@@ -194,7 +192,7 @@ Then I ran the models again.
 
 The split was now clear. The strong model applied the definition and confined the defect to the correct item, showing that the revised wording was usable by at least one capable reader. The small model still spread it across several items. The remaining error was therefore less likely to come from unclear instructions. One general sentence made the comparison fairer and the difference between the models easier to see.
 
-For this first set of model runs, each summary recorded the random seed and exact code version, so I could recreate the task; I stored the full model responses separately. That was enough to debug these tasks. Later experiments (part 2 of this series), where evidence will arrive over time, need permanent records of exactly how every run was produced, plus a clear separation between runs used to tune the setup and unseen tasks used only for final evaluation.
+For this first set of model runs, each summary recorded the random seed and exact code version, so I could recreate the task; I stored the full model responses separately. That was enough to debug these tasks. In later experiments (part 2 of this series), evidence will arrive over time. Those experiments need permanent records of exactly how every run was produced, plus a clear separation between runs used to tune the setup and unseen tasks used only for final evaluation.
 
 ## What The Single-Pass Reviews Revealed
 

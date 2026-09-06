@@ -14,7 +14,7 @@ import { SITE_TITLE } from '../consts';
 	<head>
 		<BaseHead title={`Search | ${SITE_TITLE}`} description="Search all posts and pages." noindex={true} />
 		<link href="/pagefind/pagefind-ui.css" rel="stylesheet" />
-		<style>
+		<style is:global>
 			.search-kicker {
 				display: inline-block;
 				font-family: var(--font-mono);
@@ -50,7 +50,7 @@ import { SITE_TITLE } from '../consts';
 				border-color: var(--color-border);
 				color: var(--color-text-primary);
 				background: var(--color-surface);
-				padding: 0.95rem 1rem;
+				padding: 0.95rem 5rem 0.95rem 3.5rem;
 				border-radius: 8px;
 				min-height: 3rem;
 			}
@@ -106,7 +106,7 @@ import { SITE_TITLE } from '../consts';
 			}
 			@media (max-width: 768px) {
 				.pagefind-ui .pagefind-ui__search-input {
-					padding: 1rem;
+					padding: 1rem 4.5rem 1rem 3rem;
 					font-size: 16px;
 				}
 
@@ -120,9 +120,9 @@ import { SITE_TITLE } from '../consts';
 			}
 		</style>
 	</head>
-	<body class="bg-[--color-bg]">
+	<body class="bg-[var(--color-bg)]">
 		<Header />
-		<main class="px-6 py-16 md:py-24">
+		<main id="main-content" class="px-6 py-16 md:py-24">
 			<section class="mx-auto max-w-[42rem]">
 				<span class="search-kicker">Search</span>
 				<h1 class="search-headline">Find a piece</h1>

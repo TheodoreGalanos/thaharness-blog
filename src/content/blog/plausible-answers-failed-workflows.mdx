@@ -5,7 +5,7 @@ author: "Theodoros Galanos"
 category: "Engineering"
 draft: false
 pubDate: 2026-06-02
-tags: ["harness-engineering", "agentic-ai", "ai-in-aec", "ai-benchmarks", "agent-evaluation", "quality-assurance", "workflow-reliability"]
+tags: ["agent-evaluation", "aec-bench", "ai-in-aec", "harness-engineering"]
 featured: false
 ---
 
@@ -55,8 +55,6 @@ import {
   verifierRetryFailureData,
   scaffoldReductionFailureData,
 } from '../../data/aec-bench-release-charts';
-
-Estimated reading time: 36 minutes
 
 The simplest way to read a model evaluation is to ask which model won.
 
@@ -135,7 +133,7 @@ Almost every lost check is about readback equality and provenance, not the engin
 
 ### What this chapter teaches
 
-Readback is a control surface, not a guarantee: re-reading a record only becomes a receipt when the record and the readback carry exact, matching fields — and here they almost never did. Writing the files is necessary but not sufficient; the strong models reached the right shape and still lost credit on owners, fingerprints, and exact IDs, which is why even the best sits at 0.695 rather than near 1.0. The remaining gap is not dramatic reasoning — it is exactness, the boring fields a downstream system actually ingests. Downstream systems do not ingest vibes; they ingest fields.
+Readback is a control surface, not a guarantee: re-reading a record only becomes a receipt when the record and the readback carry exact, matching fields — and here they almost never did. Writing the files is necessary but not sufficient. The strong models reached the right shape and still lost credit on owners, fingerprints, and exact IDs, which is why even the best sits at 0.695 rather than near 1.0. The remaining gap is not dramatic reasoning — it is exactness, the boring fields a downstream system actually ingests. Downstream systems do not ingest vibes; they ingest fields.
 
 <Pullquote>
 An answer convinces a reader. An artifact survives an audit.
@@ -171,7 +169,7 @@ Across both groups the strong models look healthy. The four GPT and Grok models 
 
 `deepseek-v3-2` repeats its Chapter 1 signature: it finishes every run, emits tens of kilobytes of narration, and leaves almost no verifier-visible record. `gpt-oss-120b` is the opposite failure — it writes clean records when it finishes, but four of its twelve runs never complete at all.
 
-That split is worth holding onto, because a single leaderboard number would blur it. Two different questions are in play: does the model finish the run, and when it finishes does it satisfy the record contract? A model can be good at one and bad at the other.
+That split is worth holding onto, because a single leaderboard number would blur it. Two different questions are in play. Does the model finish the run? And when it finishes, does it satisfy the record contract? A model can be good at one and bad at the other.
 
 <Pullquote>
 Finishing the run and satisfying the record are different competencies.
@@ -209,7 +207,7 @@ A small but sharp example sits inside the monitoring group. On the stale-dashboa
 
 ### What this chapter teaches
 
-Caution in prose is not caution in the record: the strong models say the stale dashboard or cached pass cannot govern, then fail to preserve the exact rejected evidence, governing evidence, or threshold that proves it, and a reviewer inspects the record rather than the intent. Status codes are part of that proof, not wording preferences; *hold* and *limited* sound equally careful and route to different downstream handling. Governance fields (evidence IDs, thresholds, owners, action and status codes) are first-class outputs rather than formatting details: the policy was not followed unless the record says why.
+Caution in prose is not caution in the record. The strong models say the stale dashboard or cached pass cannot govern, then fail to preserve the exact rejected evidence, governing evidence, or threshold that proves it. A reviewer inspects the record rather than the intent. Status codes are part of that proof, not wording preferences; *hold* and *limited* sound equally careful and route to different downstream handling. Governance fields (evidence IDs, thresholds, owners, action and status codes) are first-class outputs rather than formatting details: the policy was not followed unless the record says why.
 
 <Pullquote>
 Evidence becomes governing evidence only when the record says so.
@@ -277,7 +275,7 @@ The recurring pattern is that dependency *categories are not interchangeable*. A
 
 ### What this chapter teaches
 
-A summary is context, not authority: the partial-dashboard result is the good news — the strong models reliably refused to let an aggregate dashboard stand in for shards it never sampled, the authority boundary holding under load. But closeout can be correct and still unauditable. The models almost always get the ready-or-hold verdict right; what they drop is the trail underneath it — which required dependency failed, which result was used, which was rejected, which blocker applies. That trail is the proof, not the verdict.
+A summary is context, not authority. The partial-dashboard result is the good news: the strong models reliably refused to let an aggregate dashboard stand in for shards it never sampled. The authority boundary held under load. But closeout can be correct and still unauditable. The models almost always get the ready-or-hold verdict right; what they drop is the trail underneath it — which required dependency failed, which result was used, which was rejected, which blocker applies. That trail is the proof, not the verdict.
 
 <Pullquote>
 The record that closes a package has to carry every dependency it cleared — not just the word *done*.
@@ -343,7 +341,7 @@ That coupling is the most useful thing the drawing panel says. The misses are no
 
 ### What this chapter teaches
 
-Grounding is not one skill: text grounding binds a claim to a source-and-value pair, spatial grounding binds geometry to a transformed coordinate frame, and a model can be excellent at one surface and fail the other on completion alone. Where the strong models do fail spatially, it is a higher-quality failure than the no-record collapse of earlier chapters — the record exists and one transformed number is wrong, which a benchmark can isolate and drive down. And saturation is itself a finding: when the top tier sits on the ceiling the suite stops discriminating between them, which makes it a clean floor test for everything messier that follows.
+Grounding is not one skill. Text grounding binds a claim to a source-and-value pair; spatial grounding binds geometry to a transformed coordinate frame. A model can be excellent at one surface and fail the other on completion alone. Where the strong models do fail spatially, it is a higher-quality failure than the no-record collapse of earlier chapters — the record exists and one transformed number is wrong, which a benchmark can isolate and drive down. And saturation is itself a finding: when the top tier sits on the ceiling the suite stops discriminating between them, which makes it a clean floor test for everything messier that follows.
 
 <Pullquote>
 In compact, text-visible settings, the strong models align evidence exactly. The open question is whether that survives messier retrieval and richer drawings.

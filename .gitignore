@@ -1,5 +1,7 @@
 # build output
 dist/
+# Generated narration audio and local generation receipts
+audio/generated/
 # generated types
 .astro/
 
@@ -50,3 +52,7 @@ src/assets/logo-transparent.png
 
 # raw PNG exports for the autoresearch post — SVGs are the source of truth
 src/assets/blog/autoresearch/*.png
+
+# Browser test artifacts
+test-results/
+playwright-report/

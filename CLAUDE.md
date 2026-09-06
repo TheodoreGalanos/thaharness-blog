@@ -14,7 +14,7 @@ npm run build      # Build static site + generate Pagefind search index
 npm run preview    # Preview built site locally
 ```
 
-The build script chains `astro build && pagefind --site dist` — Pagefind runs post-build to index the static HTML output.
+The build script chains `astro build && pagefind --site .vercel/output/static` — Pagefind runs post-build to index the static HTML output.
 
 ## Architecture
 
@@ -35,8 +35,8 @@ The build script chains `astro build && pagefind --site dist` — Pagefind runs 
 ### Component & Layout Pattern
 
 - `src/components/BaseHead.astro` — `<head>` content: meta tags, OG/Twitter cards, RSS autodiscovery, font preloads. Imported by all pages.
-- `src/layouts/BlogPost.astro` — Full HTML document wrapper for blog posts.
-- Pages are full HTML documents that compose `Header`, `Footer`, and `BaseHead` components directly (no shared base layout wrapper beyond `BlogPost`).
+- `src/layouts/EditorialPost.astro` — Full HTML document wrapper for blog posts.
+- Pages are full HTML documents that compose `Header`, `Footer`, and `BaseHead` components directly (no shared base layout wrapper beyond `EditorialPost`).
 
 ### Styling
 
@@ -46,9 +46,9 @@ The build script chains `astro build && pagefind --site dist` — Pagefind runs 
 
 ### Search (Pagefind)
 
-- Pagefind generates a static search index at build time from `dist/` output.
-- Search assets are written to `dist/pagefind/`.
-- No `data-pagefind-body` attribute set yet — currently indexes all `<body>` elements. Add `data-pagefind-body` to main content areas to scope indexing.
+- Pagefind generates a static search index at build time from `.vercel/output/static/` output.
+- Search assets are written to `.vercel/output/static/pagefind/`.
+- `data-pagefind-body` scopes search to rendered article content. Run `npm run test:built` and `npm run test:browser` after building.
 
 ### Site Constants
 
@@ -61,11 +61,11 @@ The build script chains `astro build && pagefind --site dist` — Pagefind runs 
 
 ## Deployment
 
-Static output to Vercel — no adapter needed. Connect the git repo to Vercel and it auto-detects Astro. The `site` field in `astro.config.mjs` must be updated to the real production URL before deploying (currently `https://example.com`).
+The installed Vercel adapter emits `.vercel/output/`; keep the output-directory override unset. Use Node.js 22, matching `.nvmrc` and CI. The production URL in `astro.config.mjs` is `https://theharness.blog`. Preview `.vercel/output/static/` with a static HTTP server; API routes need Vercel.
 
 ## Key Conventions
 
 - **Content Collection API**: Always use `glob()` loader + `src/content.config.ts` (not the legacy `src/content/config.ts` path).
 - **Tailwind v4**: No `tailwind.config.js` — configuration is CSS-first via `@theme` directives. Use `@tailwindcss/vite`, not `@astrojs/tailwind`.
-- **RSS**: Uses `@astrojs/rss`. For full post content in feeds, render Markdown with `markdown-it` and sanitise with `sanitize-html`.
+- **RSS**: Uses `@astrojs/rss`. Full posts are rendered with Astro's container and MDX renderer, then sanitised by `src/lib/article-html.ts`. This preserves component prose and excludes source imports.
 - **All code files** must start with a 2-line `ABOUTME:` comment explaining what the file does.

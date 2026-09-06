@@ -5,7 +5,7 @@ author: "Theodoros Galanos"
 category: "Engineering"
 draft: false
 pubDate: 2026-05-16
-tags: ["aec-bench", "prime-lab", "reinforcement-learning", "agent-evaluation", "harness-engineering", "ai-in-aec"]
+tags: ["aec-bench", "reinforcement-learning", "agent-evaluation", "ai-in-aec"]
 featured: false
 ---
 
@@ -21,8 +21,6 @@ import {
 import { labCouplingFlowSteps } from '../../data/lab-coupling-flow';
 import { primeRunFlowSteps } from '../../data/prime-run-flow';
 import { trainableLoopRows } from '../../data/trainable-loop-flow';
-
-Estimated reading time: 9 minutes
 
 aec-bench can train now.
 
@@ -76,7 +74,7 @@ It is also the practical version of the argument in [Executable Standards](/blog
 
 ## Why RL Environments Matter for Engineering OOD Failures
 
-In engineering, the hard failure is often not the model becoming incoherent but really when it becomes plausibly generic.
+In engineering, the hard failure often comes when a model becomes plausibly generic, rather than incoherent.
 
 It uses the wrong table. It applies the wrong assumption. It answers the nearby problem instead of this problem. It performs a calculation but never submits the artifact in the required form. This is what I meant in the earlier benchmark work by out-of-distribution behaviour: the model is not useless, but it is not reliably attached to the task world, or to the specific instance cut from that world.[^task-world]
 
@@ -109,7 +107,7 @@ The mechanics were refreshingly direct:
 	caption="The task suite leaves aec-bench as a Prime-compatible environment, trains in Lab, then returns as comparable base-vs-adapter traces inside the aec-bench ledger."
 />
 
-The training run was intentionally small. It was not meant to establish a production-quality adapter but more so to understand whether the loop works end to end on real benchmark tasks?
+The training run was intentionally small. It was meant to test whether the loop worked end to end on real benchmark tasks, rather than establish a production-quality adapter.
 
 And it did!
 
@@ -136,9 +134,9 @@ The headline result:
 | Mean tool calls | 2.67 | 4.33 |
 | Mean `submit_answer` calls | 0.13 | 0.53 |
 
-The adapter did more of the work. It read more, wrote more, submitted more, and failed with empty responses less often. I think it what happened was workflow learning rather than general engineering competence. 
+The adapter did more of the work. It read more, wrote more, submitted more, and failed with empty responses less often. I think what happened was workflow learning rather than general engineering competence.
 
-It became more likely for the model to stay inside the environment (task world) long enough to produce something the verifier could judge.
+The model became more likely to stay inside the environment (task world) long enough to produce something the verifier could judge.
 
 Trace analysis supports that interpretation. Both base and adapter runs were mostly execution-heavy. The adapter did not become wildly more exploratory or magically more intelligent. It became better at execution-through-recovery: use the workspace, repair small tool friction, write the artifact, and submit it.
 

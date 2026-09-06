@@ -1,5 +1,5 @@
 // ABOUTME: Tests pure editorial layout helpers used by the article enhancement script.
-// ABOUTME: Covers scroll-progress math and compact chapter-strip slot selection.
+// ABOUTME: Covers scroll-progress math and anchored article navigation.
 
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -7,7 +7,7 @@ import {
 	computeAnchorScrollTop,
 	computeCssLengthPixels,
 	computeScrollProgress,
-	computeSlotWindow,
+	shouldShowChapterRail,
 } from '../src/scripts/editorial.ts';
 
 describe('editorial helpers', () => {
@@ -18,15 +18,6 @@ describe('editorial helpers', () => {
 
 	it('computeScrollProgress returns the in-article ratio', () => {
 		assert.equal(computeScrollProgress(400, 100, 1000, 400), 0.5);
-	});
-
-	it('computeSlotWindow centers the active chapter away from edges', () => {
-		assert.deepEqual(computeSlotWindow(3, 8), { left: 2, center: 3, right: 4 });
-	});
-
-	it('computeSlotWindow clamps at the first and last chapters', () => {
-		assert.deepEqual(computeSlotWindow(0, 8), { left: 0, center: 1, right: 2 });
-		assert.deepEqual(computeSlotWindow(7, 8), { left: 5, center: 6, right: 7 });
 	});
 
 	it('computeAnchorScrollTop clears sticky article chrome', () => {
@@ -42,5 +33,12 @@ describe('editorial helpers', () => {
 		assert.equal(computeCssLengthPixels('7em', 16, 18), 126);
 		assert.equal(computeCssLengthPixels('132px', 16, 18), 132);
 		assert.equal(computeCssLengthPixels('not-a-length', 16, 18), null);
+	});
+
+	it('shows the chapter rail only after the overview clears the header', () => {
+		assert.equal(shouldShowChapterRail(320, 64), false);
+		assert.equal(shouldShowChapterRail(65, 64), false);
+		assert.equal(shouldShowChapterRail(64, 64), true);
+		assert.equal(shouldShowChapterRail(-20, 64), true);
 	});
 });

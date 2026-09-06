@@ -80,7 +80,11 @@ const baselinePct = baseline ? pct(baseline.value) : null;
 				<div class="bwb-chart-header" style={`--bwb-baseline-pct: ${baselinePct}%`}>
 					<button
 						type="button"
-						class="bwb-baseline-label"
+						class:list={[
+							'bwb-baseline-label',
+							baselinePct >= 75 && 'is-near-end',
+							baselinePct <= 25 && 'is-near-start',
+						]}
 						data-bwb-baseline
 						data-baseline-label={baseline.label}
 						data-description={baseline.note ?? ''}
@@ -210,6 +214,17 @@ const baselinePct = baseline ? pct(baseline.value) : null;
 	.bwb-baseline-label:focus-visible {
 		color: var(--color-accent-hover);
 		outline: none;
+	}
+
+	/* Keep long labels inside the chart when the reference sits near an edge.
+	   The tick remains closest to the represented baseline position. */
+	.bwb-baseline-label.is-near-end {
+		transform: translateX(-100%);
+		flex-direction: row-reverse;
+	}
+
+	.bwb-baseline-label.is-near-start {
+		transform: none;
 	}
 
 	.bwb-baseline-tick {

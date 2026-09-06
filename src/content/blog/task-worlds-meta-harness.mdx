@@ -5,7 +5,7 @@ author: "Theodoros Galanos"
 category: "Engineering"
 draft: false
 pubDate: 2026-06-24
-tags: ["agentic-ai", "harness-engineering", "aec-bench", "task-worlds", "ai-evaluation", "philosophy"]
+tags: ["task-worlds", "harness-engineering", "aec-bench", "agent-evaluation"]
 featured: false
 ---
 
@@ -22,8 +22,6 @@ import {
 	missingWalkingSpeedFigure,
 } from '../../data/task-world-figures';
 
-Estimated reading time: 15 minutes
-
 ## TL;DR
 
 This essay argues that agent tasks in domains like engineering are not just
@@ -34,9 +32,9 @@ named, and what can be repaired.
 In order to generalise across complex engineering tasks, we need a meta-harness:
 a harness that knows how to construct other harness runs. Given a new, messy
 task, it can produce a problem brief and task-world profile, plan operations over
-that world, run reviewer and governance layers, materialise a recipe, bind
-execution evidence back through sandbox execution, and use failures to improve future world
-designs.
+that world, run reviewer and governance layers, and materialise a recipe. It can
+then bind execution evidence back through sandbox execution and use failures to
+improve future world designs.
 
 This gives us operational plasticity. Instead of hand-building a new harness for
 every domain, or letting an agent improvise invisibly, the system can adapt while
@@ -653,8 +651,8 @@ useful: typed world profiles, deterministic operation handles, reviewer
 artifacts, governance decisions, Harbor import, recipe materialisation, bounded
 autonomy, and a ledger.
 
-A public API can stay small: send task prose, optional attachments, existing
-baseline and candidate evidence, and model endpoint configs; get back a problem
+A public API can stay small. Send task prose, optional attachments, existing
+baseline and candidate evidence, and model endpoint configs. Get back a problem
 brief, task-world profile request, reviewer packet, operation plan, governance
 outcome, recipe workspace, comparison result, and ledger reference.
 
@@ -691,9 +689,9 @@ composed during the run.
 Using the existing Harbor machinery, aec-bench can take a natural-language input
 and stage a problem-space brief task. It can generate or review a task-world
 profile, run post-verifier reviewer layers over workspace or Harbor evidence,
-ask the operation orchestrator for a plan, apply governance, materialise a
-comparison recipe, and import Harbor trial records back into a `task_run`
-evidence object.
+and ask the operation orchestrator for a plan. It can then apply governance,
+materialise a comparison recipe, and import Harbor trial records back into a
+`task_run` evidence object.
 
 The autonomous runner is bounded rather than magical. It stops on max
 iterations, cost, stagnation, governance gates, or missing artifacts. Missing

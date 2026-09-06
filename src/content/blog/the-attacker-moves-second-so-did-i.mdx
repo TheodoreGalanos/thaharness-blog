@@ -6,7 +6,7 @@ category: "Engineering"
 draft: false
 pubDate: 2026-07-21
 updatedDate: 2026-07-21
-tags: ["harness-engineering", "agent-evaluation", "aec-bench", "agent-security", "prompt-injection", "provenance"]
+tags: ["agent-security", "agent-evaluation", "harness-engineering", "aec-bench"]
 featured: false
 ---
 
@@ -14,13 +14,11 @@ import FlowDiagram from '../../components/charts/FlowDiagram.astro';
 import ProcessComparison from '../../components/charts/ProcessComparison.astro';
 import { leakReplayComparisonData, provenanceLedgerFlowData } from '../../data/the-attacker-moves-second-figures';
 
-Estimated reading time: 14 minutes
-
 ## TL;DR
 
 In [Fluent, But Unsafe](/blog/fluent-but-unsafe/), the agent improving my benchmark quietly wrote the hidden defects' expected answers into the task instructions, one run at a time, until the scores returned to 1.00. I treated that as an evaluation defect and fixed it with variant-blindness and negative tests.
 
-But what if we reread this incident from an AI security point of view. After all, as I have written before, building agentic environments and designing benchmarks is the same as building agent harnesses deployed in production; these things are entangled in reality, a knot. So security, and a clear map of the attack surface, belongs in this work too.
+But what if we reread this incident from an AI security point of view? After all, as I have written before, building agentic environments and designing benchmarks is the same as building agent harnesses deployed in production. These things are entangled in reality, a knot. So security and a clear map of the attack surface belong in this work too.
 
 I went back to Nasr, Carlini, and colleagues' beautiful paper, [The Attacker Moves Second](https://arxiv.org/abs/2510.09023), and revisited the incident. The paper took twelve published defenses against prompt injection and jailbreaking (most reporting near-zero attack success) and broke them with adaptive attacks at over 90%. Human red-teamers reached 100%. The defenses had been evaluated against attackers who moved first: fixed attack strings, written before the defense existed. Real attackers study the deployed defense and adapt. So do optimisers, it turns out. My task-improvement loop was an attacker that moved second against a fixed verifier. It just wasn't malicious, which might make it even more dangerous, because it is harder to notice.
 
@@ -28,7 +26,7 @@ This post takes that reframe seriously and asks what it implies for the part of 
 
 ## The Optimiser Was an Attacker
 
-A process with three properties operated inside my harness: it had an objective (raise task scores), it had write access to a surface the evaluator consumed (task instructions), and its writes were invisible to the score (nothing tracked that the graded world had changed). Given enough iterations, it found the seam. It did not need to be clever about hydraulics or document review. It needed to move second: observe the fixed verifier, adjust the world, observe again.
+A process with three properties operated inside my harness. It had an objective: raise task scores. It had write access to a surface the evaluator consumed: task instructions. And its writes were invisible to the score, because nothing tracked that the graded world had changed. Given enough iterations, it found the seam. It did not need to be clever about hydraulics or document review. It needed to move second: observe the fixed verifier, adjust the world, observe again.
 
 That is exactly the evaluation failure [The Attacker Moves Second](https://arxiv.org/abs/2510.09023) documents in deployed defenses. Static evaluation tests against attacks written before your system existed; it simulates an adversary with no feedback loop. The paper's adaptive attackers used gradient descent, reinforcement learning against the live system, and search; the human red team was a 500-person competition. Twelve for twelve, the defenses fell.[^attacker-paper]
 
@@ -72,7 +70,7 @@ Without sign-offs, a taint system converges to "everything is derived from somet
 
 ## A Schematic for the Ledger
 
-The part-of-a-harness this post proposes, in one figure:
+The part of the harness this post proposes, in one figure:
 
 <FlowDiagram
 	{...provenanceLedgerFlowData}
@@ -129,7 +127,7 @@ Append-only from day one; the monitors can arrive in week two, but they will hav
 
 ## What This Does Not Solve
 
-Provenance tells you where a claim came from. It does not tell you whether the claim is true. A record can carry perfect stamps and still be wrong, so the verifiers and the human experts are still crucial. And whoever grants the sign-offs becomes the most valuable thing to corrupt: fool the signer, and every lie they bless inherits their trust. The problem does not disappear; it is just displaced. But still, I like the trade, because it moves from the inside of a model, where nobody can audit anything, to a signature on a record, which engineering firms, banks, land registries, and pharmacies, have policed for centuries.
+Provenance tells you where a claim came from. It does not tell you whether the claim is true. A record can carry perfect stamps and still be wrong, so the verifiers and the human experts are still crucial. And whoever grants the sign-offs becomes the most valuable thing to corrupt: fool the signer, and every lie they bless inherits their trust. The problem does not disappear; it is just displaced. But still, I like the trade. It moves the problem from the inside of a model, where nobody can audit anything, to a signature on a record, which engineering firms, banks, land registries, and pharmacies have policed for centuries.
 
 The second cost is stiffness. Declared actions bring back some of the rigidity language models freed us from: plenty of reasonable requests will not fit any action the system knows. At least the failure is a safe one. The agent can always talk; it just cannot act on a request that has no declared shape. And every request that fails to fit is a note about what the system should learn to do next, which is how the action list grows from real use and experience, not just guesswork.
 

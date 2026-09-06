@@ -5,7 +5,7 @@ author: "Theodoros Galanos"
 category: "Engineering"
 draft: false
 pubDate: 2026-05-03
-tags: ["harness-engineering", "autoformalisation", "ai-in-aec", "formal-methods", "compliance", "agentic-ai", "quality-assurance"]
+tags: ["harness-engineering", "formal-methods", "ai-in-aec"]
 featured: false
 ---
 
@@ -21,8 +21,6 @@ import {
   documentsToRequirementsData,
   autoformPipelinePreviewData,
 } from '../../data/executable-standards-charts';
-
-Estimated reading time: 11 minutes
 
 ## The Failures We Keep Seeing
 
@@ -78,9 +76,11 @@ In the version we are building for AEC, the pipeline looks like this:
 
 The goal is not to prove every engineering judgement in [Lean](https://lean-lang.org/).[^lean] That would be a lovely way to never ship anything.
 
-The pragmatic target is narrower. Take requirements that can be made checkable, lift them into typed predicates over design state, preserve provenance, attach discharge tests and witnesses, and store the result in a versioned corpus that can be queried by a verifier.
+The pragmatic target is narrower. Take requirements that can be made checkable and lift them into typed predicates over design state. Preserve their provenance, attach discharge tests and witnesses, and store the result in a versioned corpus that a verifier can query.
 
-Four pieces of vocabulary, in plain terms. A **predicate** is a small function that takes a design and returns pass or fail along with the numbers it used to decide. **Discharge tests** are canonical examples that should pass and others that should fail — the sanity check that the predicate actually encodes the clause. A **witness** is the evidence a predicate emits when it answers, so a reviewer can see what the check looked at. A **verifier** is the program that runs predicates against a design and emits the certificate.
+Four pieces of vocabulary, in plain terms. A **predicate** is a small function that takes a design and returns pass or fail along with the numbers it used to decide. **Discharge tests** are canonical examples that should pass and others that should fail — the sanity check that the predicate actually encodes the clause.
+
+A **witness** is the evidence a predicate emits when it answers, so a reviewer can see what the check looked at. A **verifier** is the program that runs predicates against a design and emits the certificate.
 
 For a fabricated cable-sizing example, the source might begin as natural-language prose:
 
@@ -167,7 +167,7 @@ For the same fabricated cable run, the design input might be:
 }
 ```
 
-The verifier result binds that design to a released predicate, and the certificate then records the design hash, predicate hashes, standard versions, the **assumption ledger** (a frozen record of the inputs, exclusions, and conservative choices the design was made under), the world-model reference, the witness bundle, the verifier policy, and the per-layer results. Figure 3 makes the binding explicit.
+The verifier result binds that design to a released predicate. The certificate then records the design hash, predicate hashes, standard versions, the **assumption ledger**, the world-model reference, the witness bundle, the verifier policy, and the per-layer results. The assumption ledger is a frozen record of the inputs, exclusions, and conservative choices the design was made under. Figure 3 makes the binding explicit.
 
 That is a very different object from *"the model says it complies"*.
 

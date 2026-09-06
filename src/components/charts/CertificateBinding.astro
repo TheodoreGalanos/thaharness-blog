@@ -74,7 +74,7 @@ function renderJson(obj: CertificatePayload, indent = 2): JsonLine[] {
 
 // Split a JSON line into tokens for syntax colouring. The keys are matched
 // first (string immediately followed by a colon); other strings are values.
-function tokeniseJsonLine(text) {
+function tokeniseJsonLine(text: string) {
 	const out = [];
 	const pattern = [
 		'("(?:\\\\.|[^"\\\\])*"\\s*:)',
@@ -110,14 +110,14 @@ function tokeniseJsonLine(text) {
 const validLines = renderJson(certificate.valid);
 const rejectedLines = renderJson(certificate.rejected);
 
-function escapeHtml(s) {
+function escapeHtml(s: string) {
 	return s
 		.replace(/&/g, '&amp;')
 		.replace(/</g, '&lt;')
 		.replace(/>/g, '&gt;');
 }
 
-function lineToHtml(line) {
+function lineToHtml(line: ReturnType<typeof renderJson>[number]) {
 	const tokens = tokeniseJsonLine(line.text);
 	const inner = tokens
 		.map((t) => `<span class="cb-tok cb-tok-${t.kind}">${escapeHtml(t.text)}</span>`)

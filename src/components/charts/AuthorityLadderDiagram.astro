@@ -1,0 +1,335 @@
+<!-- ABOUTME: Decomposes organisational authority into factual gains and matching obligations. -->
+<!-- ABOUTME: Highlights shared reliance as the promotion rung most often crossed silently. -->
+---
+import { authorityLadderFigure } from '../../data/broad-creation-narrow-authority-figures';
+
+const titleId = 'authority-ladder-title';
+const descriptionId = 'authority-ladder-description';
+const visualRungs = [...authorityLadderFigure.rungs].reverse();
+---
+
+<figure class="ald" aria-labelledby={titleId} aria-describedby={descriptionId}>
+	<header class="ald-header">
+		<span class="ald-kicker">Promotion mechanics</span>
+		<span class="ald-thesis">More authority ↑ more obligation</span>
+	</header>
+
+	<div class="ald-title" id={titleId}>{authorityLadderFigure.title}</div>
+	<p class="visually-hidden" id={descriptionId}>{authorityLadderFigure.description}</p>
+
+	<div class="ald-canvas" aria-hidden="true">
+		<div class="ald-axis">Authority ↑</div>
+		<div class="ald-columns">
+			<span>The artefact gains</span>
+			<i></i>
+			<span>It owes in return</span>
+		</div>
+
+		<div class="ald-rungs">
+			{visualRungs.map((rung, index) => (
+				<div class:list={['ald-rung', { 'is-highlighted': rung.id === 'shared-reliance' }]}>
+					<div class="ald-gain">
+						<span>{String(visualRungs.length - index).padStart(2, '0')}</span>
+						<strong>{rung.gain}</strong>
+					</div>
+					<div class="ald-rung-marker">
+						<i></i>
+					</div>
+					<div class="ald-obligation">{rung.obligation}</div>
+				</div>
+			))}
+		</div>
+
+		<div class="ald-note">Each rung is a change in fact—not a deployment step</div>
+	</div>
+
+	<figcaption class="ald-caption">{authorityLadderFigure.caption}</figcaption>
+</figure>
+
+<style>
+	.ald {
+		--ald-accent: var(--color-accent);
+		--ald-secondary: var(--color-accent-secondary);
+		--ald-line: color-mix(in srgb, var(--color-text-tertiary) 68%, transparent);
+		--ald-soft-line: color-mix(in srgb, var(--color-border) 82%, transparent);
+
+		margin: 3.25rem 0 4rem;
+		color: var(--color-text-primary);
+		font-family: var(--font-body);
+		text-align: left;
+		container-type: inline-size;
+	}
+
+	.ald-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding-bottom: 0.75rem;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.ald-kicker,
+	.ald-thesis,
+	.ald-axis,
+	.ald-columns,
+	.ald-gain span,
+	.ald-obligation,
+	.ald-note,
+	.ald-caption {
+		font-family: var(--font-mono);
+	}
+
+	.ald-kicker {
+		font-size: 0.625rem;
+		font-weight: 500;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--ald-accent);
+	}
+
+	.ald-thesis {
+		font-size: 0.625rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.ald-title {
+		margin: 0.9rem 0 1.35rem;
+		font-family: var(--font-display);
+		font-size: clamp(1.35rem, 3vw, 1.75rem);
+		font-weight: 500;
+		line-height: 1.2;
+		letter-spacing: -0.01em;
+	}
+
+	.ald-canvas {
+		padding: 1.15rem 1.1rem 1rem;
+		border: 1px solid var(--ald-soft-line);
+		border-radius: 5px;
+		background:
+			linear-gradient(var(--color-bg-grid) 1px, transparent 1px),
+			linear-gradient(90deg, var(--color-bg-grid) 1px, transparent 1px),
+			color-mix(in srgb, var(--color-surface) 74%, transparent);
+		background-size: 2rem 2rem;
+	}
+
+	.ald-axis {
+		margin-bottom: 0.65rem;
+		font-size: 0.5625rem;
+		letter-spacing: 0.1em;
+		text-align: center;
+		text-transform: uppercase;
+		color: var(--ald-accent);
+	}
+
+	.ald-columns,
+	.ald-rung {
+		display: grid;
+		grid-template-columns: minmax(0, 0.9fr) 4rem minmax(0, 1.15fr);
+	}
+
+	.ald-columns {
+		align-items: end;
+		min-height: 2.4rem;
+		padding-bottom: 0.6rem;
+		font-size: 0.5625rem;
+		line-height: 1.35;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.ald-columns span:first-child {
+		text-align: right;
+	}
+
+	.ald-columns i {
+		width: 1px;
+		height: 100%;
+		justify-self: center;
+		background: var(--ald-line);
+	}
+
+	.ald-rungs {
+		border-top: 1px solid var(--ald-soft-line);
+		border-bottom: 1px solid var(--ald-soft-line);
+	}
+
+	.ald-rung {
+		position: relative;
+		align-items: stretch;
+		min-height: 5rem;
+		border-bottom: 1px solid var(--ald-soft-line);
+	}
+
+	.ald-rung:last-child {
+		border-bottom: 0;
+	}
+
+	.ald-rung.is-highlighted {
+		background: linear-gradient(
+			90deg,
+			transparent,
+			color-mix(in srgb, var(--ald-accent) 8%, transparent) 22% 78%,
+			transparent
+		);
+	}
+
+	.ald-gain,
+	.ald-obligation {
+		display: flex;
+		align-items: center;
+		line-height: 1.4;
+	}
+
+	.ald-gain {
+		justify-content: flex-end;
+		gap: 0.6rem;
+		padding: 0.8rem 0.25rem 0.8rem 0;
+		text-align: right;
+	}
+
+	.ald-gain span {
+		flex: 0 0 auto;
+		font-size: 0.5625rem;
+		letter-spacing: 0.08em;
+		color: var(--color-text-tertiary);
+	}
+
+	.ald-gain strong {
+		max-width: 13rem;
+		font-family: var(--font-heading);
+		font-size: 0.8125rem;
+		font-weight: 500;
+		color: var(--color-text-primary);
+	}
+
+	.ald-obligation {
+		padding: 0.8rem 0 0.8rem 0.25rem;
+		font-size: 0.6875rem;
+		color: var(--color-text-secondary);
+	}
+
+	.ald-rung-marker {
+		position: relative;
+		min-height: 100%;
+		background:
+			linear-gradient(var(--ald-line), var(--ald-line)) calc(50% - 1rem) 0 / 1px 100%
+				no-repeat,
+			linear-gradient(var(--ald-line), var(--ald-line)) calc(50% + 1rem) 0 / 1px 100%
+				no-repeat;
+	}
+
+	.ald-rung-marker i {
+		position: absolute;
+		top: 50%;
+		left: calc(50% - 1rem);
+		width: 2rem;
+		height: 3px;
+		background: var(--ald-line);
+		transform: translateY(-50%);
+	}
+
+	.ald-rung.is-highlighted .ald-rung-marker i {
+		height: 4px;
+		background: var(--ald-accent);
+		box-shadow: 0 0 14px color-mix(in srgb, var(--ald-accent) 28%, transparent);
+	}
+
+	.ald-rung.is-highlighted .ald-gain strong,
+	.ald-rung.is-highlighted .ald-obligation {
+		color: var(--ald-accent);
+	}
+
+	.ald-note {
+		padding-top: 0.8rem;
+		font-size: 0.5625rem;
+		line-height: 1.4;
+		letter-spacing: 0.06em;
+		text-align: center;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.ald-caption {
+		margin-top: 1.25rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+		font-size: 0.8125rem;
+		line-height: 1.55;
+		color: var(--color-text-tertiary);
+	}
+
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	@container (max-width: 34rem) {
+		.ald {
+			margin: 2.5rem 0 3rem;
+		}
+
+		.ald-header {
+			align-items: flex-start;
+			flex-direction: column;
+			gap: 0.45rem;
+		}
+
+		.ald-title {
+			margin-bottom: 1rem;
+		}
+
+		.ald-canvas {
+			padding: 0.9rem 0.55rem 0.8rem;
+		}
+
+		.ald-columns,
+		.ald-rung {
+			grid-template-columns: minmax(0, 0.9fr) 2.7rem minmax(0, 1.15fr);
+		}
+
+		.ald-rung {
+			min-height: 5.5rem;
+		}
+
+		.ald-gain {
+			align-items: flex-end;
+			justify-content: center;
+			flex-direction: column;
+			gap: 0.25rem;
+			padding-right: 0.1rem;
+		}
+
+		.ald-gain strong {
+			font-size: 0.7rem;
+		}
+
+		.ald-obligation {
+			padding-left: 0.1rem;
+			font-size: 0.59375rem;
+		}
+
+		.ald-rung-marker {
+			background:
+				linear-gradient(var(--ald-line), var(--ald-line)) calc(50% - 0.65rem) 0 / 1px
+					100% no-repeat,
+				linear-gradient(var(--ald-line), var(--ald-line)) calc(50% + 0.65rem) 0 / 1px
+					100% no-repeat;
+		}
+
+		.ald-rung-marker i {
+			left: calc(50% - 0.65rem);
+			width: 1.3rem;
+		}
+	}
+</style>

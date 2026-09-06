@@ -103,12 +103,20 @@ const svg = renderPlot({
 			</div>
 		</aside>
 
-		<div class="qvc-chart" set:html={svg}></div>
+		<span class="qvc-scroll-hint">Swipe for full chart <span aria-hidden="true">→</span></span>
+		<div
+			class="qvc-chart"
+			role="region"
+			tabindex="0"
+			aria-label={`${title ?? 'Quality versus estimated cost'} chart. Scroll horizontally for full detail.`}
+			set:html={svg}
+		></div>
 	</div>
 
 	{caption && <figcaption class="qvc-caption">{caption}</figcaption>}
 
 	<script
+		is:inline
 		type="application/json"
 		data-qvc-points
 		set:html={JSON.stringify(
@@ -138,6 +146,10 @@ const svg = renderPlot({
 
 	.qvc-body {
 		position: relative;
+	}
+
+	.qvc-scroll-hint {
+		display: none;
 	}
 
 	.qvc-chart {
@@ -185,6 +197,29 @@ const svg = renderPlot({
 		opacity: 0.35;
 	}
 
+	@media (max-width: 600px) {
+		.qvc-scroll-hint {
+			display: block;
+			margin-bottom: 0.5rem;
+			font-family: var(--font-mono);
+			font-size: 0.625rem;
+			letter-spacing: 0.06em;
+			color: var(--color-accent-secondary);
+		}
+
+		.qvc-chart {
+			overflow-x: auto;
+			overscroll-behavior-inline: contain;
+			-webkit-overflow-scrolling: touch;
+			padding-bottom: 0.5rem;
+		}
+
+		.qvc-chart :global(svg) {
+			width: 32rem;
+			max-width: none;
+		}
+	}
+
 	.qvc-caption {
 		margin-top: 1.5rem;
 		padding-top: 1rem;
@@ -217,11 +252,11 @@ const svg = renderPlot({
 
 			const marks = root.querySelectorAll<SVGElement>('.qvc-point');
 
-			function resetPanel() {
+			const resetPanel = () => {
 				panel.reset();
 				root.removeAttribute('data-qvc-hover');
 				marks.forEach((m) => m.classList.remove('is-active'));
-			}
+			};
 
 			marks.forEach((mark, i) => {
 				const show = () => {

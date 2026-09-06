@@ -11,11 +11,12 @@ const blog = defineCollection({
   schema: ({ image }) =>
     z.object({
       title: z.string(),
+      seoTitle: z.string().optional(),
       description: z.string(),
       author: z.string(),
       category: z.string(),
       draft: z.boolean().default(false),
-      tags: z.array(z.string()).default([]),
+      tags: z.array(z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)).max(4).default([]),
       featured: z.boolean().default(false),
       featuredRank: z.number().int().positive().optional(),
       // Transform string to Date object

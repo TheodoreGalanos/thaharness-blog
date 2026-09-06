@@ -1,16 +1,22 @@
 <!-- ABOUTME: Dark-mode editorial blog post layout inspired by Anthropic's long-form features. -->
-<!-- ABOUTME: Warm-dark surface, Fraunces display headlines with mono kickers, no TOC furniture. -->
+<!-- ABOUTME: Warm-dark surface, Fraunces headlines, and stable chapter navigation. -->
 ---
 import { Image } from 'astro:assets';
 import Analytics from '@vercel/analytics/astro';
 import SpeedInsights from '@vercel/speed-insights/astro';
 import type { CollectionEntry } from 'astro:content';
+import '../styles/chart-hover-panel.css';
+import '../styles/editorial.css';
 import BaseHead from '../components/BaseHead.astro';
 import ChapterStrip from '../components/ChapterStrip.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
 import TagPill from '../components/TagPill.astro';
+import SubscribeForm from '../components/SubscribeForm.astro';
+import { articleWordCount } from '../lib/article-html';
+import ArticleAudio from '../components/ArticleAudio.astro';
+import publishedAudio from '../../audio/published.json';
 
 type RelatedPost = CollectionEntry<'blog'>;
 
@@ -24,13 +30,13 @@ type PostData = CollectionEntry<'blog'>['data'];
 
 interface Props extends PostData {
 	slug: string;
-	readingTime: number;
 	relatedPosts: RelatedPost[];
 	headings: Heading[];
 }
 
 const {
 	title,
+	seoTitle,
 	description,
 	pubDate,
 	updatedDate,
@@ -38,23 +44,30 @@ const {
 	heroImage,
 	tags,
 	category,
-	readingTime,
+	slug,
+	relatedPosts,
 	headings = [],
 } = Astro.props;
+const articleHtml = await Astro.slots.render('default');
+const wordCount = articleWordCount(articleHtml);
+const readingTime = Math.max(1, Math.ceil(wordCount / 180));
+const recording = publishedAudio.articles.find(entry => entry.slug === slug && entry.language === 'en');
 ---
 
+<!doctype html>
 <html lang="en" data-theme="dark">
 	<head>
 		<BaseHead
 			title={title}
+			seoTitle={seoTitle}
 			description={description}
-			image={heroImage}
+			image={heroImage ?? `/og/${slug}.png`}
 			type="article"
 			author={author}
 			publishedTime={pubDate}
 			modifiedTime={updatedDate}
 			tags={tags}
-			wordCount={readingTime * 180}
+			wordCount={wordCount}
 			articleSection={category}
 		/>
 	</head>
@@ -64,51 +77,92 @@ const {
 			<div class="editorial-progress-bar"></div>
 		</div>
 		<Header />
-		<main>
+		<main id="main-content">
 			<article class="editorial-article">
 				<header class="editorial-header">
 					<span class="editorial-kicker">
 						{category ? `${category} · ` : ''}{readingTime} min read
 					</span>
 					<h1 class="editorial-headline">{title}</h1>
-					{description && (
-						<p class="editorial-deck">{description}</p>
-					)}
+					{description && <p class="editorial-deck">{description}</p>}
 					<div class="editorial-meta">
-						<span>By {author}</span>
+						<a href="/about/">By {author}</a>
 						<span class="editorial-meta-sep">·</span>
 						<FormattedDate date={pubDate} />
-						{updatedDate && (
-							<>
-								<span class="editorial-meta-sep">·</span>
-								<span>Updated {updatedDate.toISOString().split('T')[0]}</span>
-							</>
-						)}
+						{
+							updatedDate && updatedDate.valueOf() !== pubDate.valueOf() && (
+								<>
+									<span class="editorial-meta-sep">·</span>
+									<span>Updated {updatedDate.toISOString().split('T')[0]}</span>
+								</>
+							)
+						}
 					</div>
-					{tags.length > 0 && (
-						<div class="editorial-tags">
-							{tags.map((tag: string) => (
-								<TagPill tag={tag} />
-							))}
-						</div>
-					)}
+					{
+						tags.length > 0 && (
+							<div class="editorial-tags">
+								{tags.slice(0, 2).map((tag: string) => (
+									<TagPill tag={tag} />
+								))}
+								{tags.length > 2 && (
+									<details class="more-tags">
+										<summary>All topics ({tags.length})</summary>
+										<div>
+											{tags.slice(2).map((tag) => (
+												<TagPill tag={tag} />
+											))}
+										</div>
+									</details>
+								)}
+							</div>
+						)
+					}
+					{recording && <ArticleAudio url={recording.url} durationSeconds={recording.durationSeconds} />}
 				</header>
 
-				<div class="chapter-strip-sentinel" aria-hidden="true"></div>
-			<ChapterStrip headings={headings} />
+				<ChapterStrip headings={headings} />
 
-				{heroImage && (
-					<div class="editorial-hero">
-						<Image width={1040} height={585} src={heroImage} alt="" />
-					</div>
-				)}
+				{
+					heroImage && (
+						<div class="editorial-hero">
+							<Image width={1040} height={585} src={heroImage} alt="" />
+						</div>
+					)
+				}
 
 				<div class="editorial-body">
 					<div class="prose post-content" data-pagefind-body>
-						<slot />
+						<Fragment set:html={articleHtml} />
 					</div>
 				</div>
 			</article>
+			<aside class="article-follow page-shell" aria-label="Continue reading">
+				{
+					relatedPosts.length > 0 && (
+						<section class="related-posts">
+							<>
+								<h2>Continue reading</h2>
+								<ul>
+									{relatedPosts.map((post) => (
+										<li>
+											<a href={`/blog/${post.id}/`}>
+												<h3>{post.data.title}</h3>
+												<p>{post.data.description}</p>
+											</a>
+										</li>
+									))}
+								</ul>
+							</>
+						</section>
+					)
+				}
+				<SubscribeForm
+					variant="inline"
+					title="Follow the work"
+					description="Get new essays on reliable AI agents and real engineering work when they publish."
+					inputId="article-subscribe-email"
+				/>
+			</aside>
 		</main>
 		<Footer />
 		<Analytics />
@@ -133,7 +187,6 @@ const {
 				background-color: var(--color-accent);
 				transform: scaleX(0);
 				transform-origin: left center;
-				transition: transform 0.1s linear;
 				will-change: transform;
 			}
 
@@ -146,12 +199,12 @@ const {
 			.editorial-header {
 				max-width: 42rem;
 				margin: 0 auto;
-				padding: 4rem 0 2.5rem;
+				padding: 2rem 0 1.5rem;
 			}
 
 			@media (min-width: 768px) {
 				.editorial-header {
-					padding: 6.5rem 0 3.25rem;
+					padding: 3.5rem 0 2rem;
 				}
 			}
 
@@ -224,6 +277,67 @@ const {
 				max-width: 60rem;
 				margin: 0 auto;
 				padding-bottom: 5rem;
+			}
+			.editorial-meta a {
+				color: var(--color-text-secondary);
+			}
+			.more-tags {
+				font-family: var(--font-mono);
+				font-size: 0.75rem;
+			}
+			.more-tags summary {
+				min-height: 44px;
+				display: flex;
+				align-items: center;
+				cursor: pointer;
+				color: var(--color-text-secondary);
+			}
+			.more-tags div {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.5rem;
+				padding-top: 0.5rem;
+			}
+			.article-follow {
+				max-width: 64rem;
+			}
+			.related-posts {
+				border-top: 1px solid var(--color-border);
+				padding-top: 2rem;
+				margin-bottom: 3rem;
+			}
+			.related-posts h2 {
+				font-family: var(--font-display);
+				font-size: 1.75rem;
+			}
+			.related-posts ul {
+				list-style: none;
+				padding: 0;
+				display: grid;
+				grid-template-columns: repeat(3, minmax(0, 1fr));
+				gap: 2rem;
+			}
+			.related-posts a {
+				display: block;
+				color: var(--color-text-primary);
+			}
+			.related-posts h3 {
+				font-family: var(--font-display);
+				font-size: 1.375rem;
+			}
+			.related-posts p {
+				color: var(--color-text-secondary);
+				font-size: 1rem;
+				margin: 0.75rem 0 0;
+			}
+			@media (max-width: 768px) {
+				.related-posts ul {
+					grid-template-columns: 1fr;
+					gap: 1.5rem;
+				}
+				.editorial-deck {
+					font-size: 1.125rem;
+				}
 			}
 		</style>
 	</body>

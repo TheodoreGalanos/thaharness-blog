@@ -20,7 +20,14 @@ const hasSlot = Astro.slots.has('default');
 
 <figure class:list={['editorial-figure', className]}>
 	{isImportedImage ? (
-		<Image src={src} alt={alt} width={width ?? src.width} height={height ?? src.height} />
+		<Image
+			src={src}
+			alt={alt}
+			width={width ?? src.width}
+			height={height ?? src.height}
+			layout="constrained"
+			sizes="(min-width: 1000px) 960px, calc(100vw - 2.5rem)"
+		/>
 	) : (
 		<img src={src} alt={alt} width={width} height={height} loading="lazy" decoding="async" />
 	)}

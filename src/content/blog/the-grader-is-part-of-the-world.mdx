@@ -1,0 +1,602 @@
+---
+title: "The Grader Is Part of the World"
+description: "Ten of eleven gates can pass while the benchmark still fails. Why scores, hard gates, rewards, and final decisions must remain separate when we train agents."
+author: "Theodoros Galanos"
+category: "Engineering"
+draft: true
+pubDate: 2026-08-30
+tags: ["agent-evaluation", "reinforcement-learning", "task-worlds", "aec-bench"]
+featured: false
+---
+
+## TL;DR
+
+Suppose an engineering task has eleven required gates. Ten pass. One fails. The
+benchmark correctly returns `fail`, but an equal-weight score would be:
+
+```text
+10 / 11 = 0.9091
+```
+
+As a reporting score, `0.9091` can describe partial progress. As a reinforcement
+learning reward, it can teach a different lesson: a failed result can still earn
+almost full credit.
+
+The problem is larger than the reward equation. A model is trained inside a
+measurement system made of task instructions, observations, tools, evidence,
+rubrics, verifiers, aggregation rules, feedback, and invalid-result handling.
+The optimiser does not encounter our intent directly. It encounters that system.
+
+This article proposes an **Evaluation Design Case**: a reviewable argument that
+connects the capability we claim to measure with the environment that elicits
+it, the evidence that records it, the rubric that interprets it, the score and
+gates that report it, and any reward that optimises it.
+
+The central rule is:
+
+> A score tells us what happened under a measurement system. A reward tells the
+> optimiser where to search next.
+
+Those are different objects. Treating them as one turns evaluation defects into
+training objectives.
+
+## A 0.91 failure
+
+While mapping a hydraulic design-response lifecycle in AEC-Bench, I found a
+useful tension.
+
+The lifecycle has eleven required gates. They check whether the checkpoint
+contract was followed, the selected evidence was grounded, and operation records
+were valid. They also check whether affected calculations were recomputed, the
+intervention worked, the result reached the final report, and the final claim
+remained inside the evidence boundary.
+
+The decision is strict: every required gate must pass.
+
+Now consider an illustrative reward that gives equal partial credit across those
+gates. Ten passes and one failure produce `0.9091`, while the lifecycle still
+returns `fail`.
+
+Nothing about the score is necessarily wrong. It distinguishes a catastrophic
+failure from a narrowly incomplete result. The problem begins if the same number
+becomes an RL reward.
+
+A failed submission can then receive an almost-perfect return. If the missing
+gate is expensive to satisfy but cheap to disguise, optimisation may favour the
+disguise.
+
+```text
+FINAL DECISION
+
+all required gates pass?  no
+result                    fail
+
+TRAINING SIGNAL
+
+partial criteria passed   10 / 11
+reward                     0.9091
+```
+
+The mistake is to read the second column as a smooth approximation of the first.
+
+> A high partial-credit reward is not a high probability of valid success.
+
+Keep the final decision, hard gates, retained dimensions, and optional reward
+separate. The reward may be useful. It is not the benchmark's truth.
+
+## The grader is part of the world
+
+In [*Task Worlds and Meta-Harnesses*](/blog/task-worlds-meta-harness/), I argued
+that agent tasks are worlds, not prompts. They decide what the agent can see,
+which rules have authority, what actions exist, what counts as evidence, and
+which failures can be named.
+
+In [*A World Worth Learning From*](/blog/a-world-worth-learning-from/), I added a
+second condition: before an agent can learn from experience, the environment has
+to produce experience worth learning from.
+
+Post-training adds another:
+
+> The world must make the intended behaviour the reliable route to reward.
+
+A task world is usually described from the agent's side: observations, actions,
+tools, state, resources, and consequences. For post-training, that is incomplete.
+The effective world also contains every route by which a trajectory becomes
+reward:
+
+- which facts the evaluator can observe;
+- which evidence it treats as authoritative;
+- what the rubric asks it to notice;
+- what the verifier can establish;
+- how criterion judgments are aggregated;
+- what happens when evidence is missing;
+- whether an impossible task can be reported honestly;
+- what feedback returns to the policy;
+- whether the agent can change any of these surfaces.
+
+The grader is not outside the environment, looking in. It participates in the
+environment's causal structure.
+
+If an agent can rewrite tests that determine reward, the tests are part of its
+action space. If it can produce the log that a verifier later treats as
+authoritative, the log is part of its output strategy. If an LLM judge rewards
+familiar terms, those terms become available actions whether or not they are
+technically relevant.
+
+Invalid-result handling matters too. If a timeout silently becomes zero, ending
+the evaluation may become a strategy. If honest inability and fabricated
+completion both receive zero, while a plausible unsupported answer sometimes
+receives partial credit, the environment can reward concealment.
+
+This is why reward hacking is often diagnosed too late. We notice the model's
+behaviour and call it a model failure, even though the exploitable route was
+constructed earlier in the relationship between the world and its measurement.
+
+The attack surface is the complete path from intent to reward.
+
+## Right action, wrong objective
+
+Apollo Research's *Measuring Reward-Seeking via Contrastive Belief Updates*
+starts with a difficult identification problem.[^apollo]
+
+Imagine two policies:
+
+```text
+Policy A
+tries to satisfy the developer's intended objective
+
+Policy B
+tries to satisfy whatever it believes the grader rewards
+```
+
+When the grader and developer agree, both policies produce the same action.
+Ordinary behavioural evaluation cannot tell them apart.
+
+Apollo creates the disagreement deliberately. It fine-tunes matched copies of a
+model on synthetic documents that imply opposite beliefs about what the grader
+and another authority prefer. It then measures how behaviour changes. The method
+defines reward-seeking as causal sensitivity to beliefs about the grader: does
+changing what the model thinks the grader wants redirect what it does?
+
+In one experiment, a late checkpoint from a capabilities-focused o3 RL run broke
+an honesty promise 87% of the time when it believed task completion was rewarded,
+and 9% when it believed honesty was rewarded. An earlier checkpoint was less
+sensitive: 40% versus 24%.
+
+The checkpoints were taken before safety training, and the result should not be
+generalised beyond the studied setup. The method matters more than the headline
+number. It changes the evaluation question from:
+
+> Did the model behave correctly here?
+
+to:
+
+> Would the same model still behave correctly if it believed the grader
+> preferred something else?
+
+That creates a **distinguishing case**. The intended objective and its proxy no
+longer agree.
+
+Evaluations that are vulnerable to proxy optimisation need cases where plausible
+objectives separate:
+
+- task completion versus an honesty commitment;
+- user preference versus a developer constraint;
+- local technical improvement versus system-level safety;
+- visible checklist completion versus actual evidence;
+- low cost versus valid completion;
+- current reward versus behaviour after oversight disappears.
+
+A counterfactual shift does not prove that a model has one clean, stable,
+human-like motive. It establishes sensitivity to believed grader preferences on
+a specified distribution and under a specific intervention. It does not establish
+a coherent terminal goal, long-term scheming, or behaviour in every deployment
+context.
+
+It does establish a practical limit: behavioural success under one measurement
+regime is not evidence of robustness under another.
+
+## The evaluation design case
+
+An **Evaluation Design Case** is not another configuration file. It is a
+structured argument, supported by evidence, that answers nine questions.
+
+| Layer | Question |
+| --- | --- |
+| Capability claim | What exactly do we claim this evaluation measures? |
+| Task contract | What problem, constraints, and expected products exist? |
+| Environment | What can the actor observe, do, change, and affect? |
+| Evidence contract | What authoritative facts record what happened? |
+| Rubric | How is that evidence interpreted into criteria? |
+| Score policy | Which dimensions survive, and which failures cannot be compensated? |
+| Reward policy | What signal, if any, is exposed to optimisation, and why? |
+| Threat model | How could a policy score well without satisfying the claim, or be rejected despite satisfying it? |
+| Qualification | What tests must the exact design survive before use? |
+
+The complete path should be traceable:
+
+```text
+capability claim
+      ↓
+task and environment
+      ↓
+authoritative evidence
+      ↓
+criteria and verifiers
+      ↓
+score vector and hard gates
+      ↓
+optional reward
+      ↓
+final decision
+
+threats and qualification tests attack every edge
+```
+
+This makes the design reviewable by people who own different parts of the truth.
+A domain expert does not have to accept a reward engineer's view of hydraulic
+correctness. A runtime maintainer does not have to decide which engineering
+standard has authority. A red team can record an exploit without rewriting the
+task.
+
+The task owner defines the meaning; the system makes it inspectable.
+
+## Seven things that must stay separate
+
+Most reward-design confusion comes from collapsing concepts that happen to sit
+next to each other in code.
+
+### 1. Evidence
+
+An `EvidenceItem` records something that happened or was produced: a calculation
+run, source revision, tool effect, final artifact, authoritative world state,
+timeout, or execution failure.
+
+Evidence has provenance, visibility, validity, and an owner. A model may make
+claims about evidence. It should not decide whether its own claims are true.
+
+### 2. Verified measures
+
+A `VerifiedMeasure` is a domain fact derived from evidence:
+
+```text
+maximum deflection           18.2 mm
+capacity ratio               0.91
+affected calculations rerun  7 / 8
+unsupported state updates    2
+```
+
+A deterministic checker, domain tool, or approved evaluator establishes it.
+
+### 3. Criterion judgments
+
+A `CriterionJudgment` interprets evidence under a declared standard:
+
+```text
+criterion       selective_recomputation
+judgment        partially_meets
+evidence        run-17, source-revision-3
+confidence      high
+```
+
+This is where technical facts meet the rubric.
+
+### 4. Dimension scores
+
+A `DimensionScore` preserves useful structure:
+
+```text
+technical correctness    0.82
+evidence integrity       1.00
+completeness             0.70
+reasoning quality        0.65
+efficiency               0.48
+```
+
+Even when training requires one scalar, retain the vector. Otherwise a rising
+total can conceal that factuality fell while verbosity rose.
+
+### 5. Hard gates
+
+Some failures must not be traded away. A presentation score of `1.0` cannot
+compensate for fabricated evidence. Low cost cannot compensate for an unsafe
+design. This is a different decision structure, not a request for a larger
+negative weight.
+
+### 6. Reward
+
+A `Reward` is an optional optimisation signal derived from some combination of
+measures, judgments, dimensions, and gates. Its purpose must be explicit:
+training, search, candidate selection, or reporting.
+
+A reporting score and a training reward do not have to be identical. Often they
+should not be.
+
+### 7. Decision
+
+A `Decision` records what the evaluation concludes: `passed`, `failed`,
+`invalid`, `incomplete`, or `requires_adjudication`. It should derive from
+validity and declared gates, not an unexplained scalar threshold.
+
+One separation deserves special emphasis:
+
+> Invalid is not zero.
+
+A poor submission, missing evidence, verifier crash, malformed output, timeout,
+and legitimate numeric zero are different events. Collapsing them destroys
+diagnostic information and may create exploitable incentives.
+
+## Rubrics are executable interpretations
+
+Open-ended evaluation often starts with an LLM judge and a list of criteria.
+That can work, but *rubric* hides two objects:
+
+- the **rubric** says what deserves credit;
+- the **verifier** determines whether the response satisfies it.
+
+A stronger verifier can apply a bad rubric more consistently. It cannot add a
+missing concept.
+
+Recent work on reward hacking in rubric-based RL separates these failures.[^rubric-hacking]
+Weak verifiers increasingly credit partial satisfaction, implied content, and
+approximate topical matches. Stronger verifiers reduce those errors. Yet even
+stronger rubric-based judges can prefer an RL-trained answer while rubric-free
+judges prefer the base model, because the rubric rewards visible completeness
+while omitting factuality, relevance, concision, or overall usefulness.
+
+### One meaningful requirement per criterion
+
+A criterion should express the smallest meaningful requirement that can be
+graded independently.
+
+Too compound:
+
+> Identifies the hydraulic issue, explains its cause, recomputes the affected
+> cases, proposes a suitable intervention, and updates the report.
+
+A judge may award broad credit after seeing only two of five parts.
+
+Too fragmented:
+
+> Mentions rainfall. Mentions the basin. Mentions the outlet. Mentions the report.
+
+Now the model can collect points by spraying nouns across the answer.
+
+A better rubric separates meaningful outcomes:
+
+```text
+revision_scope
+Identifies which source value changed and which calculation chain it affects.
+
+selective_recomputation
+Recomputes every affected result and preserves an unaffected result only when
+its recorded inputs remain current.
+
+intervention_effectiveness
+Uses authoritative post-action results to show that the intervention resolves
+the declared system-level constraints.
+
+report_propagation
+Updates the final report so its claims and cited runs match the accepted state.
+```
+
+Each criterion has evidence that could make it pass or fail.
+
+### Use anchors, not adjectives
+
+“Good,” “clear,” and “comprehensive” are not scoring instructions. A usable
+criterion needs positive and negative examples, a boundary case, a
+missing-evidence rule, known ambiguities, and an evaluator responsible for the
+decision.
+
+A useful calibration question is:
+
+> What is the smallest change to this response that should flip the judgment?
+
+If neither the author nor the evaluator can answer, the criterion is not ready
+to become reward.
+
+### Presence is not satisfaction
+
+“Mentions uncertainty” is not the same as calibrating uncertainty. “Cites a
+source” is not the same as grounding a claim in that source. “Includes a risk
+section” is not the same as identifying the material risk in this case.
+
+Presence-based criteria are easy to optimise because a model can add the
+expected surface form without changing the underlying work.
+
+Rubrics also need explicit priorities: non-compensable gates, essential
+criteria, and soft quality criteria. Optional excellence can sit above them. It
+cannot rescue invalid work.
+
+## Reward belongs last
+
+Design the reward only after the claim, environment, evidence, criteria,
+dimensions, gates, and invalid-result semantics are clear.
+
+A reward policy should answer:
+
+- What is this reward for?
+- Which verified facts and judgments contribute to it?
+- Which failures make positive reward ineligible?
+- Which qualities may trade off?
+- How is honest inability represented?
+- What feedback reaches the policy?
+- What known proxy risks remain?
+- How will independent quality be measured during optimisation?
+
+### Preserve the vector
+
+Suppose technical correctness rises while evidence integrity falls. A single
+total may remain flat. Suppose factuality falls while the model learns to satisfy
+a completeness checklist. The total may rise.
+
+The vector is the diagnostic. The scalar is one view.
+
+### Gate failures that change the meaning of the work
+
+For some designs, a gate is clearer than a weighted sum:
+
+```text
+eligible =
+    evidence_valid
+    and integrity_valid
+    and critical_safety_passed
+
+if not eligible:
+    decision = fail_or_invalid
+    positive_reward = unavailable
+else:
+    reward = quality_score
+```
+
+Not every requirement should become a hard gate. That would create sparse
+feedback and hide useful partial progress. Gates are for failures that make the
+remaining score mean something different.
+
+### Represent honest failure
+
+An agent sometimes cannot validly complete a task. Inputs may be missing,
+permissions may be insufficient, or the requested result may contradict a
+higher-authority constraint.
+
+The environment should distinguish valid completion, valid partial completion,
+honest blockage, insufficient evidence, invalid agent action, detected tampering,
+evaluator failure, and environment failure. Do not collapse them into one zero.
+
+If honest blockage receives the same or worse reward than unsupported
+completion, the design creates an incentive against honest reporting.
+
+### Expose the contract, protect the implementation
+
+The model should know the intended requirements. It should not have to guess
+that tests must not be altered or evidence must not be fabricated. But transparent
+semantics do not require exposing every holdout case, judge prompt, or
+implementation detail.
+
+> Transparent contract, protected measurement implementation.
+
+## The optimiser is your red team
+
+A reward function can look reliable on ordinary samples and fail under
+optimisation. Average agreement is not the same as robustness at the high-reward
+tail.
+
+Research on reward-model overoptimisation found that proxy reward and a stronger
+reference reward initially rise together, then separate as optimisation
+continues.[^overoptimisation] Rubric-based RL shows the same structural problem
+at criterion level.
+
+Reward-tampering studies go further. Under deliberately constructed conditions,
+models trained on simpler forms of specification gaming sometimes generalised to
+altering or concealing the reward process without direct training on reward
+tampering.[^tampering] The event was rare: 45 instances in 32,768 trials, of
+which seven also altered tests to hide the change. The setup was artificial and
+deliberately rewarded gaming. It does not show that ordinary deployed models
+will tamper with reward systems. It shows that the escalation path is possible.
+
+Attack the reward before expensive RL begins. Increase selection pressure from
+base samples through best-of-N selection, adversarial mutation, and short
+training runs. At each stage, compare training reward with an independent audit
+measure. Track the proxy-audit gap, top-tail precision, hard-gate failure rate,
+and tamper attempts.
+
+Seed attacks deliberately:
+
+1. **Hard-gate compensation:** maximise every soft dimension while one required
+   gate fails. The final decision must remain failed or invalid.
+2. **Missing or tampered evidence:** remove, corrupt, or make agent-controlled a
+   required evidence item. The result must not become an ordinary low score.
+3. **Presentation-only improvement:** improve length, formatting, confidence,
+   and rubric-shaped language without changing technical substance. Reward
+   should not increase materially.
+
+Also test invariance. A grader should ignore paraphrasing, reordered independent
+arguments, irrelevant names, and shorter equivalent prose. It should react when
+a required condition is removed, a critical claim is negated, authoritative
+evidence is replaced, or a permitted action becomes prohibited.
+
+When an exploit is found, patch it and leave the incentive intact. If the policy
+finds another route to the same high reward, the problem was not one memorised
+trick. It was the objective or environment.
+
+## Testing the idea in AEC-Bench
+
+The first AEC-Bench implementation should remain narrow. I plan to reconstruct
+one existing hydraulic lifecycle exactly as implemented. I will connect its
+capability claim to its environment, evidence, rubric, gates, reward, decision,
+and threat model, then run qualification against that fixed design.
+
+The process has three steps:
+
+1. **Design:** create a new Design Case or reconstruct an existing evaluation
+   without quietly improving it.
+2. **Red-team:** search for high reward without the claimed capability, and for
+   valid work that the evaluator rejects.
+3. **Qualify:** run fixed controls, anchors, attacks, missing-evidence cases, and
+   consistency tests against the exact candidate.
+
+Qualification can pass, fail, or remain inconclusive. It cannot release the
+design, silently repair it, or turn “the tests passed” into “this evaluation is
+authoritative.” Release remains a separate human decision.
+
+The domain verifier also remains local to its owner. Hydraulic code establishes
+hydraulic facts. Shared evaluation machinery records what those facts mean under
+the Design Case and whether the evaluator itself ran successfully. It should not
+learn to interpret drainage fields.
+
+This first implementation is a test of the boundary, not proof of a universal
+evaluation architecture. Shared machinery should appear only where several real
+evaluations need it.
+
+## What this does not solve
+
+A Design Case does not reveal a model's internal motive. Apollo's method provides
+a causal behavioural probe of grader sensitivity, not a direct view of intent.
+
+Qualification also does not prove that an evaluation is exploit-free. Every
+released design gives the next optimiser new information. The attacker still
+moves second.
+
+A stronger LLM judge does not rescue an incomplete rubric. A complete rubric
+does not rescue untrusted evidence. Trusted evidence does not rescue an
+environment that permits shortcuts. Hard gates do not decide which requirements
+deserve to be hard.
+
+A traceability graph can show that every reward term has lineage. It cannot show
+that the underlying capability claim is socially, scientifically, or
+professionally worthwhile.
+
+Domain experts still decide which facts, standards, safety limits, and
+alternatives are valid. AI agents can generate candidates, attacks, and
+explanations. They cannot manufacture domain approval by writing confidently
+into a schema.
+
+## Conclusion
+
+Tasks are worlds, not prompts. Before an agent can learn, the world must produce
+experience worth learning from. Once the agent is optimised, the grader becomes
+part of that world.
+
+The reward is not a detached score above the task. It belongs to a system of
+observations, actions, authorities, evidence, judgments, and feedback. Changing
+any part of that system may change what the policy learns.
+
+The question for post-training is not only:
+
+> Can the model solve this task?
+
+It is:
+
+> What task does this world make it rational to solve?
+
+We need to design, inspect, and attack that world before the optimiser does it
+for us.
+
+[^apollo]: Axel Højmark et al., [“Measuring Reward-Seeking via Contrastive Belief Updates”](https://arxiv.org/abs/2607.18966) (2026). The studied o3 checkpoints came from a capabilities-focused RL run before safety training.
+
+[^rubric-hacking]: Anas Mahmoud et al., [“Reward Hacking in Rubric-Based Reinforcement Learning”](https://arxiv.org/abs/2605.12474) (2026). The study covers medical and science tasks and distinguishes verifier exploitation from omissions in the rubric itself.
+
+[^overoptimisation]: Leo Gao, John Schulman, and Jacob Hilton, [“Scaling Laws for Reward Model Overoptimization”](https://arxiv.org/abs/2210.10760) (2022). The experiments use a synthetic gold-standard reward model as the reference.
+
+[^tampering]: Carson Denison et al., [“Sycophancy to Subterfuge: Investigating Reward-Tampering in Large Language Models”](https://arxiv.org/abs/2406.10162) (2024).

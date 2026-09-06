@@ -1,0 +1,419 @@
+<!-- ABOUTME: Time-ordered evidence figure for one Prime ACP pump-world trajectory. -->
+<!-- ABOUTME: Separates causal progress, service delivery, and the host-only completion gate. -->
+---
+import type { PrimeWorldTrajectoryData } from '../../data/prime-world-trajectory';
+
+interface Props {
+	title?: string;
+	subtitle?: string;
+	data: PrimeWorldTrajectoryData;
+	caption?: string;
+}
+
+const { title, subtitle, data, caption } = Astro.props;
+
+const chartStart = 116;
+const chartEnd = 944;
+const chartWidth = chartEnd - chartStart;
+const xAt = (hour: number) => chartStart + (hour / data.maxHour) * chartWidth;
+const widthFor = (startHour: number, endHour: number) => xAt(endHour) - xAt(startHour);
+const tickOffset = (hour: number) => hour === 11 ? -8 : hour === 12 ? 8 : 0;
+const tickAnchor = (hour: number): 'start' | 'middle' | 'end' => {
+	if (hour === 0 || hour === 12) return 'start';
+	if (hour === data.maxHour || hour === 11) return 'end';
+	return 'middle';
+};
+
+const keyMoments = [
+	{ hour: 0, label: 'Start A verification', note: 'B clearance blocked' },
+	{ hour: 8, label: 'Evidence accepted', note: 'host review absent' },
+	{ hour: 11, label: 'Admin closure', note: 'restriction retained' },
+	{ hour: 12, label: 'A + C on duty', note: 'peak covered' },
+	{ hour: 20, label: 'C liability created', note: 'world consequence' },
+	{ hour: 24, label: 'Start B clearance', note: 'then host cutoff' },
+] as const;
+
+const statusLabels = {
+	applied: 'Applied',
+	rejected: 'Rejected',
+	world: 'World event',
+	cutoff: 'Host cutoff',
+} as const;
+---
+
+<figure class="pwt" id="prime-open-trajectory">
+	{title && (
+		<div class="pwt-title">
+			{title}
+			{subtitle && <span class="pwt-subtitle"> · {subtitle}</span>}
+		</div>
+	)}
+
+	<div class="pwt-verdicts" aria-label="Evaluation summary">
+		<div class="pwt-verdict pwt-verdict-recorded">
+			<span class="pwt-kicker">Recorded evaluation</span>
+			<strong><i>Fail</i> <code>complete_journey</code></strong>
+			<span>{data.metrics.completeJourneyPassedGates}/{data.metrics.completeJourneyGateCount} gates passed; only {data.metrics.failedGate} failed</span>
+		</div>
+		<div class="pwt-verdict pwt-verdict-bounded">
+			<span class="pwt-kicker">Same run, actor-owned scope</span>
+			<strong><i>Pass</i> <code>bounded_continuation</code></strong>
+			<span>Every gate available through Prime’s authorised interface passed</span>
+		</div>
+	</div>
+
+	<div class="pwt-statline" aria-label="Run measures">
+		<span><strong>{data.metrics.appliedTransitions}</strong> applied</span>
+		<span><strong>{data.metrics.rejectedActions}</strong> valid rejections</span>
+		<span><strong>{data.metrics.replayedTransitions}/{data.metrics.appliedTransitions}</strong> transitions replayed</span>
+		<span><strong>100%</strong> required service delivered</span>
+	</div>
+
+	<div class="pwt-scroll-note" aria-hidden="true">world time · scroll →</div>
+	<div class="pwt-scroll">
+		<svg
+			class="pwt-chart"
+			viewBox="0 0 1000 448"
+			role="img"
+			aria-labelledby="pwt-svg-title pwt-svg-desc"
+		>
+			<title id="pwt-svg-title">Prime ACP actions across 24 hours of pump-station world time</title>
+			<desc id="pwt-svg-desc">Prime started Pump A verification, preserved service through a two-pump demand peak, observed a new Pump C liability, and started Pump B clearance. Three invalid actions were rejected without changing the world. The complete-journey score failed because the separate host Operations review never occurred.</desc>
+
+			<text class="pwt-row-label" x="20" y="112">WORLD</text>
+			<text class="pwt-row-label" x="20" y="253">WORK</text>
+			<text class="pwt-row-label" x="20" y="350">SERVICE</text>
+
+			{data.timeTicks.map((tick) => (
+				<g>
+					<line class="pwt-grid" x1={xAt(tick.hour)} x2={xAt(tick.hour)} y1="54" y2="400" />
+					<text
+						class="pwt-time"
+						x={xAt(tick.hour) + tickOffset(tick.hour)}
+						y="427"
+						text-anchor={tickAnchor(tick.hour)}
+					>{tick.label}</text>
+				</g>
+			))}
+
+			<line class="pwt-axis" x1={chartStart} x2={chartEnd} y1="145" y2="145" />
+			{keyMoments.map((moment, index) => (
+				<g>
+					<circle
+						class:list={['pwt-moment', index === 1 || index === 4 ? 'pwt-moment-world' : '']}
+						cx={xAt(moment.hour)}
+						cy="145"
+						r="6"
+					/>
+					<text
+						class="pwt-moment-label"
+						x={xAt(moment.hour)}
+						y={index % 2 === 0 ? 83 : 176}
+						text-anchor={moment.hour === 0 ? 'start' : moment.hour === data.maxHour ? 'end' : 'middle'}
+					>
+						<tspan x={xAt(moment.hour)} dy="0">{moment.label}</tspan>
+						<tspan class="pwt-moment-note" x={xAt(moment.hour)} dy="17">{moment.note}</tspan>
+					</text>
+				</g>
+			))}
+
+			<rect
+				class="pwt-work"
+				x={xAt(0)}
+				y="230"
+				width={widthFor(0, 8)}
+				height="34"
+				rx="2"
+			/>
+			<text class="pwt-work-label" x={xAt(0) + 12} y="252">Pump A verification</text>
+			<line class="pwt-review-missing" x1={xAt(8)} x2={xAt(8)} y1="214" y2="282" />
+			<text class="pwt-review-label" x={xAt(8) + 10} y="217">Operations review</text>
+			<text class="pwt-review-label pwt-review-label-strong" x={xAt(8) + 10} y="234">host-only · absent</text>
+			<path class="pwt-work-start" d={`M ${xAt(24) - 9} 247 L ${xAt(24)} 247 M ${xAt(24) - 4} 241 L ${xAt(24)} 247 L ${xAt(24) - 4} 253`} />
+			<text class="pwt-work-label" x={xAt(24) - 10} y="273" text-anchor="end">Pump B clearance starts</text>
+
+			{data.serviceWindows.map((window) => (
+				<g>
+					<rect
+						class="pwt-service"
+						x={xAt(window.startHour)}
+						y="326"
+						width={widthFor(window.startHour, window.endHour)}
+						height="50"
+					/>
+					<text
+						class="pwt-service-label"
+						x={xAt(window.startHour) + widthFor(window.startHour, window.endHour) / 2}
+						y="356"
+						text-anchor="middle"
+					>{window.servedScu}/{window.requiredScu} SCU</text>
+				</g>
+			))}
+			<text class="pwt-service-total" x={chartEnd} y="398" text-anchor="end">
+				{data.metrics.servedCapacitySeconds.toLocaleString('en-US')} / {data.metrics.requiredCapacitySeconds.toLocaleString('en-US')} capacity-seconds served
+			</text>
+			<line class="pwt-cutoff" x1={chartEnd} x2={chartEnd} y1="44" y2="404" />
+			<text class="pwt-cutoff-label" x={chartEnd - 8} y="39" text-anchor="end">600 s host cutoff</text>
+		</svg>
+	</div>
+
+	<div class="pwt-legend" aria-hidden="true">
+		<span><i class="pwt-key pwt-key-applied"></i>applied</span>
+		<span><i class="pwt-key pwt-key-rejected">×</i>rejected without state change</span>
+		<span><i class="pwt-key pwt-key-world"></i>world consequence</span>
+	</div>
+
+	<ol class="pwt-events" aria-label="Detailed trajectory">
+		{data.events.map((event) => (
+			<li class={`pwt-event pwt-event-${event.status}`}>
+				<div class="pwt-event-meta">
+					<time>{event.time}</time>
+					<span>{statusLabels[event.status]}</span>
+				</div>
+				<strong>{event.label}</strong>
+				<p>{event.detail}</p>
+			</li>
+		))}
+	</ol>
+
+	{caption && <figcaption class="pwt-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+	.pwt {
+		--pwt-good: var(--color-accent-secondary);
+		--pwt-warn: var(--color-accent);
+		--pwt-fail: #bf4d43;
+		margin: 3rem 0;
+		color: var(--color-text-primary);
+	}
+
+	.pwt-title {
+		margin: 0 0 0.85rem;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+	}
+
+	.pwt-subtitle {
+		font-weight: 400;
+		color: var(--color-text-tertiary);
+	}
+
+	.pwt-verdicts {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		border: 1px solid var(--color-border);
+		background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+	}
+
+	.pwt-verdict {
+		display: flex;
+		flex-direction: column;
+		gap: 0.45rem;
+		padding: 1rem 1.1rem;
+	}
+
+	.pwt-verdict + .pwt-verdict {
+		border-left: 1px solid var(--color-border);
+	}
+
+	.pwt-kicker,
+	.pwt-verdict > span:last-child,
+	.pwt-statline,
+	.pwt-legend,
+	.pwt-event-meta,
+	.pwt-caption {
+		font-family: var(--font-mono);
+	}
+
+	.pwt-kicker {
+		font-size: 0.625rem;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.pwt-verdict strong {
+		font-family: var(--font-mono);
+		font-size: 0.95rem;
+		font-weight: 500;
+	}
+
+	.pwt-verdict strong code {
+		padding: 0;
+		font: inherit;
+		color: inherit;
+		background: transparent;
+	}
+
+	.pwt-verdict strong i {
+		display: inline-block;
+		margin-right: 0.45rem;
+		font-size: 0.67rem;
+		font-style: normal;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.pwt-verdict-recorded strong i { color: var(--pwt-fail); }
+	.pwt-verdict-bounded strong i { color: var(--pwt-good); }
+
+	.pwt-verdict > span:last-child {
+		font-size: 0.72rem;
+		line-height: 1.55;
+		color: var(--color-text-secondary);
+	}
+
+	.pwt-statline {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.45rem 1.35rem;
+		padding: 0.75rem 1rem;
+		border: 1px solid var(--color-border);
+		border-top: 0;
+		font-size: 0.68rem;
+		color: var(--color-text-tertiary);
+	}
+
+	.pwt-statline strong {
+		font-weight: 600;
+		color: var(--color-text-primary);
+	}
+
+	.pwt-scroll {
+		overflow-x: auto;
+		margin-top: 1.35rem;
+		border-top: 1px solid var(--color-border);
+		border-bottom: 1px solid var(--color-border);
+		background:
+			linear-gradient(var(--color-bg-grid) 1px, transparent 1px),
+			linear-gradient(90deg, var(--color-bg-grid) 1px, transparent 1px);
+		background-size: 24px 24px;
+	}
+
+	.pwt-scroll-note {
+		display: none;
+		margin-top: 1rem;
+		font-family: var(--font-mono);
+		font-size: 0.62rem;
+		letter-spacing: 0.08em;
+		text-align: right;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.pwt-chart {
+		display: block;
+		width: 100%;
+		min-width: 820px;
+		height: auto;
+	}
+
+	.pwt-chart text { font-family: var(--font-mono); }
+	.pwt-row-label { fill: var(--color-text-tertiary); font-size: 11px; letter-spacing: 0.12em; }
+	.pwt-grid { stroke: var(--color-border); stroke-width: 1; stroke-dasharray: 2 5; }
+	.pwt-axis { stroke: var(--color-text-tertiary); stroke-width: 1; }
+	.pwt-time { fill: var(--color-text-tertiary); font-size: 11px; }
+	.pwt-moment { fill: var(--pwt-good); stroke: var(--color-bg); stroke-width: 3; }
+	.pwt-moment-world { fill: var(--pwt-warn); }
+	.pwt-moment-label { fill: var(--color-text-primary); font-size: 11px; font-weight: 500; }
+	.pwt-moment-note { fill: var(--color-text-tertiary); font-size: 10px; font-weight: 400; }
+	.pwt-work { fill: color-mix(in srgb, var(--pwt-good) 34%, var(--color-surface)); stroke: var(--pwt-good); }
+	.pwt-work-label { fill: var(--color-text-primary); font-size: 11px; }
+	.pwt-review-missing { stroke: var(--pwt-fail); stroke-width: 2; stroke-dasharray: 4 4; }
+	.pwt-review-label { fill: var(--color-text-tertiary); font-size: 9px; }
+	.pwt-review-label-strong { fill: var(--pwt-fail); }
+	.pwt-work-start { fill: none; stroke: var(--pwt-good); stroke-width: 2; }
+	.pwt-service { fill: color-mix(in srgb, var(--pwt-good) 18%, var(--color-surface)); stroke: var(--pwt-good); stroke-width: 1; }
+	.pwt-service-label { fill: var(--color-text-primary); font-size: 12px; font-weight: 600; }
+	.pwt-service-total { fill: var(--pwt-good); font-size: 10px; }
+	.pwt-cutoff { stroke: var(--pwt-fail); stroke-width: 1.5; stroke-dasharray: 5 4; }
+	.pwt-cutoff-label { fill: var(--pwt-fail); font-size: 10px; }
+
+	.pwt-legend {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem 1.1rem;
+		margin: 0.8rem 0 1.2rem;
+		font-size: 0.67rem;
+		color: var(--color-text-tertiary);
+	}
+
+	.pwt-legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+	.pwt-key { display: inline-grid; place-items: center; width: 0.55rem; height: 0.55rem; border-radius: 50%; }
+	.pwt-key-applied { background: var(--pwt-good); }
+	.pwt-key-world { background: var(--pwt-warn); }
+	.pwt-key-rejected { border-radius: 0; color: var(--pwt-fail); font-size: 0.85rem; font-style: normal; }
+
+	.pwt-events {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0;
+		margin: 0;
+		padding: 0;
+		border-top: 1px solid var(--color-border);
+		list-style: none;
+	}
+
+	.pwt-event {
+		padding: 0.9rem 1rem 1rem;
+		border-right: 1px solid var(--color-border);
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.pwt-event:nth-child(even) { border-right: 0; }
+	.pwt-event:last-child { grid-column: 1 / -1; border-right: 0; }
+
+	.pwt-event-meta {
+		display: flex;
+		justify-content: space-between;
+		gap: 1rem;
+		margin-bottom: 0.3rem;
+		font-size: 0.62rem;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.pwt-event-applied .pwt-event-meta span { color: var(--pwt-good); }
+	.pwt-event-world .pwt-event-meta span { color: var(--pwt-warn); }
+	.pwt-event-rejected .pwt-event-meta span,
+	.pwt-event-cutoff .pwt-event-meta span { color: var(--pwt-fail); }
+
+	.pwt-event strong {
+		display: block;
+		font-family: var(--font-mono);
+		font-size: 0.78rem;
+		font-weight: 500;
+		line-height: 1.45;
+	}
+
+	.pwt-event p {
+		margin: 0.35rem 0 0;
+		font-size: 0.88rem;
+		line-height: 1.5;
+		color: var(--color-text-secondary);
+	}
+
+	.pwt-caption {
+		margin: 1rem 0 0;
+		padding-top: 0.8rem;
+		border-top: 1px solid var(--color-border);
+		font-size: 0.75rem;
+		line-height: 1.6;
+		color: var(--color-text-tertiary);
+	}
+
+	@media (max-width: 700px) {
+		.pwt-verdicts,
+		.pwt-events { grid-template-columns: 1fr; }
+		.pwt-verdict + .pwt-verdict { border-left: 0; border-top: 1px solid var(--color-border); }
+		.pwt-event { border-right: 0; }
+		.pwt-scroll-note { display: block; }
+		.pwt-scroll { margin-top: 0.35rem; }
+	}
+</style>

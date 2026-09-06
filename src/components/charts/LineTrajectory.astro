@@ -306,12 +306,20 @@ void panelPointCount;
 			</div>
 		</aside>
 
-		<div class="lt-chart" set:html={svg}></div>
+		<span class="lt-scroll-hint">Swipe for full chart <span aria-hidden="true">→</span></span>
+		<div
+			class="lt-chart"
+			role="region"
+			tabindex="0"
+			aria-label={`${title ?? 'Line trajectory'} chart. Scroll horizontally for full detail.`}
+			set:html={svg}
+		></div>
 	</div>
 
 	{caption && <figcaption class="lt-caption">{caption}</figcaption>}
 
 	<script
+		is:inline
 		type="application/json"
 		data-lt-series
 		set:html={JSON.stringify(
@@ -324,11 +332,13 @@ void panelPointCount;
 		)}
 	/>
 	<script
+		is:inline
 		type="application/json"
 		data-lt-points
 		set:html={JSON.stringify(hoverPoints)}
 	/>
 	<script
+		is:inline
 		type="application/json"
 		data-lt-baseline
 		set:html={JSON.stringify(baseline ?? null)}
@@ -426,6 +436,10 @@ void panelPointCount;
 		position: relative;
 	}
 
+	.lt-scroll-hint {
+		display: none;
+	}
+
 	.lt-chart {
 		width: 100%;
 		overflow: visible;
@@ -487,6 +501,33 @@ void panelPointCount;
 	/* Bump stroke-width on the highlighted line for extra pop. */
 	.lt-chart :global(path.is-series-highlight) {
 		stroke-width: 3;
+	}
+
+	@media (max-width: 600px) {
+		.lt-legend-pill {
+			min-height: 2.75rem;
+		}
+
+		.lt-chart {
+			overflow-x: auto;
+			overscroll-behavior-inline: contain;
+			-webkit-overflow-scrolling: touch;
+			padding-bottom: 0.5rem;
+		}
+
+		.lt-scroll-hint {
+			display: block;
+			margin-bottom: 0.5rem;
+			font-family: var(--font-mono);
+			font-size: 0.625rem;
+			letter-spacing: 0.06em;
+			color: var(--color-accent-secondary);
+		}
+
+		.lt-chart :global(svg) {
+			width: 34rem;
+			max-width: none;
+		}
 	}
 
 		.lt-caption {
@@ -579,12 +620,12 @@ void panelPointCount;
 				});
 			}
 
-			function reset() {
+			const reset = () => {
 				panel.reset();
 				dots.forEach((d) => d.classList.remove('is-active'));
 				markers.forEach((m) => m.classList.remove('is-active'));
 				highlightSeries(null);
-			}
+			};
 
 			dots.forEach((dot, i) => {
 				const show = () => {

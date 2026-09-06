@@ -1,19 +1,12 @@
 ---
 title: "The Third Axis"
 description: "What happens when you let the harness improve itself — two experiments in feedback-driven harness evolution, and an honest look at how rough the trajectory actually is."
+seoTitle: "Improving Agent Harnesses Through Feedback | The Third Axis"
 author: "Theodoros Galanos"
 category: "Engineering"
 draft: false
 pubDate: 2026-04-18
-tags:
-  [
-    "harness-engineering",
-    "agentic-ai",
-    "self-improvement",
-    "autoresearch",
-    "harness-design",
-    "ai-agents",
-  ]
+tags: ["harness-engineering", "autoresearch", "agentic-ai"]
 ---
 
 import AdvisorHeatmap from '../../components/charts/AdvisorHeatmap.astro';
@@ -28,8 +21,6 @@ import {
   experiment2TrajectoryData,
   frontierDotData,
 } from '../../data/third-axis-charts';
-
-Estimated reading time: 14 minutes
 
 ## Three Ways to Make an Agent Better
 
@@ -65,7 +56,9 @@ Three questions have to be answered before the loop produces anything other than
 
 A failing reward score tells you the answer was wrong. It doesn't tell you *why*. Was the model missing a fact? Did it call the wrong tool? Did it spin on the problem without committing? Did it charge forward without checking its own work?
 
-Every assistant turn in a trajectory is labelled with one of four behaviours — what I call [*bonds*](https://arxiv.org/abs/2601.06002), following the agent-behaviour taxonomies literature. **Execution**: the obvious forward motion — tool calls, code runs, formatting an answer. **Verification**: looking backward at your own work, comparing output to expectations, catching errors. **Deliberation**: committed multi-step reasoning along a single path. e**X**ploration: branching, considering alternatives, hedging, forming hypotheses. The classifier is itself an LLM, prompted with definitions, indicators, and tie-break rules — verification wins over exploration wins over deliberation wins over execution, because the quieter behaviours are the easier ones to under-count.
+Every assistant turn in a trajectory is labelled with one of four behaviours — what I call [*bonds*](https://arxiv.org/abs/2601.06002), following the agent-behaviour taxonomies literature. **Execution**: the obvious forward motion — tool calls, code runs, formatting an answer. **Verification**: looking backward at your own work, comparing output to expectations, catching errors. **Deliberation**: committed multi-step reasoning along a single path. e**X**ploration: branching, considering alternatives, hedging, forming hypotheses.
+
+The classifier is itself an LLM, prompted with definitions, indicators, and tie-break rules — verification wins over exploration wins over deliberation wins over execution, because the quieter behaviours are the easier ones to under-count.
 
 From the labelled sequence I build a transition matrix: the probability of going from Exploration to Deliberation, from Execution to Verification, and so on. Aggregate the matrices across many high-reward trials and you get an *ideal pattern* — the shape of thinking that tends to succeed. Compare a new run's matrix to the ideal and you get a structural score: not "did this answer land" but "did this agent think in a shape that usually lands."
 
@@ -168,7 +161,7 @@ That's a +15 point autonomous gain, a 30-point swing within a two-cycle window, 
 
 ## Experiment 2 — The Habit Ceiling
 
-If prompts-and-skills evolution can close a 15-point gap on Haiku, the next question is whether it can unstick a weaker executor given a stronger lever: a sub-inference tool the agent can call when it hits a wall. Anthropic's playbook for their [advisor tool](https://platform.claude.com/docs/en/agents-and-tools/tool-use/advisor-tool) is clean — call at the start, call before declaring done, call when stuck. Does evolution discover that pattern on its own? And does advisor access let GPT-4.1-mini close the gap to Haiku?
+If prompts-and-skills evolution can close a 15-point gap on Haiku, the next question is whether it can unstick a weaker executor given a stronger lever. Here, that lever is a sub-inference tool the agent can call when it hits a wall. Anthropic's playbook for their [advisor tool](https://platform.claude.com/docs/en/agents-and-tools/tool-use/advisor-tool) is clean — call at the start, call before declaring done, call when stuck. Does evolution discover that pattern on its own? And does advisor access let GPT-4.1-mini close the gap to Haiku?
 
 **Setup.** Six arms, crossing executor (Haiku 4.5 via Bedrock / GPT-4.1-mini via Azure) with prompt strength (a one-line system prompt, a 400-character "call when stuck" hint, and Anthropic's verbatim 2,300-character recommended advisor-timing block). Three seeds per arm on the main four; two N=1 anchors on the stock-prompt arms. Same ten voltage-drop instances per seed. Advisor backed by Sonnet 4.6, max five calls per trial. Evolution runs for up to ten cycles, stopping early on stagnation.
 
@@ -215,7 +208,7 @@ Anthropic's verbatim prompt — the system prompt for this exact trial — says:
 
 One negative control makes this feel structural rather than stochastic. **Arm 6 and arm 7 are the same Haiku executor, on the same task, under the same evolver. The only variable is advisor-guidance prompt length** — 400 characters vs Anthropic's 2,300. The final reward: 0.93 ± 0.06 vs 0.93 ± 0.06. Neither better nor worse. The strongest available prompt is not a lever on this task for this model.
 
-**Evolution did try.** In arm 4 cycle 8 the evolver proposed rewriting the prompt and adding a `read-before-act` skill plus a `cable-sizing` skill — the score jumped from 0.20 to 0.60, then regressed over the following cycles. In arm 5 seed 42 cycle 2, a proposed mutation went the other direction: batch reward 0.00. An independent instance of the peak-walkoff I saw at cycle 7 of Experiment 1, on a different executor, a different seed, a different mutation target. The search behaves the same.
+**Evolution did try.** In arm 4 cycle 8, the evolver proposed rewriting the prompt and adding a `read-before-act` skill plus a `cable-sizing` skill. The score jumped from 0.20 to 0.60, then regressed over the following cycles. In arm 5 seed 42 cycle 2, a proposed mutation went the other direction: batch reward 0.00. An independent instance of the peak-walkoff I saw at cycle 7 of Experiment 1, on a different executor, a different seed, a different mutation target. The search behaves the same.
 
 One small positive signal at the other end of the distribution. On cycle 10 of arm 6, advisor calls jumped to 0.20 per trial — the evolver had finally surfaced the advisor tool through a prompt mutation, on a Haiku run that was already near-perfect. Evolution *can* teach advisor-calling. Just not reliably, and not to the executor that needed it.
 
