@@ -1,0 +1,347 @@
+---
+title: "The Packet Starts Moving"
+description: "How aec-bench moved from static engineering reviews to persistent evidence lifecycles—and why continual-learning-shaped environments must come before continual learners."
+author: "Theodoros Galanos"
+category: "Engineering"
+draft: true
+pubDate: 2026-07-11
+updatedDate: 2026-07-13
+tags: ["harness-engineering", "agent-evaluation", "aec-bench", "task-worlds", "reinforcement-learning", "continual-learning", "ai-in-aec"]
+featured: false
+---
+
+Estimated reading time: 17 minutes
+
+## TL;DR
+
+Richard Sutton's sharpest challenge to current language models is not that they are useless. It is that almost none of their normal interaction with the world becomes learning. A deployed model acts, observes what follows, and remains the same. In [his conversation with Dwarkesh Patel](https://www.dwarkesh.com/p/richard-sutton), Sutton argues that intelligence should learn from an ongoing stream of action, sensation, and consequence. In [Dwarkesh's follow-up reflection](https://www.dwarkesh.com/p/thoughts-on-sutton), he makes the complementary case: imitation may still provide the cultural and technical prior from which experiential learning begins.
+
+That architectural argument remains open. Building a benchmark exposed a more immediate question: what would an interaction look like if it were designed from the perspective of an agent that remains in the world?
+
+That question changed our work on long-horizon tasks in aec-bench. A static review packet became a staged evidence lifecycle. The lifecycle acquired semantic measures for acquisition, retention, precise revision, and interference; controlled public variants; a provenance-bound calibration runner; and a typed boundary between environment execution and task-owned judgment.
+
+Then the packet began to push back. The model could request bounded evidence. A deterministic hydraulic world could answer with flows, storage, and water levels. A source revision could invalidate one calculation chain while leaving another current. A sealed provider boundary could hold back a structurally different target. Finally, one preregistered public campaign could select a condition before that target was touched.
+
+Two real-model pilots tested the complete path. The first exposed an ambiguity in our submission contract after completing the intended engineering work. The repaired contract then supported one persistent model session through all three checkpoints and all eleven verifier gates.
+
+The evidence state now changes while the model weights remain fixed. This is not continual learning. It is an executable interaction substrate for studying adaptation with fixed models today, ordinary RL post-training next, and more persistent learners later.
+
+## Sutton, Dwarkesh, And The Missing World
+
+Sutton's [Bitter Lesson](https://www.incompleteideas.net/IncIdeas/BitterLesson.html) is often summarized as an argument for more compute. His point is more demanding: methods should use computation in ways that keep scaling, especially through search and learning, rather than depending on human knowledge engineered into the system.
+
+In the podcast, he pushes that argument into deployment. A world model should say something about what happens after an action. A learner should be able to test that prediction against experience and change. Predicting what a person might say is different from discovering how a world responds to what you do.
+
+Dwarkesh's reply is that these routes need not be rivals. Pretraining can supply a powerful prior over language, culture, technical knowledge, and plausible action. Experiential learning can begin from that prior instead of rebuilding civilization from random initialization.
+
+For benchmark design, both views create the same obligation. If we want agents to learn from experience, we first need environments that produce experience worth learning from. A static prompt and a final scalar score are thin raw material. They hide when a belief formed, which evidence changed it, whether an unaffected belief survived, and what the agent's action caused.
+
+Engineering makes this especially interesting because its world answers in several languages:
+
+- A physical system answers through flows, loads, temperatures, failures, and solver outputs.
+- An evidence system answers through measurements, reports, missing artifacts, and revised calculations.
+- An institutional system answers through document status, authority, approval, rejection, and which revision governs.
+
+The first SSC-03 lifecycle modelled the evidence and institutional systems much more strongly than the physical one. That intermediate step was useful: continuity came before consequence. The later hydraulic lifecycle now gives the physical system a small, deterministic voice as well. It remains a synthetic screening world, not an open-ended project or an authority-approved solver.
+
+We are constructing continual-learning-shaped interactions before we have continual learners.
+
+## The Review Record Was Only The Beginning
+
+[Fluent, But Unsafe](/blog/fluent-but-unsafe/) is the postmortem for the first part of this work: how a coverage campaign manufactured perfect scores, how redesigned review tasks leaked their hidden defects, and how variant-blindness and contract-versus-model triage finally produced honest measurements.
+
+Those review tasks still shared one convenience.
+
+They cheated time.
+
+A packet could contain stale and current revisions, open comments, contradictory registers, and calculations derived from the wrong source. But the agent saw all of it at once. It reconstructed what had happened retrospectively, wrote one review record, and stopped.
+
+That remains a useful evaluation. It can test whether the agent identifies the governing source, handles missing data honestly, localizes defects, and makes a readiness decision consistent with its own evidence.
+
+The missing test begins after the agent commits.
+
+The review record gave the task something it had previously lacked: state. A finding had an identity. An evidence request recorded what closure would require. An accepted decision had a basis. Readiness was derived from the cumulative record rather than generated as a free-floating final sentence.
+
+A state becomes long-running when later evidence can test it.
+
+## A Longer Packet Is Still A Static World
+
+The tempting fix was to add more documents. Put the original package, the response, the revised report, and the closeout memo into one larger prompt. Ask the agent to reconstruct the sequence.
+
+That would make the task larger. It would not make the interaction longer.
+
+Putting every revision in the initial context gives the agent hindsight disguised as horizon. It never has to decide what governs before seeing the correction. It never has to preserve an earlier decision that remains valid. It can rewrite the whole history around the latest evidence and still produce a plausible final record.
+
+Real review work is less accommodating. A reviewer raises a finding against one issue, asks for specific evidence, receives a response package, checks what changed, and decides whether the response closes the finding. Some decisions survive untouched. Others are superseded because the reviewed object changed. The final issue decision is defensible only if that history remains coherent.
+
+So the packet had to arrive in stages:
+
+```text
+initial review
+  -> finding and evidence request
+  -> revised manifest, rerun, and report arrive
+  -> response review
+  -> revised design memo and formal response arrive
+  -> closeout review
+```
+
+The important move is commitment before disclosure. The agent submits its current review state before later evidence exists in its visible workspace.
+
+The horizon is the obligation that survives the next release.
+
+## SSC-03: One Review, Three Releases
+
+The [first evidence lifecycle](https://github.com/TheodoreGalanos/aec-bench/pull/10) uses the SSC-03 drainage model-run provenance task.
+
+The engineering question is mundane in the way dangerous questions often are: which hydraulic model run actually governs the design claim?
+
+The initial package contains a provenance break. The registered model evidence does not trace cleanly to the governing inputs, so the agent has to distinguish between a report that exists and a run that can legitimately govern. It records the review matrix, opens the necessary finding, states what evidence would be required for closure, and commits the package readiness state.
+
+Only then does the response evidence appear. A revised manifest, rerun identity, and reissued hydraulic report address the upstream provenance problem. But the downstream design memo has not yet propagated the replacement result. One part of the review can close while another remains unresolved.
+
+The final release contains the revised design memo and formal response. The agent must decide whether the cumulative evidence now supports closeout and issue readiness.
+
+The task has to preserve a set of engineering obligations:
+
+- keep finding and evidence-request identities stable;
+- close a finding only when its recorded evidence requirement is satisfied;
+- preserve accepted decisions whose reviewed object has not changed;
+- supersede only the decisions invalidated by replacement evidence;
+- keep readiness consistent with the cumulative record.
+
+A fluent rewrite of the latest packet is insufficient. The history itself is part of the answer.
+
+## Two Ways To Carry A History
+
+The lifecycle supports two baseline execution modes and four visibility conditions.
+
+The fresh-context path calls a new model context at every checkpoint while keeping one persistent workspace. Earlier submissions can remain visible as artifact memory, or the host can hide them while exposing cumulative raw evidence or only the current release. These conditions ask whether continuity comes from the conversation, the written record, or repeated access to evidence.
+
+The persistent path keeps one model conversation alive across all three checkpoints. The agent begins with only the initial release. After writing its checkpoint submission, it calls a harness-owned `submit_checkpoint` tool. The harness archives the submission, releases the next packet, and returns the new instruction to the same conversation.
+
+Later files do not exist in the visible workspace before that transition.
+
+| Condition | What carries the history | What it tests |
+| --- | --- | --- |
+| Persistent context | One conversation plus durable artifacts | In-context adaptation across staged evidence |
+| Artifact memory | Fresh context plus prior immutable submissions | Whether the written state supports handoff reconstruction |
+| Raw evidence only | Fresh context plus cumulative released evidence | Whether continuity can be rebuilt without prior conclusions |
+| Current release only | Fresh context plus the active release | The cost of removing both conversational and artifact memory |
+| Continual learner | A changing policy carried across interactions | A later research condition, not the current runtime |
+
+Calling the fresh-context mode "three agents" would be misleading. It is three model contexts reconstructing one history. The persistent mode also keeps the policy fixed; conversation memory is not weight-level learning.
+
+This is one task world and one task run. The world identity and review contract remain fixed while visible evidence changes.
+
+## The First Trace Was A Contract Test
+
+An early local Sonnet probe completed all three checkpoints in one conversation. That result mattered less as a model score than as a test of whether the lifecycle could distinguish unfair grading from useful failure.
+
+Its first verifier pass exposed two contract defects. The output contract was unclear about citation shape, and the verifier used one identifier vocabulary where the source package used another. Fixing those problems changed the grading without changing what a competent reviewer had to figure out.
+
+After that pass, the trace still contained behavioral failures. The model lost part of the closure-evidence lineage and superseded decisions whose engineering basis had not changed.
+
+One probe says nothing general about model capability. It did prove that the environment could now name two very different classes of failure.
+
+A malformed citation should fail locally instead of crashing the run. Equivalent source identifiers need a declared contract. Those are harness defects. Closing a finding without all the evidence it requested, or rewriting unaffected decisions after every revision, is model evidence.
+
+Review-first tasks made the audit trail visible. Evidence lifecycles make the agent responsible for maintaining it over time.
+
+## Building The Adaptation Microscope
+
+The first lifecycle made temporal failure observable. It did not make one successful or failed trace scientifically interpretable. The next implementation steps each removed a different ambiguity.
+
+First came [semantic transition metrics](https://github.com/TheodoreGalanos/aec-bench/pull/11). The scorer projects each cumulative submission into stable semantic atoms: review-matrix states, run and report authority, readiness, finding identity, evidence requests, and accepted-decision lineage. It can then separate:
+
+- initial accuracy;
+- acquisition of a newly supported state;
+- precision and recall of revision;
+- retention of state that should remain unchanged;
+- interference, where new evidence damages an earlier correct decision.
+
+These are diagnostics, not a replacement reward. A task can still pass or fail according to its engineering verifier while the metrics explain how its state changed.
+
+Next came [four controlled public variants](https://github.com/TheodoreGalanos/aec-bench/pull/12):
+
+| Variant | Environmental pressure |
+| --- | --- |
+| Full correction | Acquire the corrected provenance chain and close it correctly |
+| Semantic no-op | Retain engineering state when irrelevant administrative evidence arrives |
+| Assertion without artifacts | Refuse to treat an unsupported correction claim as closure evidence |
+| Missing closeout memo | Preserve the unresolved state when the required downstream artifact never arrives |
+
+The variants are public calibration cases. They reveal the choreography; private holdouts must remain structurally separate.
+
+Then the [calibration runner](https://github.com/TheodoreGalanos/aec-bench/pull/13) made the conditions executable as a provenance-bound study:
+
+```text
+public variant × valid execution/visibility condition × agent × repetition
+```
+
+Every trial binds the task package, source code, runtime dependencies, requested and resolved model identity, session and attempt ownership, turn budget, verifier result, and immutable snapshot. Interrupted work can be resumed or finalized without rewriting history.
+
+The study is deliberately descriptive. Conditions are sequential, not randomized or counterbalanced, and their total turn capacity differs. Group means can locate hypotheses. They cannot establish a causal effect of memory policy.
+
+This is the shape I now mean by an adaptation microscope: controlled evidence changes, explicit memory conditions, semantic transition measures, and enough provenance to tell which interaction produced the result.
+
+We have built the microscope. The complete model campaign still lies ahead; the later pilots test whether one model can use the apparatus, not fill its comparison table.
+
+## Who Is Allowed To Declare Success?
+
+Moving an interaction into another execution system introduces an awkward question: can the environment report its own reward?
+
+For engineering work, execution authority and engineering authority have to remain separate. An adapter can execute a model. The task still decides whether a provenance gap is closed, which revision governs, and whether a package is ready to issue.
+
+The [typed lifecycle episode boundary](https://github.com/TheodoreGalanos/aec-bench/pull/14) makes that separation explicit for fresh-context execution. The host supplies the package hashes, checkpoint and attempt ownership, visibility policy, paths, requested model identity, and turn limit. The environment can return execution status, resolved identity, usage, and failure details. Fields for expected answers, verifier gates, pass/fail, or reward are rejected.
+
+Checkpoint acceptance, immutable archival, lifecycle transition, and engineering verification remain host- or task-owned.
+
+This sounds like plumbing. It is actually epistemology with types.
+
+## Putting The Lifecycle Inside A Real RL Environment
+
+The next boundary was a [local Prime/Verifiers lifecycle export](https://github.com/TheodoreGalanos/aec-bench/pull/15).
+
+One `StatefulToolEnv` rollout now owns the complete persistent lifecycle and one conversation. The generated environment references existing public lifecycle packages by absolute path and content hash. It binds the exact editable aec-bench checkout. At rollout setup it creates a fresh run, prepares the first checkpoint, and exposes only five host-controlled tools:
+
+- list the visible workspace;
+- read one visible file;
+- write the active checkpoint submission;
+- submit the checkpoint;
+- revisit an immutable earlier checkpoint.
+
+There is no shell. Later evidence remains inaccessible until the host accepts the active structural submission. Only the final checkpoint ends the rollout, and only the registered task verifier computes reward. An incomplete rollout closes its active attempt and receives zero.
+
+This closes a practical gap with [Making aec-bench Trainable](/blog/making-aec-bench-trainable/). That earlier work proved ordinary aec-bench tasks could enter a hosted RL loop without losing their verifiers. The new export proves the evidence lifecycle itself can inhabit a real Verifiers interaction boundary.
+
+The result is local and provider-free. No model was trained. No hosted lifecycle run was performed. The tests prove the environment contract and lifecycle machinery, not model capability.
+
+## What This Can Train Now
+
+Ordinary RL post-training can already use this interaction shape. Run a fixed policy through a resettable lifecycle, preserve the trajectory, score the cumulative submissions, update the policy between rollouts, and start again from a clean world.
+
+The training target is richer than final-answer accuracy. A rollout can expose whether the policy acquired new evidence, retained unaffected decisions, revised only invalidated state, respected evidence authority, and kept its final readiness decision consistent with the record.
+
+The current verifier supplies decomposed terminal feedback rather than dense reward at every action. Semantic transition metrics add explanation without changing that reward.
+
+Four public variants are enough to calibrate the machinery. A serious training distribution still needs broader release histories, private targets, and leakage controls. Otherwise a policy can memorize the sequence and look adapted.
+
+## The World Answers Back, Within Bounds
+
+[PR17](https://github.com/TheodoreGalanos/aec-bench/pull/17) made the first successor state depend on a model choice. A task can publish a bounded request catalogue with prerequisites and a finite budget. The model asks for one declared packet; the host records the action and reveals only that packet. A repeated request is harmless. An unknown or unavailable request reveals nothing.
+
+That changed the evidence system. [PR18](https://github.com/TheodoreGalanos/aec-bench/pull/18) built the physical counterpart: a deterministic, benchmark-owned detention and pipe-network world with two catchments, a basin, an orifice, an emergency weir, tailwater, and explicit checks for discharge, velocity, hydraulic grade line, storage, and freeboard.
+
+The solver choice deserves plain language. We tested the supported SWMM Python path first. Its namespace imported, but the native solver and output modules did not run successfully in the environments we support, and there was no compatible local executable. So the benchmark uses an explicitly synthetic hydraulic engine. It is deterministic and source-bound. It is not SWMM, project design evidence, standards compliance, or authority approval.
+
+[PR19](https://github.com/TheodoreGalanos/aec-bench/pull/19) connected bounded model actions to that world. At baseline the reviewer can run hydrology, detention and outlet analysis, and downstream HGL for both the design and major events. A later source revision changes the major-event rainfall intensity but leaves the design inputs untouched.
+
+The correct response is selective:
+
+```text
+activate the source revision
+
+design chain  -> reuse the current hydrology, detention, and HGL evidence
+major chain   -> recompute hydrology, detention, and HGL
+
+replace the affected major decision
+retain the unaffected design decision
+propagate both into closeout
+```
+
+Currentness is not a model assertion. The host compares exact calculation inputs and prerequisite action IDs. A reusable result points back to the original canonical artifacts and consumes no calculation budget. A stale result must be recomputed.
+
+The terminal verifier checks the operation history, source grounding, selective recomputation, decision replacement and retention, run and report propagation, closeout memo, readiness, and claim boundary. A physical criterion may fail while the task still earns full reward: the model's job is to report the current engineering evidence honestly, not to make the synthetic design pass.
+
+The world now answers back. It does so through a small declared action space whose consequences can be replayed and checked.
+
+## The Private Exam Stays Sealed
+
+A public environment is easy to overfit once its choreography and verifier are visible. [PR20](https://github.com/TheodoreGalanos/aec-bench/pull/20) therefore added an explicit sealed-provider boundary before public model calibration began.
+
+One external provider can supply a private package builder, operation resolver, and verifier for one exact content-bound package. The provider never enters public registries. A generic host receipt says only that public registration and export are forbidden. It carries no target name, prompt, path, operation ID, expected answer, or verifier rule.
+
+Normal Prime export and public full-fidelity records reject sealed packages. Those records contain prompts, file inventories, hashes, paths, and verifier identity; calling them redacted would be fiction. PR20 keeps them private until PR22 adds an access-controlled record path and an allowlisted public summary.
+
+An out-of-tree pump-station proof exercised the boundary with wet-well levels, pump and system curves, duty point, power, and NPSH. Production tools completed the three-checkpoint graph and the provider-owned verifier passed. No language model ran. The proof established the private authority boundary, not holdout performance.
+
+[PR21](https://github.com/TheodoreGalanos/aec-bench/pull/21) added the public side of that separation. Four public hydraulic variants can now run under four context and memory conditions. The campaign manifest declares the comparison, coverage, turn limits, and deterministic selector before execution. Each immutable trial binds the task, model, adapter, runtime dependencies, memory policy, operation protocol, and tool schema.
+
+Only after every planned public record exists can the write-once selector freeze one condition. The selector cannot see a sealed target and refuses to run while one is mounted.
+
+That sequence matters:
+
+```text
+public campaign
+  -> preserve every valid success and failure
+  -> freeze one exact condition
+  -> mount the private target once
+  -> publish only an allowlisted aggregate
+```
+
+The full public campaign has not run. There is no frozen condition and no holdout result yet.
+
+## The First Real Model Found The Interface
+
+The first PR21 pilot put a real Sonnet model into the persistent `major_idf_revision` lifecycle. It completed all three checkpoints and the intended thirteen hydraulic actions. It retained the design chain, recomputed the major chain, superseded the stale decision, and reached the correct readiness conclusion.
+
+Its immutable reward was zero.
+
+The model had not failed the hydraulic reasoning. Our public contract had failed the model. One shared instruction described closeout-only fields during earlier checkpoints and named two memo concepts differently from the verifier's exact JSON keys. The host accepted undeclared top-level fields and exposed the mismatch only after the lifecycle ended.
+
+A diagnostic replay removed only the undeclared fields and renamed those two memo keys. The same engineering evidence then passed all eleven gates. That replay did not rewrite the pilot. It isolated the interface defect.
+
+We changed the public contract rather than teaching the verifier to forgive arbitrary output. Each checkpoint now lists its exact top-level keys. Closeout-only fields disappear from baseline and revision. The model-facing write tool rejects missing or undeclared fields while the model can still correct them. The host checks the same contract again before archival.
+
+The change revealed a second provenance trap. Adding a defaulted contract field changed the canonical hash of every older lifecycle, including the immutable pilot. We changed canonicalisation so the behaviour-neutral default remains omitted while the stricter policy changes identity. The old pilot became readable again without changing a byte of its evidence.
+
+Then we ran a second, freshly materialised pilot under the repaired contract. One persistent session completed all three checkpoints with one submitted attempt each. It executed the same thirteen-operation pattern, produced no rejected submission, and passed all eleven verifier gates at reward one.
+
+That is the first real-model success in this richer environment. It is also deliberately narrow. One model completed one public variant under one memory condition. Both pilots sit outside the preregistered campaign. They cannot tell us which condition is best, how reliable the model is across variants, or how it performs on the sealed target.
+
+## Environment Richness And Learner Persistence
+
+Environment richness and learner persistence are separate axes.
+
+| Axis | Progression | SSC-03 today |
+| --- | --- | --- |
+| Environment richness | Static packet → staged observations → action-conditioned consequences → open-ended world | Bounded evidence choices and deterministic hydraulic consequences |
+| Learner persistence | Fixed model → in-context adaptation → artifact-mediated continuity → policy updates between episodes → continual learning | Fixed model using context or artifacts |
+
+A static model can act inside a rich world. A continually updated model can still learn inside a trivial one. Progress on one axis does not prove progress on the other.
+
+Within a lifecycle, we can now measure acquisition, retention, revision precision, and interference against controlled semantic changes. We can also inspect which operations the model requested, which results it reused, and which source revision governed each downstream decision. Those measurements concern the state expressed by a fixed model during one run. They say nothing yet about weight updates, forgetting across training, or transfer to a new lifecycle.
+
+Ordinary post-training updates the policy between resettable episodes. A continual learner would carry improvement through normal interaction or into later packages while remaining accountable for what changed. Studying that safely will require training-data provenance, contamination controls, model-version lineage, rollback, and held-out regression checks.
+
+The boring record-keeping work is already pointing in that direction.
+
+## What Comes Next
+
+The next step is not to add self-training and hope.
+
+First we need to land the stacked implementation and freeze the exact clean code used for evidence. Then the complete public campaign has to run: four public variants across four context and memory conditions. Every valid success and failure stays in the record. Only the preregistered selector may choose the condition.
+
+PR22 then needs a private record path that does not leak full prompts, paths, hashes, traces, action maps, or verifier rules. The frozen condition can run once against the reviewed pump-station target under the declared repetition policy. PR16's evidence-only evaluator can report descriptive holdout generalisation from the immutable public and private records.
+
+Even a clean holdout result would concern a fixed model. It would not show that the public interactions taught the model anything.
+
+Ordinary RL post-training comes later: collect public trajectories, update a model between resettable episodes, freeze the trained checkpoint, and compare it with the base model on untouched targets. Continual learning is a further step. It needs explicit cross-run learner updates, versioned update authority, rollback, nonstationary task streams, and measurement of both improvement and forgetting.
+
+The progression now looks less like a leap and more like a sequence of obligations.
+
+A calculation task asks the agent to compute.
+
+A review task asks it to judge.
+
+An evidence lifecycle asks it to preserve and revise that judgment.
+
+An action-conditioned world asks it to choose what happens next and live with the result.
+
+A continual learner will eventually have to become better across those interactions without quietly forgetting what it already knew.
+
+I set out to make the task longer. The useful work began when the world acquired memory.
+
+The packet has started moving. It answers back now, but inside a small controlled world. The learner itself still does not change.
+
+> Before a model can learn continually, the world it inhabits has to remember what it did.
